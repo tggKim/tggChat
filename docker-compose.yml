@@ -1,0 +1,33 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: chat-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: chatdb
+    ports:
+      - "3307:3306"
+    volumes:
+      - chatdb_data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: chat-app
+    depends_on:
+      - mysql
+    restart: always
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/chatdb?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    volumes:
+      - chatApp_logs:/chatApp/logs
+
+volumes:
+  chatdb_data:
+  chatApp_logs:
