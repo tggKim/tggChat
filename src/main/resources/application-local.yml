@@ -10,4 +10,4 @@ spring:
 
 logging:
   file:
-    name: ./logs/chatApp.log
+    name: /logs/chatApp/chatApp.log
