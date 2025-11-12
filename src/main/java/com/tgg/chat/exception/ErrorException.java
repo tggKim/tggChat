@@ -1,7 +1,5 @@
 package com.tgg.chat.exception;
 
-import com.mysql.cj.jdbc.CloseOption;
-
 import lombok.Getter;
 
 @Getter
@@ -11,11 +9,6 @@ public class ErrorException extends RuntimeException {
 	
 	public ErrorException(ErrorCode errorCode) {
 		super(errorCode.getMessage());
-		this.errorCode = errorCode;
-	}
-	
-	public ErrorException(ErrorCode errorCode, String message) {
-		super(message);
 		this.errorCode = errorCode;
 	}
 	

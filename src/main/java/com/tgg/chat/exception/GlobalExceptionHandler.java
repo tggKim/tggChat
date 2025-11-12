@@ -24,13 +24,6 @@ public class GlobalExceptionHandler {
                 errorCode.getCode(),
                 errorCode.getStatus().value(),
                 errorMessage);
-		
-        // 예외에 담긴 에러 메시지와 ErrorCode에 담긴 에러 메시지가 다르면 예외에 담긴 에러 메시지가 우선이다
-        if(!errorMessage.equals(errorCodeMessage)) {
-    		return ResponseEntity
-    				.status(errorCode.getStatus())
-    				.body(ErrorResponse.of(errorCode, errorMessage));
-        }
         
 		return ResponseEntity
 				.status(errorCode.getStatus())
