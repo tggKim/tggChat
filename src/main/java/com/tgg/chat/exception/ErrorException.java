@@ -14,9 +14,4 @@ public class ErrorException extends RuntimeException {
 		this.errorCode = errorCode;
 	}
 	
-	public ErrorException(ErrorCode errorCode, String message) {
-		super(message);
-		this.errorCode = errorCode;
-	}	
-	
 }
