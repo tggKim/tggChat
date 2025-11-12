@@ -48,7 +48,21 @@ public class User {
     }
 
     public static User of(String email, String password, String username) {
+    	
+    	if (email == null || email.isBlank()) {
+    		throw new IllegalArgumentException("이메일은 필수입니다.");
+    	}
+    	
+		if (password == null || password.isBlank()) {
+			throw new IllegalArgumentException("비밀번호는 필수입니다.");		
+		}
+
+		if (username == null || username.isBlank()) {
+			throw new IllegalArgumentException("사용자명은 필수입니다.");
+		}
+		
         return new User(email, password, username, false);
+    
     }
 
 }
