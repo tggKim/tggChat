@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.user.controller;
 
+import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +40,17 @@ public class UserController {
 				.status(HttpStatus.OK)
 				.body(userResponseDto);
 		
+	}
+
+	@PatchMapping("/user")
+	public ResponseEntity<Void> updateUser(@RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
+
+		userService.updateUser(userUpdateRequestDto);
+
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body(null);
+
 	}
 
 	@DeleteMapping("/user/{userId}")

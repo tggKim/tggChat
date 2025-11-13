@@ -56,4 +56,8 @@ public class User {
         deleted = true;
     }
 
+    public void update(String username) {
+        this.username = username;
+    }
+
 }

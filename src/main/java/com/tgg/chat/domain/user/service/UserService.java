@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.user.service;
 
+import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +53,19 @@ public class UserService {
 		
 		return UserResponseDto.of(findUser);
 		
+	}
+
+	@Transactional
+	public void updateUser(UserUpdateRequestDto userUpdateRequestDto) {
+
+		User findUser = userRepository.findById(userUpdateRequestDto.getId()).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+		if(findUser.getDeleted()) {
+			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+		}
+
+		findUser.update(userUpdateRequestDto.getUsername());
+
 	}
 
 	@Transactional
