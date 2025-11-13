@@ -2,6 +2,8 @@ package com.tgg.chat.exception;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.Getter;
 
 @Getter
@@ -10,6 +12,8 @@ public class ErrorResponse {
 	private final String code;
 	private final int status;
 	private final String message;
+	
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private final LocalDateTime timestamp;
 	
 	private ErrorResponse(String code, int status, String message, LocalDateTime timestamp) {
