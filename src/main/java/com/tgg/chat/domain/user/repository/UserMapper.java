@@ -1,0 +1,16 @@
+package com.tgg.chat.domain.user.repository;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import com.tgg.chat.domain.user.entity.User;
+
+@Mapper
+public interface UserMapper {
+	
+	User findByEmail(String email);
+	
+	User findById(Long id);
+
+	boolean existsByEmail(String email);
+	
+}
