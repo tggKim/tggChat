@@ -17,7 +17,7 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	
-	public SignUpResponseDto saveUser(SignUpRequestDto signUpRequestDto) {
+	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
 		
 		User requestUser = User.of(signUpRequestDto.getEmail(), signUpRequestDto.getPassword(), signUpRequestDto.getUsername());
 		
