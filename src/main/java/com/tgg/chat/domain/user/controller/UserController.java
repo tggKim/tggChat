@@ -2,12 +2,15 @@ package com.tgg.chat.domain.user.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
+import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.service.UserService;
 
@@ -28,6 +31,17 @@ public class UserController {
 		return ResponseEntity
 				.status(HttpStatus.OK)
 				.body(signUpResponseDto);
+		
+	}
+	
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<UserResponseDto> findUser(@PathVariable Long userId) {
+		
+		UserResponseDto userResponseDto = userService.findUser(userId);
+		
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body(userResponseDto);
 		
 	}
 	
