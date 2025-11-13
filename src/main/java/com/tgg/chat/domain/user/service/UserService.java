@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.user.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
@@ -19,6 +20,7 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	
+	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
 		
 		// 이메일 중복 검사
