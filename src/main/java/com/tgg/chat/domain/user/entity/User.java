@@ -52,4 +52,8 @@ public class User {
     
     }
 
+    public void deleteUser() {
+        deleted = true;
+    }
+
 }

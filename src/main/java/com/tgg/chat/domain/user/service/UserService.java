@@ -42,9 +42,9 @@ public class UserService {
 	}
 	
 	@Transactional(readOnly = true)
-	public UserResponseDto findUser(Long id) {
+	public UserResponseDto findUser(Long userId) {
 		
-		User findUser = userMapper.findById(id);
+		User findUser = userMapper.findById(userId);
 		
 		if(findUser == null || findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
@@ -52,6 +52,19 @@ public class UserService {
 		
 		return UserResponseDto.of(findUser);
 		
+	}
+
+	@Transactional
+	public void deleteUser(Long userId) {
+
+		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+		if(findUser.getDeleted()) {
+			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+		}
+
+		findUser.deleteUser();
+
 	}
 	
 }

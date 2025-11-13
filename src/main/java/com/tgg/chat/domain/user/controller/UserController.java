@@ -2,11 +2,7 @@ package com.tgg.chat.domain.user.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
@@ -43,6 +39,17 @@ public class UserController {
 				.status(HttpStatus.OK)
 				.body(userResponseDto);
 		
+	}
+
+	@DeleteMapping("/user/{userId}")
+	public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+
+		userService.deleteUser(userId);
+
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body(null);
+
 	}
 	
 }
