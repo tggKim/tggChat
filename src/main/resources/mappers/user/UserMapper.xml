@@ -10,4 +10,17 @@
 		)
 	</select>
 	
+	<select id="findById" parameterType="long" resultType="User">
+		SELECT 
+	        id,
+	        email,
+	        password,
+	        username,
+	        deleted,
+	        created_at,
+	        updated_at
+	    FROM user
+	    WHERE id = #{id}
+	</select>
+	
 </mapper>

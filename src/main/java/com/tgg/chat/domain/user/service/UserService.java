@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
+import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -37,6 +38,19 @@ public class UserService {
 		User savedUser = userRepository.save(requestUser);
 		
 		return SignUpResponseDto.of(savedUser);
+		
+	}
+	
+	@Transactional(readOnly = true)
+	public UserResponseDto findUser(Long id) {
+		
+		User findUser = userMapper.findById(id);
+		
+		if(findUser == null || findUser.getDeleted()) {
+			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+		}
+		
+		return UserResponseDto.of(findUser);
 		
 	}
 	
