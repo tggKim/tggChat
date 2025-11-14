@@ -58,7 +58,7 @@ public class UserService {
 	@Transactional
 	public void updateUser(UserUpdateRequestDto userUpdateRequestDto) {
 
-		User findUser = userRepository.findById(userUpdateRequestDto.getId()).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+		User findUser = userRepository.findById(userUpdateRequestDto.getUserId()).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
 
 		if(findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);

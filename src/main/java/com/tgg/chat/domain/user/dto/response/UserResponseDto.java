@@ -10,7 +10,7 @@ import lombok.Getter;
 @Getter
 public class UserResponseDto {
 	
-	private final Long id;
+	private final Long userId;
 	private final String email;
 	private final String username;
 	
@@ -20,8 +20,8 @@ public class UserResponseDto {
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private final LocalDateTime updatedAt;
 	
-	private UserResponseDto(Long id, String email, String username, LocalDateTime createdAt, LocalDateTime updatedAt) {
-		this.id = id;
+	private UserResponseDto(Long userId, String email, String username, LocalDateTime createdAt, LocalDateTime updatedAt) {
+		this.userId = userId;
 		this.email = email;
 		this.username = username;
 		this.createdAt = createdAt;
@@ -29,7 +29,7 @@ public class UserResponseDto {
 	}
 	
 	public static UserResponseDto of(User user) {
-		return new UserResponseDto(user.getId(), user.getEmail(), user.getUsername(), user.getCreatedAt(), user.getUpdatedAt());
+		return new UserResponseDto(user.getUserId(), user.getEmail(), user.getUsername(), user.getCreatedAt(), user.getUpdatedAt());
 	}
 
 }
