@@ -12,7 +12,7 @@ import lombok.Getter;
 @Schema(description = "유저 조회 응답 DTO")
 public class UserResponseDto {
 	
-	@Schema(description = "생성된 유저 식별 ID", example = "1")
+	@Schema(description = "생성된 유저 식별 ID", example = "1", type = "string")
 	private final Long userId;
 	
 	@Schema(description = "이메일", example = "test@example.com")
