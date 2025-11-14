@@ -45,9 +45,9 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public UserResponseDto findUser(Long userId) {
 		
-		User findUser = userMapper.findById(userId);
-		
-		if(findUser == null || findUser.getDeleted()) {
+		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+		if(findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
 		}
 		
@@ -56,9 +56,9 @@ public class UserService {
 	}
 
 	@Transactional
-	public void updateUser(UserUpdateRequestDto userUpdateRequestDto) {
+	public void updateUser(Long userId, UserUpdateRequestDto userUpdateRequestDto) {
 
-		User findUser = userRepository.findById(userUpdateRequestDto.getUserId()).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
 
 		if(findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);

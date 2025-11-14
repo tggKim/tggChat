@@ -42,10 +42,10 @@ public class UserController {
 		
 	}
 
-	@PatchMapping("/user")
-	public ResponseEntity<Void> updateUser(@RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
+	@PatchMapping("/user/{userId}")
+	public ResponseEntity<Void> updateUser(@PathVariable Long userId, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
 
-		userService.updateUser(userUpdateRequestDto);
+		userService.updateUser(userId, userUpdateRequestDto);
 
 		return ResponseEntity
 				.status(HttpStatus.OK)

@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserUpdateRequestDto {
 
-    private Long userId;
-
     @NotBlank(message = "사용자명은 필수입니다.")
     @Size(max = 50, message = "사용자명 길이는 50자 이하입니다.")
     private String username;
