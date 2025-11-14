@@ -14,7 +14,7 @@ public class ErrorResponse {
 	@Schema(description = "에러 코드", example = "에러 코드")
 	private final String code;
 	
-	@Schema(description = "HTTP 상태 코드", example = "HTTP 상태 코드")
+	@Schema(description = "HTTP 상태 코드", example = "HTTP 상태 코드", type = "string")
 	private final int status;
 	
 	@Schema(description = "에러 메시지", example = "에러 메시지")

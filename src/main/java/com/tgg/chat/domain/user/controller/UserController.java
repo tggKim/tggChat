@@ -69,6 +69,28 @@ public class UserController {
 		
 	}
 	
+	@Operation(
+			summary = "회원 조회",
+			description =  "userId로 회원을 조회 합니다."
+		)
+		@ApiResponses({
+			@ApiResponse(
+					responseCode = "200", 
+					description = "조회 성공",
+					content = @Content(
+						mediaType = "application/json",
+						schema = @Schema(implementation = SignUpResponseDto.class)
+					)
+			),
+			@ApiResponse(
+					responseCode = "404", 
+					description = "존재하지 않는 유저",
+					content = @Content(
+						mediaType = "application/json",
+						schema = @Schema(implementation = ErrorResponse.class)
+					)
+			)
+		})
 	@GetMapping("/user/{userId}")
 	public ResponseEntity<UserResponseDto> findUser(@PathVariable Long userId) {
 		
