@@ -21,3 +21,6 @@ logging:
     max-file-size: 10MB
   level:
     root: info
+    
+springdoc:
+ override-with-generic-response: false
