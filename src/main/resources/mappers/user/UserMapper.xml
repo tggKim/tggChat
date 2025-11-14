@@ -12,7 +12,7 @@
 	
 	<select id="findById" parameterType="long" resultType="User">
 		SELECT 
-	        id,
+	        user_id,
 	        email,
 	        password,
 	        username,
