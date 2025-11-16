@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
 import org.springframework.stereotype.Component;
 
@@ -18,9 +20,17 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtils {
+
+	@Value("${JWT_SECRET_KEY}")
+	private String jwtSecretKey;
 	
 	// 비밀키 생성
-	private static final Key SECREAT_KEY = Keys.hmacShaKeyFor("mysecret".getBytes());
+	private Key SECREAT_KEY;
+
+	@PostConstruct
+	public void init() {
+		this.SECREAT_KEY = Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
+	}
 	
 	// accessToken, refreshToekn 유효기간 설정
 	private static final Long ACCESS_TOKEN_MILLIS = 30 * 60 * 1000L;

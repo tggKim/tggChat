@@ -24,3 +24,5 @@ logging:
     
 springdoc:
  override-with-generic-response: false
+
+JWT_SECRET_KEY: ${JWT_SECRET_KEY}
