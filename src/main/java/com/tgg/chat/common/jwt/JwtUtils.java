@@ -20,16 +20,12 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtils {
-
-	@Value("${JWT_SECRET_KEY}")
-	private String jwtSecretKey;
 	
 	// 비밀키 생성
-	private Key SECREAT_KEY;
+	private final Key SECREAT_KEY;
 
-	@PostConstruct
-	public void init() {
-		this.SECREAT_KEY = Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
+	public JwtUtils(@Value("${JWT_SECRET_KEY}") String jwtSecretKey) {
+		SECREAT_KEY = Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
 	}
 	
 	// accessToken, refreshToekn 유효기간 설정
