@@ -15,6 +15,7 @@ import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ClaimsMutator;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -111,6 +112,16 @@ public class JwtUtils {
 			throw new ErrorException(ErrorCode.JWT_EMPTY_TOKEN);
 		
 		}
+ 	}
+	
+	public Claims getClaims(String token) {
+
+		return Jwts.parserBuilder()
+					.setSigningKey(SECREAT_KEY)
+					.build()
+					.parseClaimsJws(token)
+					.getBody();
+		
  	}
 	
 }
