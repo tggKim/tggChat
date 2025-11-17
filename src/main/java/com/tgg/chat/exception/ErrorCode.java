@@ -16,7 +16,13 @@ public enum ErrorCode {
 	
 	// 유저(User)
 	DUPLICATE_EMAIL_ERROR(HttpStatus.CONFLICT, "U001", "중복된 이메일 입니다."),
-	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U002", "존재하지 않는 유저입니다.");
+	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U002", "존재하지 않는 유저입니다."),
+	
+    // JWT 토큰 관련
+    JWT_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A006", "유효하지 않은 JWT 토큰입니다."),
+    JWT_EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "J001", "만료된 JWT 토큰입니다."),
+    JWT_UNSUPPORTED_TOKEN(HttpStatus.UNAUTHORIZED, "J002", "지원되지 않는 JWT 토큰 형식입니다."),
+    JWT_EMPTY_TOKEN(HttpStatus.UNAUTHORIZED, "J005", "JWT 토큰이 비어있습니다.");
 	
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;

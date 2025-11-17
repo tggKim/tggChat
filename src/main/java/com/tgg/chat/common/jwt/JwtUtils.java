@@ -12,11 +12,17 @@ import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2Res
 import org.springframework.stereotype.Component;
 
 import com.tgg.chat.domain.user.entity.User;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 
 import io.jsonwebtoken.ClaimsMutator;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 
 @Component
 public class JwtUtils {
@@ -45,8 +51,8 @@ public class JwtUtils {
 		
 		return Jwts.builder()
 			.setHeaderParam("typ", "JWT")
-			.setClaims(claims)
 			.setSubject(subject)
+			.setClaims(claims)
 			.setIssuedAt(now)
 			.setExpiration(expiration)
 			.signWith(SECREAT_KEY, SignatureAlgorithm.HS256)
@@ -75,5 +81,36 @@ public class JwtUtils {
 			.compact();
 		
 	}
+	
+	public void validateToken(String token) {
+		try {
+			
+			Jwts.parserBuilder()
+				.setSigningKey(SECREAT_KEY)
+				.build()
+				.parse(token);
+		
+		} catch (SignatureException | SecurityException | MalformedJwtException e) {
+			
+			// 유효하지 않은 JWT
+			throw new ErrorException(ErrorCode.JWT_INVALID_TOKEN);
+		
+		} catch (ExpiredJwtException e) {
+			
+			// 만료된 JWT
+			throw new ErrorException(ErrorCode.JWT_EXPIRED_TOKEN);
+		
+		} catch (UnsupportedJwtException e) {
+			
+			// 지원되지 않는 JWT 형식
+			throw new ErrorException(ErrorCode.JWT_UNSUPPORTED_TOKEN);
+		
+		} catch (IllegalArgumentException e) {
+			
+			// 토큰이 빈값 혹은 null 값
+			throw new ErrorException(ErrorCode.JWT_EMPTY_TOKEN);
+		
+		}
+ 	}
 	
 }
