@@ -1,14 +1,17 @@
 package com.tgg.chat.common.filter;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.jwt.JwtUtils;
+import com.tgg.chat.common.security.SecurityWhitelist;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import com.tgg.chat.exception.ErrorResponse;
@@ -28,6 +31,7 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 
 	private final JwtUtils jwtUtils;
 	private final ObjectMapper objectMapper;
+	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -74,6 +78,15 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 		
 		// Security FilterChain의 다음 필터로 요청 전달
 		filterChain.doFilter(request, response);
+		
+	}
+	
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+		
+		String path = request.getRequestURI();
+		
+		return Arrays.stream(SecurityWhitelist.WHITELIST).anyMatch(pattern -> pathMatcher.match(pattern, path));
 		
 	}
 	

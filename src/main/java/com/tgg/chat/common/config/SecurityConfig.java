@@ -10,6 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.tgg.chat.common.filter.JwtSecurityFilter;
+import com.tgg.chat.common.security.SecurityWhitelist;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,7 +27,7 @@ public class SecurityConfig {
 		http.csrf(csrf -> csrf.disable())
 		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/**").permitAll()
+				.requestMatchers(SecurityWhitelist.WHITELIST).permitAll()
 				.anyRequest().authenticated())
 		.addFilterBefore(jwtSecurityFilter, UsernamePasswordAuthenticationFilter.class)
 		.formLogin(form -> form.disable())
