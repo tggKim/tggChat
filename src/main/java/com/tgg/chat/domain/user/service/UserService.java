@@ -45,9 +45,9 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public UserResponseDto findUser(Long userId) {
 		
-		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+		User findUser = userMapper.findById(userId);
 
-		if(findUser.getDeleted()) {
+		if(findUser == null || findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
 		}
 		
