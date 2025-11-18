@@ -2,6 +2,7 @@ package com.tgg.chat.common.filter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.http.HttpMethod;
@@ -77,11 +78,8 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 		// claims 추출
 		Claims claims = jwtUtils.getClaims(jwtString);
 		
-		// 권한 생성(현재는 권한이 한개 이므로, 추후에는 엔티티에 권한 넣을 예정)
-		List<GrantedAuthority> authorities =List.of(new SimpleGrantedAuthority("USER"));
-		
-		// Authentication 객체 생성
-		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), claims, authorities);
+		// Authentication 객체 생성(현재는 권한이 없어서 빈 리스트)
+		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims, null, Collections.emptyList());
 		
 		// SecurityContext에 인증 정보 저장
 		SecurityContextHolder.getContext().setAuthentication(authenticationToken);
