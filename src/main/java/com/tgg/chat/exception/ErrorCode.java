@@ -18,6 +18,7 @@ public enum ErrorCode {
 	DUPLICATE_EMAIL_ERROR(HttpStatus.CONFLICT, "U001", "중복된 이메일 입니다."),
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U002", "존재하지 않는 유저입니다."),
 	INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "U003", "비밀번호가 일치하지 않습니다."),
+	FORBIDDEN_USER_ACCESS(HttpStatus.FORBIDDEN, "U005", "해당 사용자 정보에 접근할 권한이 없습니다."),
 	
     // JWT 토큰 관련
     JWT_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "J001", "유효하지 않은 JWT 토큰입니다."),

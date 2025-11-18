@@ -1,8 +1,10 @@
 package com.tgg.chat.domain.user.controller;
 
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
+import io.jsonwebtoken.Claims;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
@@ -126,9 +128,13 @@ public class UserController {
 		)
 	})
 	@PatchMapping("/user/{userId}")
-	public ResponseEntity<Void> updateUser(@PathVariable Long userId, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
-		
-		userService.updateUser(userId, userUpdateRequestDto);
+	public ResponseEntity<Void> updateUser(Authentication authentication, @PathVariable Long userId, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
+
+		Claims claims = (Claims)authentication.getPrincipal();
+
+		Long loginUserId = Long.parseLong(claims.getSubject());
+
+		userService.updateUser(loginUserId, userId, userUpdateRequestDto);
 
 		return ResponseEntity
 				.status(HttpStatus.OK)

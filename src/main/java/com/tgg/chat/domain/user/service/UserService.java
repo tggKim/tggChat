@@ -56,7 +56,11 @@ public class UserService {
 	}
 
 	@Transactional
-	public void updateUser(Long userId, UserUpdateRequestDto userUpdateRequestDto) {
+	public void updateUser(Long loginUserId, Long userId, UserUpdateRequestDto userUpdateRequestDto) {
+
+		if(loginUserId.equals(userId)) {
+			throw new ErrorException(ErrorCode.FORBIDDEN_USER_ACCESS);
+		}
 
 		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
 
