@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -102,6 +103,7 @@ public class UserController {
 		
 	}
 
+	@SecurityRequirement(name = "JWT Auth")
 	@Operation(
 			summary = "회원 수정",
 			description =  "회원 이름을 수정합니다."
@@ -125,7 +127,7 @@ public class UserController {
 	})
 	@PatchMapping("/user/{userId}")
 	public ResponseEntity<Void> updateUser(@PathVariable Long userId, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
-
+		
 		userService.updateUser(userId, userUpdateRequestDto);
 
 		return ResponseEntity
@@ -134,6 +136,7 @@ public class UserController {
 
 	}
 
+	@SecurityRequirement(name = "JWT Auth")
 	@Operation(
 			summary = "회원 삭제",
 			description =  "회원을 삭제합니다."
