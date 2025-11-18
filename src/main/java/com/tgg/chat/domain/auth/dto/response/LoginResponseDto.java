@@ -18,7 +18,7 @@ public class LoginResponseDto {
 		this.refreshToken = refreshToken;
 	}
 	
-	public LoginResponseDto of(String accessToken, String resfreshToken) {
+	public static LoginResponseDto of(String accessToken, String resfreshToken) {
 		return new LoginResponseDto(accessToken, resfreshToken);
 	}
 	
