@@ -6,6 +6,6 @@ import org.springframework.stereotype.Component;
 
 public class SecurityWhitelist {
 	
-	public static final String[] WHITELIST = {"/user/**"};
+	public static final String[] WHITELIST = {"/swagger-ui/**", "/user/**", "/login"};
 	
 }
