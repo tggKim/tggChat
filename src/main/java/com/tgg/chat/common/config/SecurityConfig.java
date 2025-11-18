@@ -31,15 +31,17 @@ public class SecurityConfig {
 		.formLogin(form -> form.disable())
 		.httpBasic(basic -> basic.disable());
 		
-		// 화이트 리스트에 대해서 누구나 접근 가능하게 설정
-		for(PermitRule permitRule : SecurityWhitelist.WHITELIST) {
-			http.authorizeHttpRequests(auth -> auth
-					.requestMatchers(permitRule.getHttpMethod(), permitRule.getPattern()).permitAll());
-		}
-		
-		// 화이트 리스트 이외의 요청들은 인증된 사용자만 접근 가능하게 설정
-		http.authorizeHttpRequests(auth -> auth
-				.anyRequest().authenticated());
+		http.authorizeHttpRequests(auth -> {
+			
+			// 화이트 리스트에 대해서 누구나 접근 가능하게 설정
+			for(PermitRule permitRule : SecurityWhitelist.WHITELIST) {
+				auth.requestMatchers(permitRule.getHttpMethod(), permitRule.getPattern()).permitAll();
+			}
+			
+			// 화이트 리스트 이외의 요청들은 인증된 사용자만 접근 가능하게 설정
+			auth.anyRequest().authenticated();
+			
+		});
 		
 		return http.build();
 		
