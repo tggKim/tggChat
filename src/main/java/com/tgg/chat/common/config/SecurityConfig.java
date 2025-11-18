@@ -11,6 +11,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.tgg.chat.common.filter.JwtSecurityFilter;
 import com.tgg.chat.common.security.SecurityWhitelist;
+import com.tgg.chat.common.security.SecurityWhitelist.PermitRule;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,12 +27,19 @@ public class SecurityConfig {
 		
 		http.csrf(csrf -> csrf.disable())
 		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-		.authorizeHttpRequests(auth -> auth
-				.requestMatchers(SecurityWhitelist.WHITELIST).permitAll()
-				.anyRequest().authenticated())
 		.addFilterBefore(jwtSecurityFilter, UsernamePasswordAuthenticationFilter.class)
 		.formLogin(form -> form.disable())
 		.httpBasic(basic -> basic.disable());
+		
+		// 화이트 리스트에 대해서 누구나 접근 가능하게 설정
+		for(PermitRule permitRule : SecurityWhitelist.WHITELIST) {
+			http.authorizeHttpRequests(auth -> auth
+					.requestMatchers(permitRule.getHttpMethod(), permitRule.getPattern()).permitAll());
+		}
+		
+		// 화이트 리스트 이외의 요청들은 인증된 사용자만 접근 가능하게 설정
+		http.authorizeHttpRequests(auth -> auth
+				.anyRequest().authenticated());
 		
 		return http.build();
 		

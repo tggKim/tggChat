@@ -3,10 +3,12 @@ package com.tgg.chat.common.filter;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -89,8 +91,10 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
 		
 		String path = request.getRequestURI();
+		String httpMethod = request.getMethod();
 		
-		return Arrays.stream(SecurityWhitelist.WHITELIST).anyMatch(pattern -> pathMatcher.match(pattern, path));
+		return SecurityWhitelist.WHITELIST.stream()
+			.anyMatch(permitRule -> permitRule.getHttpMethod().matches(httpMethod) && pathMatcher.match(permitRule.getPattern(), path));
 		
 	}
 	
