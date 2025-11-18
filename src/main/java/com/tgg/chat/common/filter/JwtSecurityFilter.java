@@ -2,9 +2,12 @@ package com.tgg.chat.common.filter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -37,12 +40,12 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
+		
 		String jwtString = null;
 
 		// 토큰 검증
 		try {
-
+			
 			String bearerString = request.getHeader("Authorization");
 
 			if(bearerString == null) {
@@ -74,10 +77,11 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 		// claims 추출
 		Claims claims = jwtUtils.getClaims(jwtString);
 		
-		// Authentication 객체 생성
-		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), claims);
+		// 권한 생성(현재는 권한이 한개 이므로, 추후에는 엔티티에 권한 넣을 예정)
+		List<GrantedAuthority> authorities =List.of(new SimpleGrantedAuthority("USER"));
 		
-		System.out.println(authenticationToken);
+		// Authentication 객체 생성
+		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), claims, authorities);
 		
 		// SecurityContext에 인증 정보 저장
 		SecurityContextHolder.getContext().setAuthentication(authenticationToken);
