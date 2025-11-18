@@ -13,6 +13,7 @@ public class SecurityWhitelist {
 				new PermitRule(HttpMethod.GET, "/swagger-ui/**"),
 				new PermitRule(HttpMethod.GET, "/v3/api-docs/**"),
 				new PermitRule(HttpMethod.GET, "/user/**"),
+				new PermitRule(HttpMethod.POST, "/user"),
 				new PermitRule(HttpMethod.POST, "/login")
 			);
 	
