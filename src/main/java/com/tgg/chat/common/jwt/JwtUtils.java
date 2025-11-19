@@ -52,8 +52,8 @@ public class JwtUtils {
 		
 		return Jwts.builder()
 			.setHeaderParam("typ", "JWT")
-			.setSubject(subject)
 			.setClaims(claims)
+			.setSubject(subject)
 			.setIssuedAt(now)
 			.setExpiration(expiration)
 			.signWith(SECREAT_KEY, SignatureAlgorithm.HS256)
@@ -74,8 +74,8 @@ public class JwtUtils {
 		
 		return Jwts.builder()
 			.setHeaderParam("typ", "JWT")
-			.setSubject(subject)
 			.setClaims(claims)
+			.setSubject(subject)
 			.setIssuedAt(now)
 			.setExpiration(expiration)
 			.signWith(SECREAT_KEY, SignatureAlgorithm.HS256)
