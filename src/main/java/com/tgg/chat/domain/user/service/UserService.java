@@ -58,7 +58,7 @@ public class UserService {
 	@Transactional
 	public void updateUser(Long loginUserId, Long userId, UserUpdateRequestDto userUpdateRequestDto) {
 
-		if(loginUserId.equals(userId)) {
+		if(!loginUserId.equals(userId)) {
 			throw new ErrorException(ErrorCode.FORBIDDEN_USER_ACCESS);
 		}
 
@@ -73,8 +73,12 @@ public class UserService {
 	}
 
 	@Transactional
-	public void deleteUser(Long userId) {
+	public void deleteUser(Long loginUserId, Long userId) {
 
+		if(!loginUserId.equals(userId)) {
+			throw new ErrorException(ErrorCode.FORBIDDEN_USER_ACCESS);
+		}
+		
 		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
 
 		if(findUser.getDeleted()) {

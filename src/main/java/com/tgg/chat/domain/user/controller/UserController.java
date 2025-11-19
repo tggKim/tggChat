@@ -165,9 +165,13 @@ public class UserController {
 		)
 	})
 	@DeleteMapping("/user/{userId}")
-	public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+	public ResponseEntity<Void> deleteUser(Authentication authentication, @PathVariable Long userId) {
 
-		userService.deleteUser(userId);
+		Claims claims = (Claims)authentication.getPrincipal();
+
+		Long loginUserId = Long.parseLong(claims.getSubject());
+		
+		userService.deleteUser(loginUserId, userId);
 
 		return ResponseEntity
 				.status(HttpStatus.OK)
