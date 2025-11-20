@@ -65,6 +65,9 @@ dependencies {
     
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	
 }
 
