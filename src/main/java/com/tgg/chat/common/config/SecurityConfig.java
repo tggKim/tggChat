@@ -29,7 +29,8 @@ public class SecurityConfig {
 		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		.addFilterBefore(jwtSecurityFilter, UsernamePasswordAuthenticationFilter.class)
 		.formLogin(form -> form.disable())
-		.httpBasic(basic -> basic.disable());
+		.httpBasic(basic -> basic.disable())
+		.logout(logout -> logout.disable());
 		
 		http.authorizeHttpRequests(auth -> {
 			
