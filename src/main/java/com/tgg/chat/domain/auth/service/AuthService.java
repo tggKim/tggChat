@@ -75,6 +75,14 @@ public class AuthService {
 		
 	}
 	
+	// 로그아웃
+	public void logout(Long userId) {
+		
+		redisUtils.deleteAccessToken(userId);
+		redisUtils.deleteRefreshToken(userId);
+		
+	}
+	
 	private void storeTokenSet(Long userId, String accessToken, String refreshToken) {
 
 		Claims accessTokenClaims = jwtUtils.getClaims(accessToken);
