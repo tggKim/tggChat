@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.tgg.chat.common.jwt.JwtUtils;
 import com.tgg.chat.common.redis.RedisUtils;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
+import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginResponseDto;
 import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.user.entity.User;
@@ -52,9 +53,15 @@ public class AuthService {
 	}
 	
 	// 로그인 여부 확인
-	public LoginStatusResponseDto isLogedIn(Long userId) {
+	public LoginStatusResponseDto isLogedIn(LoginStatusRequestDto loginStatusRequestDto) {
 		
-		String refreshToken = redisUtils.getRefreshToken(userId);
+		User findUser = userMapper.findByEmail(loginStatusRequestDto.getEmail());
+		
+		if(findUser == null || findUser.getDeleted()) {
+			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+		}
+		
+		String refreshToken = redisUtils.getRefreshToken(findUser.getUserId());
 		
 		boolean isLoggedIn;
 		

@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
+import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginResponseDto;
+import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.auth.service.AuthService;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.service.UserService;
@@ -107,11 +109,11 @@ public class AuthController {
 				)
 		)
 	})
-	public ResponseEntity<LoginResponseDto> isLoggedIn(@RequestBody @Valid LoginRequestDto loginRequestDto) {
+	public ResponseEntity<LoginStatusResponseDto> isLoggedIn(@RequestBody @Valid LoginStatusRequestDto loginStatusRequestDto) {
 		
-		LoginResponseDto loginResponseDto = authService.login(loginRequestDto);
+		LoginStatusResponseDto loginStatusResponseDto = authService.isLogedIn(loginStatusRequestDto);
 		
-		return ResponseEntity.status(HttpStatus.OK).body(loginResponseDto);
+		return ResponseEntity.status(HttpStatus.OK).body(loginStatusResponseDto);
 		
 	}
 	
