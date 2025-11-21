@@ -5,17 +5,17 @@ import lombok.Getter;
 
 @Getter
 @Schema(description = "로그인 여부 응답 DTO")
-public class LoginStatusResponse {
+public class LoginStatusResponseDto {
 
 	@Schema(description = "로그인 여부 플래그")
 	private final Boolean isLoggedIn;
 	
-	private LoginStatusResponse(Boolean isLoggedIn) {
+	private LoginStatusResponseDto(Boolean isLoggedIn) {
 		this.isLoggedIn = isLoggedIn;
 	}
 	
-	public static LoginStatusResponse of(Boolean isLoggedIn) {
-		return new LoginStatusResponse(isLoggedIn);
+	public static LoginStatusResponseDto of(Boolean isLoggedIn) {
+		return new LoginStatusResponseDto(isLoggedIn);
 	}
 	
 }

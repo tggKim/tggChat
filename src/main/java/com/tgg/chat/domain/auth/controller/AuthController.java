@@ -76,4 +76,43 @@ public class AuthController {
 		
 	}
 	
+	@PostMapping("/login-status")
+	@Operation(
+			summary = "로그인 여부 확인", 
+			description = "이메이을 통해서 로그인 여부를 확인합니다."
+	)
+	@ApiResponses({
+		@ApiResponse(
+				responseCode = "200", 
+				description = "로그인 여부 확인 성공",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = LoginResponseDto.class)
+				)
+		),
+		@ApiResponse(
+				responseCode = "400", 
+				description = "잘못된 요청",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)
+				)
+		),
+		@ApiResponse(
+				responseCode = "404", 
+				description = "존재하지 않는 유저",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)
+				)
+		)
+	})
+	public ResponseEntity<LoginResponseDto> isLoggedIn(@RequestBody @Valid LoginRequestDto loginRequestDto) {
+		
+		LoginResponseDto loginResponseDto = authService.login(loginRequestDto);
+		
+		return ResponseEntity.status(HttpStatus.OK).body(loginResponseDto);
+		
+	}
+	
 }

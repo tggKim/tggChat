@@ -7,7 +7,7 @@ import com.tgg.chat.common.jwt.JwtUtils;
 import com.tgg.chat.common.redis.RedisUtils;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginResponseDto;
-import com.tgg.chat.domain.auth.dto.response.LoginStatusResponse;
+import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -52,7 +52,7 @@ public class AuthService {
 	}
 	
 	// 로그인 여부 확인
-	public LoginStatusResponse isLogedIn(Long userId) {
+	public LoginStatusResponseDto isLogedIn(Long userId) {
 		
 		String refreshToken = redisUtils.getRefreshToken(userId);
 		
@@ -64,7 +64,7 @@ public class AuthService {
 			isLoggedIn = true;
 		}
 		
-		return LoginStatusResponse.of(isLoggedIn);
+		return LoginStatusResponseDto.of(isLoggedIn);
 		
 	}
 	
