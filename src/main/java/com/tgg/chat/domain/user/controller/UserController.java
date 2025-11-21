@@ -31,6 +31,7 @@ public class UserController {
 
 	private final UserService userService;
 	
+	@PostMapping("/user")
 	@Operation(
 		summary = "회원 가입",
 		description =  "사용자를 신규 등록합니다."
@@ -61,7 +62,6 @@ public class UserController {
 				)
 		)
 	})
-	@PostMapping("/user")
 	public ResponseEntity<SignUpResponseDto> signUpUser(@RequestBody @Valid SignUpRequestDto signUpRequestDto) {
 		
 		SignUpResponseDto signUpResponseDto = userService.signUpUser(signUpRequestDto);
@@ -72,6 +72,7 @@ public class UserController {
 		
 	}
 	
+	@GetMapping("/user/{userId}")
 	@Operation(
 			summary = "회원 조회",
 			description =  "userId로 회원을 조회 합니다."
@@ -94,7 +95,6 @@ public class UserController {
 				)
 		)
 	})
-	@GetMapping("/user/{userId}")
 	public ResponseEntity<UserResponseDto> findUser(@PathVariable Long userId) {
 		
 		UserResponseDto userResponseDto = userService.findUser(userId);
@@ -105,6 +105,7 @@ public class UserController {
 		
 	}
 
+	@PatchMapping("/user/{userId}")
 	@SecurityRequirement(name = "JWT Auth")
 	@Operation(
 			summary = "회원 수정",
@@ -127,7 +128,6 @@ public class UserController {
 				)
 		)
 	})
-	@PatchMapping("/user/{userId}")
 	public ResponseEntity<Void> updateUser(Authentication authentication, @PathVariable Long userId, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
 
 		Claims claims = (Claims)authentication.getPrincipal();
@@ -142,6 +142,7 @@ public class UserController {
 
 	}
 
+	@DeleteMapping("/user/{userId}")
 	@SecurityRequirement(name = "JWT Auth")
 	@Operation(
 			summary = "회원 삭제",
@@ -164,7 +165,6 @@ public class UserController {
 				)
 		)
 	})
-	@DeleteMapping("/user/{userId}")
 	public ResponseEntity<Void> deleteUser(Authentication authentication, @PathVariable Long userId) {
 
 		Claims claims = (Claims)authentication.getPrincipal();
