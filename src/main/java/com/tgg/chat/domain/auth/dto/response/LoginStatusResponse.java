@@ -14,7 +14,7 @@ public class LoginStatusResponse {
 		this.isLoggedIn = isLoggedIn;
 	}
 	
-	public LoginStatusResponse of(Boolean isLoggedIn) {
+	public static LoginStatusResponse of(Boolean isLoggedIn) {
 		return new LoginStatusResponse(isLoggedIn);
 	}
 	
