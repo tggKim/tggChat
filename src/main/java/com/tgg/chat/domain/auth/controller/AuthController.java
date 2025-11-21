@@ -2,6 +2,7 @@ package com.tgg.chat.domain.auth.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,11 +16,13 @@ import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.service.UserService;
 import com.tgg.chat.exception.ErrorResponse;
 
+import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -89,7 +92,7 @@ public class AuthController {
 				description = "로그인 여부 확인 성공",
 				content = @Content(
 					mediaType = "application/json",
-					schema = @Schema(implementation = LoginResponseDto.class)
+					schema = @Schema(implementation = LoginStatusResponseDto.class)
 				)
 		),
 		@ApiResponse(
@@ -114,6 +117,41 @@ public class AuthController {
 		LoginStatusResponseDto loginStatusResponseDto = authService.isLogedIn(loginStatusRequestDto);
 		
 		return ResponseEntity.status(HttpStatus.OK).body(loginStatusResponseDto);
+		
+	}
+	
+	@PostMapping("/logout")
+	@SecurityRequirement(name = "JWT Auth")
+	@Operation(
+			summary = "로그아웃", 
+			description = "accessToken을 통해서 로그아웃 요청 합니다."
+	)
+	@ApiResponses({
+		@ApiResponse(
+				responseCode = "200", 
+				description = "로그아웃 성공",
+				content = @Content(
+					mediaType = "application/json"
+				)
+		),
+		@ApiResponse(
+				responseCode = "404", 
+				description = "존재하지 않는 유저",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)
+				)
+		)
+	})
+	public ResponseEntity<Void> logout(Authentication authentication) {
+		
+		Claims claims = (Claims)authentication.getPrincipal();
+
+		Long loginUserId = Long.parseLong(claims.getSubject());
+		
+		authService.logout(loginUserId);
+		
+		return ResponseEntity.status(HttpStatus.OK).body(null);
 		
 	}
 	
