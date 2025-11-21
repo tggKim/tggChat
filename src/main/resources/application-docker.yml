@@ -7,6 +7,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO}   # create, update, validate, none 중 선택 가능
+  
+  data:
+    redis:
+      host: redis
 
 logging:
   file:
