@@ -66,9 +66,7 @@ public class RedisUtils {
 	
 	private String createAccessTokenKey(Long userId) {
 		
-		String strUserId = String.valueOf(userId);
-		
-		String key = AT_PREFIX + strUserId;	
+		String key = AT_PREFIX + userId;	
 		
 		return key;
 		
@@ -76,9 +74,7 @@ public class RedisUtils {
 	
 	private String createRefreshTokenKey(Long userId) {
 		
-		String strUserId = String.valueOf(userId);
-		
-		String key = RT_PREFIX + strUserId;	
+		String key = RT_PREFIX + userId;	
 		
 		return key;
 		
