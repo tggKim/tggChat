@@ -133,14 +133,6 @@ public class AuthController {
 				content = @Content(
 					mediaType = "application/json"
 				)
-		),
-		@ApiResponse(
-				responseCode = "404", 
-				description = "존재하지 않는 유저",
-				content = @Content(
-					mediaType = "application/json",
-					schema = @Schema(implementation = ErrorResponse.class)
-				)
 		)
 	})
 	public ResponseEntity<Void> logout(Authentication authentication) {
