@@ -18,8 +18,8 @@ public class LoginResponseDto {
 		this.refreshToken = refreshToken;
 	}
 	
-	public static LoginResponseDto of(String accessToken, String resfreshToken) {
-		return new LoginResponseDto(accessToken, resfreshToken);
+	public static LoginResponseDto of(String accessToken, String refreshToken) {
+		return new LoginResponseDto(accessToken, refreshToken);
 	}
 	
 }
