@@ -116,7 +116,7 @@ public class AuthController {
 	})
 	public ResponseEntity<LoginStatusResponseDto> isLoggedIn(@RequestBody @Valid LoginStatusRequestDto loginStatusRequestDto) {
 		
-		LoginStatusResponseDto loginStatusResponseDto = authService.isLogedIn(loginStatusRequestDto);
+		LoginStatusResponseDto loginStatusResponseDto = authService.isLoggedIn(loginStatusRequestDto);
 		
 		return ResponseEntity.status(HttpStatus.OK).body(loginStatusResponseDto);
 		
