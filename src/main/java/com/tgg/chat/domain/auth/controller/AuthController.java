@@ -1,5 +1,7 @@
 package com.tgg.chat.domain.auth.controller;
 
+import com.tgg.chat.domain.auth.dto.request.RefreshRequestDto;
+import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -58,7 +60,7 @@ public class AuthController {
 		),
 		@ApiResponse(
 				responseCode = "401", 
-				description = "잘못된 비밀번호",
+				description = "잘못된 비밀번호, 유효하지 않은 토큰",
 				content = @Content(
 					mediaType = "application/json",
 					schema = @Schema(implementation = ErrorResponse.class)
@@ -84,7 +86,7 @@ public class AuthController {
 	@PostMapping("/login-status")
 	@Operation(
 			summary = "로그인 여부 확인", 
-			description = "이메이을 통해서 로그인 여부를 확인합니다."
+			description = "이메일을 통해서 로그인 여부를 확인합니다."
 	)
 	@ApiResponses({
 		@ApiResponse(
@@ -145,6 +147,37 @@ public class AuthController {
 		
 		return ResponseEntity.status(HttpStatus.OK).body(null);
 		
+	}
+
+	@PostMapping("/refresh")
+	@Operation(
+			summary = "AccessToken 재발급",
+			description = "RefreshToken을 사용하여 AccessToken을 재발급"
+	)
+	@ApiResponses({
+			@ApiResponse(
+					responseCode = "200",
+					description = "토큰 재발급 성공",
+					content = @Content(
+							mediaType = "application/json",
+							schema = @Schema(implementation = RefreshResponseDto.class)
+					)
+			),
+			@ApiResponse(
+					responseCode = "401",
+					description = "유효하지 않은 토큰",
+					content = @Content(
+							mediaType = "application/json",
+							schema = @Schema(implementation = ErrorResponse.class)
+					)
+			)
+	})
+	public ResponseEntity<RefreshResponseDto> refresh(@RequestBody RefreshRequestDto refreshRequestDto) {
+
+		RefreshResponseDto refreshResponseDto = authService.refresh(refreshRequestDto);
+
+		return ResponseEntity.status(HttpStatus.OK).body(refreshResponseDto);
+
 	}
 	
 }
