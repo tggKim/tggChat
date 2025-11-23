@@ -135,6 +135,14 @@ public class AuthController {
 				content = @Content(
 					mediaType = "application/json"
 				)
+		),
+		@ApiResponse(
+				responseCode = "401",
+				description = "유효하지 않은 토큰",
+				content = @Content(
+						mediaType = "application/json",
+						schema = @Schema(implementation = ErrorResponse.class)
+				)
 		)
 	})
 	public ResponseEntity<Void> logout(Authentication authentication) {
