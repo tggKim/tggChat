@@ -60,7 +60,7 @@ public class AuthController {
 		),
 		@ApiResponse(
 				responseCode = "401", 
-				description = "잘못된 비밀번호, 유효하지 않은 토큰",
+				description = "잘못된 비밀번호",
 				content = @Content(
 					mediaType = "application/json",
 					schema = @Schema(implementation = ErrorResponse.class)
