@@ -1,5 +1,9 @@
 package com.tgg.chat.domain.auth.service;
 
+import com.tgg.chat.domain.auth.dto.request.RefreshRequestDto;
+import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +19,6 @@ import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -81,6 +84,33 @@ public class AuthService {
 		redisUtils.deleteAccessToken(userId);
 		redisUtils.deleteRefreshToken(userId);
 		
+	}
+
+	// 토큰 재발급
+	public RefreshResponseDto refresh(RefreshRequestDto refreshRequestDto) {
+
+		String refreshToken = refreshRequestDto.getRefreshToken();
+
+		jwtUtils.validateToken(refreshToken);
+
+		Claims claims = jwtUtils.getClaims(refreshToken);
+		Long userId = Long.parseLong(claims.getSubject());
+
+		String findRefreshToken = redisUtils.getRefreshToken(userId);
+		// RefreshToken 이 존재하지 않거나 유효하지 않으면 예외처리
+		if(findRefreshToken == null || !findRefreshToken.equals(refreshToken)) {
+			throw new ErrorException(ErrorCode.JWT_INVALID_REFRESH_TOKEN);
+		}
+
+		User findUser = userMapper.findById(userId);
+
+		String newRefreshToken = jwtUtils.createRefreshToken(findUser);
+		String newAccessToken = jwtUtils.createRefreshToken(findUser);
+
+		storeTokenSet(userId, newAccessToken, newRefreshToken);
+
+		return RefreshResponseDto.of(newAccessToken, newRefreshToken);
+
 	}
 	
 	private void storeTokenSet(Long userId, String accessToken, String refreshToken) {

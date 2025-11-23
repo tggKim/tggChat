@@ -26,7 +26,8 @@ public enum ErrorCode {
     JWT_UNSUPPORTED_TOKEN(HttpStatus.UNAUTHORIZED, "J003", "지원되지 않는 JWT 토큰 형식입니다."),
     JWT_EMPTY_TOKEN(HttpStatus.UNAUTHORIZED, "J004", "JWT 토큰이 비어있습니다."),
 	JWT_MISSING_AUTH_HEADER(HttpStatus.UNAUTHORIZED, "J005", "Authorization 헤더가 존재하지 않습니다."),
-	JWT_INVALID_AUTH_SCHEME(HttpStatus.UNAUTHORIZED, "J006", "Authorization 헤더가 Bearer 형식이 아닙니다.");
+	JWT_INVALID_AUTH_SCHEME(HttpStatus.UNAUTHORIZED, "J006", "Authorization 헤더가 Bearer 형식이 아닙니다."),
+	JWT_INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "J007", "유효하지 않은 리프레시 토큰입니다.");
 	
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;
