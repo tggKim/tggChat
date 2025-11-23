@@ -56,7 +56,7 @@ public class AuthService {
 	}
 	
 	// 로그인 여부 확인
-	public LoginStatusResponseDto isLogedIn(LoginStatusRequestDto loginStatusRequestDto) {
+	public LoginStatusResponseDto isLoggedIn(LoginStatusRequestDto loginStatusRequestDto) {
 		
 		User findUser = userMapper.findByEmail(loginStatusRequestDto.getEmail());
 		
