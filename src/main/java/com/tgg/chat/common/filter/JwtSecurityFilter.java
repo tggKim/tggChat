@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.jwt.JwtUtils;
+import com.tgg.chat.common.redis.RedisUtils;
 import com.tgg.chat.common.security.SecurityWhitelist;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -38,6 +39,7 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 	private final JwtUtils jwtUtils;
 	private final ObjectMapper objectMapper;
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
+	private final RedisUtils redisUtils;
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -61,22 +63,29 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 
 			jwtUtils.validateToken(jwtString);
 		
-		} catch(ErrorException e) {
+		} catch(ErrorException errorException) {
 			
-			ErrorCode errorCode = e.getErrorCode();
+			makeErrorResposne(errorException, response);
 			
-	        log.warn("[ValidationError] code={}, status={}, message={}",
-	                errorCode.getCode(),
-	                errorCode.getStatus().value(),
-	                errorCode.getMessage());
-			
-			makeErrorResposne(errorCode, response);
 			return;
 			
 		}
 		
 		// claims 추출
 		Claims claims = jwtUtils.getClaims(jwtString);
+		
+		// 레디스에 저장된 accessToken 과 비교
+		Long userId = Long.parseLong(claims.getSubject());
+		String redisAccessToken = redisUtils.getAccessToken(userId);
+		if(redisAccessToken == null || !redisAccessToken.equals(jwtString)) {
+			
+			ErrorException errorException = new ErrorException(ErrorCode.ACCESS_TOKEN_MISMATCH);
+			
+			makeErrorResposne(errorException, response);
+			
+			return;
+			
+		}
 		
 		// Authentication 객체 생성(현재는 권한이 없어서 빈 리스트)
 		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims, null, Collections.emptyList());
@@ -101,7 +110,14 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 	}
 	
 	// 응답에 ErrorResponse 담는 메서드
-	private void makeErrorResposne(ErrorCode errorCode, HttpServletResponse response) throws IOException {
+	private void makeErrorResposne(ErrorException errorException, HttpServletResponse response) throws IOException {
+		
+		ErrorCode errorCode = errorException.getErrorCode();
+		
+        log.warn("[ValidationError] code={}, status={}, message={}",
+                errorCode.getCode(),
+                errorCode.getStatus().value(),
+                errorCode.getMessage());
 		
 		ErrorResponse errorResponse = ErrorResponse.of(errorCode);
 		
