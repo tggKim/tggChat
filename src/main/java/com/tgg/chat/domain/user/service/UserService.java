@@ -5,6 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tgg.chat.common.redis.RedisUtils;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
@@ -23,6 +24,7 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
+	private final RedisUtils redisUtils;
 	
 	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
@@ -86,6 +88,10 @@ public class UserService {
 		}
 
 		findUser.deleteUser();
+		
+		// 레디스에서 AccessToken, RefreshToken 제거
+		redisUtils.deleteAccessToken(findUser.getUserId());
+		redisUtils.deleteRefreshToken(findUser.getUserId());
 
 	}
 	
