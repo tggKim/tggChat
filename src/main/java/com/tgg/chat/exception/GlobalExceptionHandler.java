@@ -16,8 +16,6 @@ public class GlobalExceptionHandler {
 	protected ResponseEntity<ErrorResponse> handleErrorException(ErrorException e) {
 		
 		ErrorCode errorCode = e.getErrorCode();
-		
-		String errorCodeMessage = errorCode.getMessage();
 		String errorMessage = e.getMessage();
 		
         log.warn("[ErrorException] code={}, status={}, message={}",
