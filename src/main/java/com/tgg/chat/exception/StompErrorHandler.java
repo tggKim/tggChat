@@ -1,5 +1,8 @@
 package com.tgg.chat.exception;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -50,11 +53,15 @@ public class StompErrorHandler extends StompSubProtocolErrorHandler{
 		        		internalServerError.getStatus().value(),
 		        		internalServerErrorMessage);
 			    
+		        String timestamp = LocalDateTime.now()
+		                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+		        
 				String fallbackJson = String.format(
-			            "{\"code\":\"%s\",\"status\":%d,\"message\":\"%s\"}",
+			            "{\"code\":\"%s\",\"status\":%d,\"message\":\"%s\",\"timestamp\":\"%s\"}",
 			            internalServerError.getCode(),
 			            internalServerError.getStatus().value(),
-			            internalServerError.getMessage()
+			            internalServerError.getMessage(),
+			            timestamp
 			    );
 				
 				errorResponseByte = fallbackJson.getBytes();
