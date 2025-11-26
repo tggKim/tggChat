@@ -43,8 +43,6 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-		
-		String jwtString = null;
 
 		// 토큰 검증
 		try {
@@ -59,10 +57,26 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 				throw new ErrorException(ErrorCode.JWT_INVALID_AUTH_SCHEME);
 			}
 
-			jwtString = bearerString.substring(7);
+			String jwtString = bearerString.substring(7);
 
 			jwtUtils.validateToken(jwtString);
-		
+			
+			// claims 추출
+			Claims claims = jwtUtils.getClaims(jwtString);
+			
+			// 레디스에 저장된 accessToken 과 비교
+			Long userId = Long.parseLong(claims.getSubject());
+			String redisAccessToken = redisUtils.getAccessToken(userId);
+			if(redisAccessToken == null || !redisAccessToken.equals(jwtString)) {
+				throw new ErrorException(ErrorCode.ACCESS_TOKEN_MISMATCH);
+			}
+			
+			// Authentication 객체 생성(현재는 권한이 없어서 빈 리스트)
+			UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims, null, Collections.emptyList());
+			
+			// SecurityContext에 인증 정보 저장
+			SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+			
 		} catch(ErrorException errorException) {
 			
 			makeErrorResposne(errorException, response);
@@ -70,28 +84,6 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 			return;
 			
 		}
-		
-		// claims 추출
-		Claims claims = jwtUtils.getClaims(jwtString);
-		
-		// 레디스에 저장된 accessToken 과 비교
-		Long userId = Long.parseLong(claims.getSubject());
-		String redisAccessToken = redisUtils.getAccessToken(userId);
-		if(redisAccessToken == null || !redisAccessToken.equals(jwtString)) {
-			
-			ErrorException errorException = new ErrorException(ErrorCode.ACCESS_TOKEN_MISMATCH);
-			
-			makeErrorResposne(errorException, response);
-			
-			return;
-			
-		}
-		
-		// Authentication 객체 생성(현재는 권한이 없어서 빈 리스트)
-		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims, null, Collections.emptyList());
-		
-		// SecurityContext에 인증 정보 저장
-		SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 		
 		// Security FilterChain의 다음 필터로 요청 전달
 		filterChain.doFilter(request, response);
@@ -124,7 +116,7 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 		String jsonResponse = objectMapper.writeValueAsString(errorResponse);
 		
 		response.setStatus(errorResponse.getStatus());
-		response.setContentType("applicaiton/json; charset=UTF-8");
+		response.setContentType("application/json; charset=UTF-8");
 		response.getWriter().write(jsonResponse);
 		
 	}
