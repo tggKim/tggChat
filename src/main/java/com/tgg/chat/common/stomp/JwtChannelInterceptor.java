@@ -1,5 +1,7 @@
 package com.tgg.chat.common.stomp;
 
+import java.security.Principal;
+
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -55,8 +57,9 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 				throw new ErrorException(ErrorCode.ACCESS_TOKEN_MISMATCH);
 			}
 
-            System.out.println(claims);
-
+            Principal stomPrincipal = new StompPrincipal(userId);
+            accessor.setUser(stomPrincipal);
+            
         }
 
         return message;
