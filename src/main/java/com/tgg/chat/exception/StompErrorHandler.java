@@ -13,6 +13,7 @@ import org.springframework.web.socket.messaging.StompSubProtocolErrorHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.xml.bind.annotation.XmlAccessOrder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,7 +70,6 @@ public class StompErrorHandler extends StompSubProtocolErrorHandler{
 			}
 		
 			StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.ERROR);
-			accessor.setLeaveMutable(true);
 			
 			Message<byte[]> message = MessageBuilder.createMessage(errorResponseByte, accessor.getMessageHeaders());
 
