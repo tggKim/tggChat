@@ -2,6 +2,7 @@ package com.tgg.chat.domain.auth.service;
 
 import com.tgg.chat.domain.auth.dto.request.RefreshRequestDto;
 import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
+import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +33,7 @@ public class AuthService {
 	private final RedisUtils redisUtils;
 	
 	// 로그인
-	public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+	public TokenPair login(LoginRequestDto loginRequestDto) {
 		
 		User findUser = userMapper.findByEmail(loginRequestDto.getEmail());
 
@@ -51,7 +52,7 @@ public class AuthService {
 		// AccessToken, RefreshToken 레디스에 저장
 		storeTokenSet(findUser.getUserId(), accessToken, refreshToken);
 		
-		return LoginResponseDto.of(accessToken, refreshToken);
+		return TokenPair.of(accessToken, refreshToken);
 		
 	}
 	

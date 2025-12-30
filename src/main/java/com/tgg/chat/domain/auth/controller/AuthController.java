@@ -2,7 +2,10 @@ package com.tgg.chat.domain.auth.controller;
 
 import com.tgg.chat.domain.auth.dto.request.RefreshRequestDto;
 import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
+import com.tgg.chat.domain.auth.dto.response.TokenPair;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +31,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.time.Duration;
 
 @Tag(name = "Auth API", description = "로그인, 로그아웃, 토큰 재발급 등의 인증 관련 API")
 @RestController
@@ -77,9 +82,24 @@ public class AuthController {
 	})
 	public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto loginRequestDto) {
 		
-		LoginResponseDto loginResponseDto = authService.login(loginRequestDto);
+        TokenPair tokenPair = authService.login(loginRequestDto);
+
+        String accessToken = tokenPair.getAccessToken();
+        String refreshToken = tokenPair.getRefreshToken();
+
+        ResponseCookie rtCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofDays(14))
+                .build();
+
+        LoginResponseDto loginResponseDto = LoginResponseDto.of(accessToken);
 		
-		return ResponseEntity.status(HttpStatus.OK).body(loginResponseDto);
+		return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, rtCookie.toString())
+                .body(loginResponseDto);
 		
 	}
 	

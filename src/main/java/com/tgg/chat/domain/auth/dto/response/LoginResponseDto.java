@@ -9,17 +9,13 @@ public class LoginResponseDto {
 	
 	@Schema(description = "엑세스 토큰")
 	private final String accessToken;
-	
-	@Schema(description = "리프레시 토큰")
-	private final String refreshToken;
 
-	private LoginResponseDto(String accessToken, String refreshToken) {	
+	private LoginResponseDto(String accessToken) {
 		this.accessToken = accessToken;
-		this.refreshToken = refreshToken;
 	}
 	
-	public static LoginResponseDto of(String accessToken, String refreshToken) {
-		return new LoginResponseDto(accessToken, refreshToken);
+	public static LoginResponseDto of(String accessToken) {
+		return new LoginResponseDto(accessToken);
 	}
 	
 }
