@@ -105,7 +105,7 @@ public class AuthService {
 		User findUser = userMapper.findById(userId);
 
 		String newRefreshToken = jwtUtils.createRefreshToken(findUser);
-		String newAccessToken = jwtUtils.createRefreshToken(findUser);
+		String newAccessToken = jwtUtils.createAccessToken(findUser);
 
 		storeTokenSet(userId, newAccessToken, newRefreshToken);
 
