@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -200,11 +201,26 @@ public class AuthController {
 					)
 			)
 	})
-	public ResponseEntity<RefreshResponseDto> refresh(@RequestBody RefreshRequestDto refreshRequestDto) {
+	public ResponseEntity<RefreshResponseDto> refresh(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-		RefreshResponseDto refreshResponseDto = authService.refresh(refreshRequestDto);
+		TokenPair tokenPair = authService.refresh(refreshToken);
 
-		return ResponseEntity.status(HttpStatus.OK).body(refreshResponseDto);
+        String newAccessToken = tokenPair.getAccessToken();
+        String newRefreshToken = tokenPair.getRefreshToken();
+
+        ResponseCookie rtCookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofDays(14))
+                .build();
+
+        RefreshResponseDto refreshResponseDto = RefreshResponseDto.of(newAccessToken);
+
+		return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, rtCookie.toString())
+                .body(refreshResponseDto);
 
 	}
 	

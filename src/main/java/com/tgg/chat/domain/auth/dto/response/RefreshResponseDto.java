@@ -11,16 +11,12 @@ public class RefreshResponseDto {
     @Schema(description = "엑세스 토큰")
     private final String accessToken;
 
-    @Schema(description = "리프레시 토큰")
-    private final String refreshToken;
-
-    private RefreshResponseDto(String accessToken, String refreshToken) {
+    private RefreshResponseDto(String accessToken) {
         this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
     }
 
-    public static RefreshResponseDto of(String accessToken, String refreshToken) {
-        return new RefreshResponseDto(accessToken, refreshToken);
+    public static RefreshResponseDto of(String accessToken) {
+        return new RefreshResponseDto(accessToken);
     }
 
 }

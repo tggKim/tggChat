@@ -88,9 +88,7 @@ public class AuthService {
 	}
 
 	// 토큰 재발급
-	public RefreshResponseDto refresh(RefreshRequestDto refreshRequestDto) {
-
-		String refreshToken = refreshRequestDto.getRefreshToken();
+	public TokenPair refresh(String refreshToken) {
 
 		jwtUtils.validateToken(refreshToken);
 
@@ -110,7 +108,7 @@ public class AuthService {
 
 		storeTokenSet(userId, newAccessToken, newRefreshToken);
 
-		return RefreshResponseDto.of(newAccessToken, newRefreshToken);
+		return TokenPair.of(newAccessToken, newRefreshToken);
 
 	}
 	
