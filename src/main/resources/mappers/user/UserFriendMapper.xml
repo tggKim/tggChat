@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tgg.chat.domain.friend.repository.UserFriendMapper">
+
+    <select id="findFriendListByOwnerId" parameterType="long" resultType="UserFriendRowDto">
+        SELECT
+            user_friend_id
+        ,   owner_id
+        ,   friend_id
+        ,   created_at
+        ,   updated_at
+        FROM user_friend
+        WHERE owner_id = #{ownerId}
+    </select>
+
+</mapper>
