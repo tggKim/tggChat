@@ -91,7 +91,7 @@ public class AuthController {
         ResponseCookie rtCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
                 .secure(false) // http 환경에서만 쿠키 전송
-                .sameSite("Lax") // 다른 사이트에서 요청시에도 전송될지 결정하는 옵션
+                .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
                 .path("/") // 모든 경로의 요청에 쿠키 포함
                 .maxAge(Duration.ofDays(7)) // 만료시간 설정
                 .build();
