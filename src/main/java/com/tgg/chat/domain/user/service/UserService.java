@@ -34,6 +34,11 @@ public class UserService {
 			throw new ErrorException(ErrorCode.DUPLICATE_EMAIL_ERROR);
 		}
 		
+		// 유저명 중복 검사
+		if(userMapper.existsByUsername(signUpRequestDto.getUsername())) {
+			throw new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR);
+		}
+		
 		String encodedPassword = passwordEncoder.encode(signUpRequestDto.getPassword());
 		
 		User requestUser = User.of(signUpRequestDto.getEmail(), encodedPassword, signUpRequestDto.getUsername());
