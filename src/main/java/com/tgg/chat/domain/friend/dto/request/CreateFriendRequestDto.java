@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "친구 생성 요청 DTO")
 public class CreateFriendRequestDto {
 
+	@Schema(description = "추가하고자 하는 유저 ID", example = "1")
     private Long friendId;
 
 }
