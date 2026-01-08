@@ -44,4 +44,17 @@
 	    WHERE email = #{email}
 	</select>
 	
+	<select id="findByUsername" parameterType="string" resultType="User">
+		SELECT 
+	        user_id,
+	        email,
+	        password,
+	        username,
+	        deleted,
+	        created_at,
+	        updated_at
+	    FROM user
+	    WHERE username = #{username}
+	</select>
+	
 </mapper>
