@@ -15,6 +15,7 @@
         INNER JOIN user T2 ON T1.owner_id = T2.user_id
         INNER JOIN user T3 ON T1.friend_id = T3.user_id 
         WHERE owner_id = #{ownerId}
+        ORDER BY T3.username ASC
     </select>
     
     <select id="existsByOwnerIdAndFriendId" parameterType="long" resultType="boolean">
