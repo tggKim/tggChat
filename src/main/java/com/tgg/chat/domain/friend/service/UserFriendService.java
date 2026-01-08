@@ -1,6 +1,8 @@
 package com.tgg.chat.domain.friend.service;
 
+import com.tgg.chat.domain.friend.dto.query.UserFriendRowDto;
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
+import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
 import com.tgg.chat.domain.friend.entity.UserFriend;
 import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
@@ -8,9 +10,14 @@ import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +50,30 @@ public class UserFriendService {
 
         userFriendRepository.save(userFriend);
 
+    }
+    
+    @Transactional(readOnly = true)
+    public List<FriendListResponseDto> findFriendListByOwnerId(Long ownerId) {
+    	
+    	// 유저의 존재여부를 검증
+		User findUser = userRepository.findById(ownerId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+		if(findUser.getDeleted()) {
+			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+		}
+    	
+		// 친구목록 조회
+		List<UserFriendRowDto> friendList = userFriendMapper.findFriendListByOwnerId(ownerId);
+		
+		// 응답 DTO로 변환
+		List<FriendListResponseDto> friendListResponse = friendList.stream().map(userFriendRowDto -> {
+			Long friendId = userFriendRowDto.getFriendId();
+			String friendUsername = userFriendRowDto.getFriendUsername();
+			return FriendListResponseDto.of(friendId, friendUsername);
+		})
+		.collect(Collectors.toList());
+		
+		return friendListResponse;
+		
     }
 
 }
