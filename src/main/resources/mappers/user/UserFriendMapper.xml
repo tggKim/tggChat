@@ -12,5 +12,14 @@
         FROM user_friend
         WHERE owner_id = #{ownerId}
     </select>
+    
+    <select id="existsByOwnerIdAndFriendId" parameterType="long" resultType="boolean">
+		SELECT EXISTS (
+			SELECT 1
+			FROM user_friend
+			WHERE owner_id = #{owner_id}
+			AND	friend_id = #{friend_id}
+		)
+    </select>
 
 </mapper>

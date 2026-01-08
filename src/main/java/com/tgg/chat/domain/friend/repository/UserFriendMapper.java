@@ -9,5 +9,7 @@ import java.util.List;
 public interface UserFriendMapper {
 
     public List<UserFriendRowDto> findFriendListByOwnerId(Long ownerId);
+    
+    public boolean existsByOwnerIdAndFriendId(Long ownerId, Long friendId);
 
 }
