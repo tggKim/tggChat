@@ -31,7 +31,8 @@ public enum ErrorCode {
 	ACCESS_TOKEN_MISMATCH(HttpStatus.UNAUTHORIZED, "J008", "현재 사용할 수 없는 액세스 토큰입니다."),
 	
 	// 친구(Friend)
-	ALREADY_FRIEND(HttpStatus.CONFLICT, "F001", "이미 친구로 등록되어 있습니다.");
+	ALREADY_FRIEND(HttpStatus.CONFLICT, "F001", "이미 친구로 등록되어 있습니다."),
+	SELF_FRIEND_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "F002", "자기 자신을 친구로 추가할 수 없습니다.");
 	
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;

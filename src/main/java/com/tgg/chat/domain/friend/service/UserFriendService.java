@@ -26,7 +26,12 @@ public class UserFriendService {
         // 현재 로그인한 유저와, 친구로 추가하고자 하는 유저 엔티티 조회
         User owner = userRepository.findById(ownerId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
         User friend = userRepository.findById(createFriendRequestDto.getFriendId()).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-
+        
+        // 자기 자신은 친구로 추가할 수 없으므로 검증
+        if(owner.getUserId() == friend.getUserId()) {
+        	throw new ErrorException(ErrorCode.SELF_FRIEND_NOT_ALLOWED);
+        }
+        
         // 이미 친구로 등록이 되었는지 확인
         boolean isAlreadyFriend = userFriendMapper.existsByOwnerIdAndFriendId(owner.getUserId(), friend.getUserId());
         if(isAlreadyFriend) {
