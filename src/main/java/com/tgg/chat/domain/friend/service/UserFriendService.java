@@ -7,6 +7,7 @@ import com.tgg.chat.domain.friend.entity.UserFriend;
 import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
+import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -23,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserFriendService {
 
-    private final UserRepository userRepository;
+    private final UserMapper userMapper;
     private final UserFriendRepository userFriendRepository;
     private final UserFriendMapper userFriendMapper;
 
@@ -31,8 +32,11 @@ public class UserFriendService {
     public void createFriend(Long ownerId, CreateFriendRequestDto createFriendRequestDto) {
 
         // 현재 로그인한 유저와, 친구로 추가하고자 하는 유저 엔티티 조회
-        User owner = userRepository.findById(ownerId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-        User friend = userRepository.findById(createFriendRequestDto.getFriendId()).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+    	User owner = userMapper.findById(ownerId);
+    	User friend = userMapper.findByUsername(createFriendRequestDto.getUsername());
+        if(friend == null || friend.getDeleted()) {
+        	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
         
         // 자기 자신은 친구로 추가할 수 없으므로 검증
         if(owner.getUserId() == friend.getUserId()) {
@@ -56,8 +60,8 @@ public class UserFriendService {
     public List<FriendListResponseDto> findFriendListByOwnerId(Long ownerId) {
     	
     	// 유저의 존재여부를 검증
-		User findUser = userRepository.findById(ownerId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-		if(findUser.getDeleted()) {
+		User findUser = userMapper.findById(ownerId);
+		if(findUser == null || findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
 		}
     	
