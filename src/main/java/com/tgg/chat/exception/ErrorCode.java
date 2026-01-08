@@ -28,7 +28,10 @@ public enum ErrorCode {
 	JWT_MISSING_AUTH_HEADER(HttpStatus.UNAUTHORIZED, "J005", "Authorization 헤더가 존재하지 않습니다."),
 	JWT_INVALID_AUTH_SCHEME(HttpStatus.UNAUTHORIZED, "J006", "Authorization 헤더가 Bearer 형식이 아닙니다."),
 	JWT_INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "J007", "유효하지 않은 리프레시 토큰입니다."),
-	ACCESS_TOKEN_MISMATCH(HttpStatus.UNAUTHORIZED, "J008", "현재 사용할 수 없는 액세스 토큰입니다.");
+	ACCESS_TOKEN_MISMATCH(HttpStatus.UNAUTHORIZED, "J008", "현재 사용할 수 없는 액세스 토큰입니다."),
+	
+	// 친구(Friend)
+	ALREADY_FRIEND(HttpStatus.CONFLICT, "F001", "이미 친구로 등록되어 있습니다.");
 	
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;
