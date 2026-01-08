@@ -48,6 +48,14 @@ public class UserFriendController {
 				)
 		),
 		@ApiResponse(
+				responseCode = "400", 
+				description = "자기 자신을 친구로 추가할 수 없습니다.",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)
+				)
+		),
+		@ApiResponse(
 				responseCode = "404", 
 				description = "존재하지 않는 유저",
 				content = @Content(
