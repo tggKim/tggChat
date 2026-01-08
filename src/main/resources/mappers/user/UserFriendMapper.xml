@@ -17,8 +17,8 @@
 		SELECT EXISTS (
 			SELECT 1
 			FROM user_friend
-			WHERE owner_id = #{owner_id}
-			AND	friend_id = #{friend_id}
+			WHERE owner_id = #{ownerId}
+			AND	friend_id = #{friendId}
 		)
     </select>
 
