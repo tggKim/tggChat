@@ -12,6 +12,10 @@ public class UserFriendRowDto {
     private Long ownerId;
 
     private Long friendId;
+    
+    private String ownerUsername;
+    
+    private String friendUsername;
 
     private LocalDateTime createdAt;
 

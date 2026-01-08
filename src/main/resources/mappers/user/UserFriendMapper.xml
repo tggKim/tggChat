@@ -4,12 +4,16 @@
 
     <select id="findFriendListByOwnerId" parameterType="long" resultType="UserFriendRowDto">
         SELECT
-            user_friend_id
-        ,   owner_id
-        ,   friend_id
-        ,   created_at
-        ,   updated_at
-        FROM user_friend
+            T1.user_friend_id
+        ,   T1.owner_id
+        ,   T1.friend_id
+        ,   T1.created_at
+        ,   T1.updated_at
+        ,	T2.username AS owner_username
+        ,	T3.username AS friend_username
+        FROM user_friend T1
+        INNER JOIN user T2 ON T1.owner_id = T2.user_id
+        INNER JOIN user T3 ON T1.friend_id = T3.user_id 
         WHERE owner_id = #{ownerId}
     </select>
     
