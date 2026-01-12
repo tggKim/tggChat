@@ -55,7 +55,7 @@ public class ChatRoom {
 	private ChatRoomType chatRoomType;
 	
 	// 채팅방 이름 필드
-	@Column(name = "room_name", length = 100)
+	@Column(length = 100)
 	private String roomName;
 	
 	// 채팅방 생성자
@@ -68,7 +68,7 @@ public class ChatRoom {
 	private Long directUser2Id;
 	
 	// 채팅방 마지막 메시지 필드
-	@Column(name = "last_message_preview", length = 2000)
+	@Column(length = 2000)
 	private String lastMessagePreview;
 	
 	// 채팅방 마지막 메시지 생성 시각
