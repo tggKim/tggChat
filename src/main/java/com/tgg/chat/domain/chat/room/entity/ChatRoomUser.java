@@ -65,6 +65,9 @@ public class ChatRoomUser {
 	// 채팅에 참여한 시점 -> 메시지 불러오는 기준
 	private LocalDateTime joinedAt;
 	
+	// 읽은 마지막 메시지 시퀸스 번호
+	private Long lastReadSeq;
+	
 	@CreatedDate
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
