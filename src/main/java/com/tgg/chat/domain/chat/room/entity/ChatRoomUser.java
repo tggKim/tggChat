@@ -2,6 +2,7 @@ package com.tgg.chat.domain.chat.room.entity;
 
 import java.time.LocalDateTime;
 
+import com.tgg.chat.domain.chat.room.enums.ChatMessageType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -46,20 +47,22 @@ public class ChatRoomUser {
 	
 	// 유저를 구분하기 위한 fk 값
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id")
+	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 	
 	// 채팅방을 구분하기 위한 fk 값
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "chat_room_id")
+	@JoinColumn(name = "chat_room_id", nullable = false)
 	private ChatRoom chatRoom;
 	
 	// 채팅에 참여한 사람 권한 -> OWNER, MEMBER 2가지이며 1대1 채팅에서는 둘 다 MEMBER
 	@Enumerated(EnumType.STRING)
+    @Column(nullable = false)
 	private ChatRoomUserRole chatRoomUserRole;
 	
 	// 채팅에 참여한 사람 상태 -> ACTIVE, LEFT 2가지
 	@Enumerated(EnumType.STRING)
+    @Column(nullable = false)
 	private ChatRoomUserStatus chatRoomUserStatus;
 	
 	// 채팅에 참여한 시점 -> 메시지 불러오는 기준
@@ -75,5 +78,17 @@ public class ChatRoomUser {
 	@LastModifiedDate
 	@Column(nullable = false)
 	private LocalDateTime updatedAt;
+
+    private ChatRoomUser(
+            User user,
+            ChatRoom chatRoom,
+            ChatRoomUserRole chatRoomUserRole,
+            ChatRoomUserStatus chatRoomUserStatus
+    ) {
+        this.user = user;
+        this.chatRoom = chatRoom;
+        this.chatRoomUserRole = chatRoomUserRole;
+        this.chatRoomUserStatus = chatRoomUserStatus;
+    }
 	
 }
