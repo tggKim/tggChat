@@ -44,6 +44,6 @@ jobs: # 워크플로우에서 실행할 작업 묶음, 작업 단위로 별도�
           key: ${{ secrets.EC2_SSH_KEY }}   # SSH 접속에 사용할 .pem 키
           script: | # docker-compose 실행
             cd /home/ubuntu/tgg-app
-            docker compose pull
-            docker compose up -d
-            docker image prune -f
+            sudo docker compose pull
+            sudo docker compose up -d
+            sudo docker image prune -f
