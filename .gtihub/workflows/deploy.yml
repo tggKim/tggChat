@@ -4,6 +4,7 @@ name: CI-CD
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   contents: read    # 해당 워크플로우가 깃허브 저장소 읽기만 허용
