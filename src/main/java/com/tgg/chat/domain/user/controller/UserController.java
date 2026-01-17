@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.user.controller;
 
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
+import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import io.jsonwebtoken.Claims;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,8 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
-import com.tgg.chat.domain.user.dto.response.UserResponseDto;
-import com.tgg.chat.domain.user.entity.User;
+import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.service.UserService;
 import com.tgg.chat.exception.ErrorResponse;
 
@@ -74,7 +74,7 @@ public class UserController {
 	
 	@GetMapping("/user/{userId}")
 	@Operation(
-			summary = "회원 조회",
+			summary = "타 회원 조회",
 			description =  "userId로 회원을 조회 합니다."
 		)
 	@ApiResponses({
@@ -83,7 +83,7 @@ public class UserController {
 				description = "조회 성공",
 				content = @Content(
 					mediaType = "application/json",
-					schema = @Schema(implementation = UserResponseDto.class)
+					schema = @Schema(implementation = OtherUserResponseDto.class)
 				)
 		),
 		@ApiResponse(
@@ -95,15 +95,52 @@ public class UserController {
 				)
 		)
 	})
-	public ResponseEntity<UserResponseDto> findUser(@PathVariable Long userId) {
+	public ResponseEntity<OtherUserResponseDto> findOtherUser(@PathVariable Long userId) {
 		
-		UserResponseDto userResponseDto = userService.findUser(userId);
+		OtherUserResponseDto otherUserResponseDto = userService.findOtherUser(userId);
 		
 		return ResponseEntity
 				.status(HttpStatus.OK)
-				.body(userResponseDto);
+				.body(otherUserResponseDto);
 		
 	}
+
+    @GetMapping("/me")
+    @Operation(
+            summary = "회원 조회",
+            description =  "로그인한 사용자를 조회 합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UserResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "존재하지 않는 유저",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<UserResponseDto> findOtherUser(Authentication authentication) {
+
+        Claims claims = (Claims)authentication.getPrincipal();
+
+        Long loginUserId = Long.parseLong(claims.getSubject());
+
+        UserResponseDto userResponseDto = userService.findUser(loginUserId);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(userResponseDto);
+
+    }
 
 	@PatchMapping("/me")
 	@SecurityRequirement(name = "JWT Auth")

@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.user.service;
 
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
+import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tgg.chat.common.redis.RedisUtils;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
-import com.tgg.chat.domain.user.dto.response.UserResponseDto;
+import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -50,7 +51,7 @@ public class UserService {
 	}
 	
 	@Transactional(readOnly = true)
-	public UserResponseDto findUser(Long userId) {
+	public OtherUserResponseDto findOtherUser(Long userId) {
 		
 		User findUser = userMapper.findById(userId);
 
@@ -58,9 +59,22 @@ public class UserService {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
 		}
 		
-		return UserResponseDto.of(findUser);
+		return OtherUserResponseDto.of(findUser);
 		
 	}
+
+    @Transactional(readOnly = true)
+    public UserResponseDto findUser(Long userId) {
+
+        User findUser = userMapper.findById(userId);
+
+        if(findUser == null || findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return UserResponseDto.of(findUser);
+
+    }
 
 	@Transactional
 	public void updateUser(Long loginUserId, UserUpdateRequestDto userUpdateRequestDto) {
