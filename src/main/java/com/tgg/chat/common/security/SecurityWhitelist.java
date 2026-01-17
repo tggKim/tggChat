@@ -17,7 +17,9 @@ public class SecurityWhitelist {
 				new PermitRule(HttpMethod.POST, "/login"),
 				new PermitRule(HttpMethod.POST, "/login-status"),
 				new PermitRule(HttpMethod.POST, "/refresh"),
-				new PermitRule(HttpMethod.GET, "/ws/**")
+				new PermitRule(HttpMethod.GET, "/ws/**"),
+            new PermitRule(HttpMethod.GET, "/test"),
+            new PermitRule(HttpMethod.GET, "/chatRooms")
 			);
 	
 	@Getter
