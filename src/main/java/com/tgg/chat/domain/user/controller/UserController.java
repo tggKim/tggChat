@@ -105,7 +105,7 @@ public class UserController {
 		
 	}
 
-	@PatchMapping("/user/{userId}")
+	@PatchMapping("/me")
 	@SecurityRequirement(name = "JWT Auth")
 	@Operation(
 			summary = "회원 수정",
@@ -128,13 +128,13 @@ public class UserController {
 				)
 		)
 	})
-	public ResponseEntity<Void> updateUser(Authentication authentication, @PathVariable Long userId, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
+	public ResponseEntity<Void> updateUser(Authentication authentication, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
 
 		Claims claims = (Claims)authentication.getPrincipal();
 
 		Long loginUserId = Long.parseLong(claims.getSubject());
 
-		userService.updateUser(loginUserId, userId, userUpdateRequestDto);
+		userService.updateUser(loginUserId, userUpdateRequestDto);
 
 		return ResponseEntity
 				.status(HttpStatus.OK)
