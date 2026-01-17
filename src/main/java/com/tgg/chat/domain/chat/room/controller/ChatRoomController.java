@@ -11,4 +11,9 @@ public class ChatRoomController {
         return "deploy success";
     }
 
+    @GetMapping("/test")
+    public String deploy_test2() {
+        return "deploy success";
+    }
+
 }
