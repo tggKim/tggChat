@@ -90,5 +90,18 @@ public class ChatRoomUser {
         this.chatRoomUserRole = chatRoomUserRole;
         this.chatRoomUserStatus = chatRoomUserStatus;
     }
+
+    public static ChatRoomUser of(
+            User user,
+            ChatRoom chatRoom,
+            ChatRoomUserRole chatRoomUserRole,
+            ChatRoomUserStatus chatRoomUserStatus
+    ) {
+        return new ChatRoomUser(user, chatRoom, chatRoomUserRole, chatRoomUserStatus);
+    }
+
+    public void setJoinedAt() {
+        joinedAt = LocalDateTime.now();
+    }
 	
 }
