@@ -36,7 +36,9 @@ public enum ErrorCode {
 	SELF_FRIEND_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "F002", "자기 자신을 친구로 추가할 수 없습니다."),
 
     // 채팅방
-    DIRECT_CHAT_ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR001", "이미 존재하는 1대1 채팅방 입니다.");
+    DIRECT_CHAT_ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR001", "이미 존재하는 1대1 채팅방 입니다."),
+    CHAT_ROOM_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR002", "이미 채팅방에 존재하는 유저입니다."),
+    CANNOT_CREATE_CHAT_ROOM_WITH_SELF(HttpStatus.BAD_REQUEST, "CR003", "자기 자신과 채팅방을 만들 수 없습니다.");
 
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;
