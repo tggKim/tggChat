@@ -6,7 +6,8 @@
         SELECT EXISTS (
             SELECT 1
             FROM chat_room
-            WHERE direct_user1_id = #{userId1}
+            WHERE chat_room_type = 'DIRECT'
+            AND direct_user1_id = #{userId1}
             AND direct_user2_id = #{userId2}
         )
     </select>
