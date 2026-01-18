@@ -33,8 +33,11 @@ public enum ErrorCode {
 	
 	// 친구(Friend)
 	ALREADY_FRIEND(HttpStatus.CONFLICT, "F001", "이미 친구로 등록되어 있습니다."),
-	SELF_FRIEND_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "F002", "자기 자신을 친구로 추가할 수 없습니다.");
-	
+	SELF_FRIEND_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "F002", "자기 자신을 친구로 추가할 수 없습니다."),
+
+    // 채팅방
+    DIRECT_CHAT_ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR001", "이미 존재하는 1대1 채팅방 입니다.");
+
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;
 		this.code = code;
