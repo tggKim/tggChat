@@ -45,6 +45,14 @@ public class ChatRoomController {
                     )
             ),
             @ApiResponse(
+                    responseCode = "400",
+                    description = "자기 자신과 1대1 채팅방 생성할 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
                     responseCode = "404",
                     description = "존재하지 않는 유저",
                     content = @Content(
