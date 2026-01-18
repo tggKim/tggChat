@@ -65,8 +65,6 @@ public class ChatRoomService {
         // ChatRoomUser 생성한다, 1대1 채팅방은 두 유저의 권한이 모두 MEMBER 이다.
         ChatRoomUser chatRoomUser1 = ChatRoomUser.of(user1, savedChatRoom, ChatRoomUserRole.MEMBER, ChatRoomUserStatus.ACTIVE);
         ChatRoomUser chatRoomUser2 = ChatRoomUser.of(user2, savedChatRoom, ChatRoomUserRole.MEMBER, ChatRoomUserStatus.ACTIVE);
-        chatRoomUser1.setJoinedAt();
-        chatRoomUser2.setJoinedAt();
         chatRoomUserRepository.save(chatRoomUser1);
         chatRoomUserRepository.save(chatRoomUser2);
 

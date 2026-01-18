@@ -89,6 +89,7 @@ public class ChatRoomUser {
         this.chatRoom = chatRoom;
         this.chatRoomUserRole = chatRoomUserRole;
         this.chatRoomUserStatus = chatRoomUserStatus;
+        this.joinedAt = LocalDateTime.now();
     }
 
     public static ChatRoomUser of(
