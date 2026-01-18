@@ -114,11 +114,10 @@ public class ChatRoom {
 
     public static ChatRoom of(
             ChatRoomType chatRoomType,
-            String roomName,
             User directUser1,
             User directUser2
     ) {
-        return new ChatRoom(chatRoomType, roomName, directUser1, directUser2);
+        return new ChatRoom(chatRoomType, chatRoomType.name(), directUser1, directUser2);
     }
 
 }
