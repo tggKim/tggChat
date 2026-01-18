@@ -1,5 +1,7 @@
 package com.tgg.chat.domain.chat.room.service;
 
+import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
+import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.entity.ChatRoom;
 import com.tgg.chat.domain.chat.room.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.room.repository.ChatRoomMapper;
@@ -21,7 +23,9 @@ public class ChatRoomService {
     private final ChatRoomMapper chatRoomMapper;
 
     @Transactional
-    public Long createDirectChatRoom(Long userId, Long friendUserId, String chatRoomName) {
+    public CreateDirectChatRoomResponseDto createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
+
+        Long friendUserId = requestDto.getFriendId();
 
         // 1대1 채팅방은 유저간에 유일해야 하므로 유니크 제약 조건에 걸릴 수 있도록 아래처럼 계산이 필요
         Long maxUseId = Math.max(userId, friendUserId);
@@ -29,7 +33,7 @@ public class ChatRoomService {
         
         // 각 유저 조회
         User user1 = userRepository.findById(maxUseId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-        User user2 = userRepository.findById(maxUseId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        User user2 = userRepository.findById(minUserId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
         if(user1.getDeleted() || user2.getDeleted()) {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
@@ -44,7 +48,10 @@ public class ChatRoomService {
         ChatRoom chatRoom = ChatRoom.of(ChatRoomType.DIRECT, user1, user2);
         ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
 
-        return savedChatRoom.getChatRoomId();
+        // 응답 DTO 생성
+        CreateDirectChatRoomResponseDto responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
+
+        return responseDto;
 
     }
 
