@@ -1,7 +1,9 @@
 package com.tgg.chat.domain.chat.room.controller;
 
 import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
+import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
+import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.service.ChatRoomService;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import com.tgg.chat.exception.ErrorResponse;
@@ -29,7 +31,7 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
 
-    @PostMapping("directChatRooms")
+    @PostMapping("/directChatRooms")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "1대1 채팅방 생성",
@@ -80,6 +82,64 @@ public class ChatRoomController {
 
         // 채팅방 생성 응답 DTO 생성
         CreateDirectChatRoomResponseDto responseDto = chatRoomService.createDirectChatRoom(loginUserId, requestDto);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(responseDto);
+
+    }
+    
+    @PostMapping("groupChatRooms")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "단체 채팅방 생성",
+            description =  "단체 채팅방을 생성합니다"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "단체 채팅방 생성 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CreateGroupChatRoomResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "자기 자신과 단체 채팅방 생성할 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "단체 채팅방은 2명 이상의 유저가 필요",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "존재하지 않는 유저",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<CreateGroupChatRoomResponseDto> createGroupChatRoom(
+            Authentication authentication,
+            @RequestBody CreateGroupChatRoomRequestDto requestDto
+    ) {
+
+        // Authentication 에서 로그인한 유저의 userId 추출
+        Claims claims = (Claims)authentication.getPrincipal();
+        Long loginUserId = Long.parseLong(claims.getSubject());
+
+        // 채팅방 생성 응답 DTO 생성
+        CreateGroupChatRoomResponseDto responseDto = chatRoomService.createGroupChatRoom(loginUserId, requestDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
