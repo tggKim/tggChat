@@ -38,7 +38,8 @@ public enum ErrorCode {
     // 채팅방
     DIRECT_CHAT_ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR001", "이미 존재하는 1대1 채팅방 입니다."),
     CHAT_ROOM_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR002", "이미 채팅방에 존재하는 유저입니다."),
-    CANNOT_CREATE_CHAT_ROOM_WITH_SELF(HttpStatus.BAD_REQUEST, "CR003", "자기 자신과 채팅방을 만들 수 없습니다.");
+    CANNOT_CREATE_CHAT_ROOM_WITH_SELF(HttpStatus.BAD_REQUEST, "CR003", "자기 자신과 채팅방을 만들 수 없습니다."),
+    CHAT_ROOM_MEMBER_REQUIRED(HttpStatus.BAD_REQUEST, "CR004", "단체 채팅은 2명 이상이 필요합니다.");
 
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;
