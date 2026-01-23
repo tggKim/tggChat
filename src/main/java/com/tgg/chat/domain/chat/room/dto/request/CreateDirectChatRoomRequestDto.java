@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "1대1 채팅방 생성 요청 DTO")
 public class CreateDirectChatRoomRequestDto {
 
-    @Schema(description = "채팅방을 만들 상대 userId", example = "tgg")
+    @Schema(description = "채팅방을 만들 상대 userId", example = "1")
     private Long friendId;
 
 }
