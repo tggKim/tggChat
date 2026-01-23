@@ -27,4 +27,15 @@
 		)
     </select>
 
+    <select id="countActiveFriendsByIds" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM user_friend
+        WHERE owner_id = #{ownerId}
+        AND friend_id IN
+        <foreach collection="friendIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
 </mapper>

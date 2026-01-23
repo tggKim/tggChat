@@ -12,4 +12,6 @@ public interface UserFriendMapper {
     
     public boolean existsByOwnerIdAndFriendId(Long ownerId, Long friendId);
 
+    public int countActiveFriendsByIds(Long ownerId, List<Long> friendIds);
+
 }
