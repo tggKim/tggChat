@@ -1,5 +1,7 @@
 package com.tgg.chat.domain.user.repository;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
 import com.tgg.chat.domain.user.entity.User;
@@ -16,5 +18,7 @@ public interface UserMapper {
 	boolean existsByEmail(String email);
 	
 	boolean existsByUsername(String username);
+	
+	int countActiveUsersByIds(List<Long> userIds);
 	
 }
