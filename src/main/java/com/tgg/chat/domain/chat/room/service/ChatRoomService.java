@@ -13,6 +13,7 @@ import com.tgg.chat.domain.chat.room.repository.ChatRoomMapper;
 import com.tgg.chat.domain.chat.room.repository.ChatRoomRepository;
 import com.tgg.chat.domain.chat.room.repository.ChatRoomUserMapper;
 import com.tgg.chat.domain.chat.room.repository.ChatRoomUserRepository;
+import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -43,6 +44,8 @@ public class ChatRoomService {
     private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatRoomUserMapper chatRoomUserMapper;
 
+    private final UserFriendMapper userFriendMapper;
+
     @Transactional
     public CreateDirectChatRoomResponseDto createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
 
@@ -51,6 +54,12 @@ public class ChatRoomService {
         // 자신과 1대1 채팅방을 만들 수 없음
         if (userId.equals(friendUserId)) {
             throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
+        }
+
+        // 자신의 친구가 아닌데 채팅방을 개설할 수 없음
+        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, List.of(friendUserId));
+        if(friendCount != 1) {
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_NON_FRIEND);
         }
 
         // 1대1 채팅방은 유저간에 유일해야 하므로 유니크 제약 조건에 걸릴 수 있도록 아래처럼 계산이 필요
@@ -91,23 +100,29 @@ public class ChatRoomService {
     public CreateGroupChatRoomResponseDto createGroupChatRoom(Long userId, CreateGroupChatRoomRequestDto requestDto) {
     	
     	// dto에서 필드 추출
-    	List<Long> friendIds = requestDto.getFriendIds();
+    	List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
     	String chatRoomName = requestDto.getChatRoomName();
-    	
-    	// 자기 자신과 단체 채팅방을 만들 수 없다.
-    	if(friendIds.contains(userId)) {
-    		throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
-    	}
+
+        // 추가할 친구가 1명 이상이어야 한다.
+        if(friendIds.isEmpty()) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_MEMBER_REQUIRED);
+        }
+
+        // 자기 자신과 단체 채팅방을 만들 수 없다.
+        if(friendIds.contains(userId)) {
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
+        }
+
+        // 자신의 친구가 아닌데 채팅방을 개설할 수 없음
+        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, friendIds);
+        if(friendCount != friendIds.size()) {
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_NON_FRIEND);
+        }
     	
     	// 중복을 제거한 리스트 생성
     	Set<Long> set = new HashSet<>(friendIds);
         set.add(userId);
         List<Long> memberIds = new ArrayList<>(set);
-    	
-        // 최소 인원 체크
-        if (memberIds.size() < 2) {
-            throw new ErrorException(ErrorCode.CHAT_ROOM_MEMBER_REQUIRED);
-        }
     	
     	// 채팅방 생성 요청받은 유저들이 존재하는지 확인하고 검증
     	int existsCount = userMapper.countActiveUsersByIds(memberIds);
