@@ -8,7 +8,20 @@
             FROM chat_room_user
             WHERE chat_room_id = #{chatRoomId}
             AND user_id = #{userId}
+            AND chat_room_user_status = 'ACTIVE'
         )
+    </select>
+
+    <select id="findMemberStatusesFriendIs">
+        SELECT
+                user_id
+            ,   chat_room_user_status
+        FROM chat_room_user
+        WHERE chat_room_id = #{chatRoomId}
+        AND user_id IN
+        <foreach collection="friendIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 
 </mapper>
