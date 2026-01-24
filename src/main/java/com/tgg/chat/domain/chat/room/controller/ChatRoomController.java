@@ -2,6 +2,7 @@ package com.tgg.chat.domain.chat.room.controller;
 
 import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
+import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.service.ChatRoomService;
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Tag(name = "ChatRoom API", description = "채팅방 API")
 @RestController
@@ -181,6 +184,39 @@ public class ChatRoomController {
 
         // 채팅방 생성 응답 DTO 생성
         CreateGroupChatRoomResponseDto responseDto = chatRoomService.createGroupChatRoom(loginUserId, requestDto);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(responseDto);
+
+    }
+
+    @GetMapping("chatRooms")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방 목록 조회",
+            description =  "채팅방 목록을 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방 목록 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CreateGroupChatRoomResponseDto.class)
+                    )
+            )
+    })
+    public ResponseEntity<List<ChatRoomListResponseDto>> findAllChatRooms(
+            Authentication authentication
+    ) {
+
+        // Authentication 에서 로그인한 유저의 userId 추출
+        Claims claims = (Claims)authentication.getPrincipal();
+        Long loginUserId = Long.parseLong(claims.getSubject());
+
+        // 채팅방 생성 응답 DTO 생성
+        List<ChatRoomListResponseDto> responseDto = chatRoomService.findAllChatRooms(loginUserId);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
