@@ -76,6 +76,7 @@ public class ChatRoom {
 	private LocalDateTime lastMessageAt;
 
     // 채팅방 마지막 메시지 seq
+    @Column(nullable = false)
     private Long lastMessageSeq;
 	
 	@CreatedDate

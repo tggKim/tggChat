@@ -69,6 +69,7 @@ public class ChatRoomUser {
 	private LocalDateTime joinedAt;
 	
 	// 읽은 마지막 메시지 시퀸스 번호
+    @Column(nullable = false)
 	private Long lastReadSeq;
 	
 	@CreatedDate
@@ -90,6 +91,7 @@ public class ChatRoomUser {
         this.chatRoomUserRole = chatRoomUserRole;
         this.chatRoomUserStatus = chatRoomUserStatus;
         this.joinedAt = LocalDateTime.now();
+        this.lastReadSeq = 0L;
     }
 
     public static ChatRoomUser of(
