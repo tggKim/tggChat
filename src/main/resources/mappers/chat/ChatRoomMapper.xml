@@ -12,4 +12,20 @@
         )
     </select>
 
+    <select id="findAllChatRoomsByUserId">
+        SELECT
+                T2.chat_room_id
+            ,   T2.chat_room_type
+            ,   T2.room_name
+            ,   T2.last_message_preview
+            ,   T2.last_message_at
+            ,   T2.last_message_seq
+            ,   T1.last_read_seq
+        FROM chat_room_user T1
+        INNER JOIN chat_room T2 ON T1.chat_room_id = T2.chat_room_id
+        WHERE T1.user_id = #{userId}
+        AND T1.chat_room_user_status = 'ACTIVE'
+        ORDER BY T2.last_message_at DESC
+    </select>
+
 </mapper>
