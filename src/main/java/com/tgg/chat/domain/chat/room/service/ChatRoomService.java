@@ -1,7 +1,9 @@
 package com.tgg.chat.domain.chat.room.service;
 
+import com.tgg.chat.domain.chat.room.dto.query.ChatRoomListRowDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
+import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.entity.ChatRoom;
@@ -46,6 +48,7 @@ public class ChatRoomService {
 
     private final UserFriendMapper userFriendMapper;
 
+    // 1대1 채팅방 생성
     @Transactional
     public CreateDirectChatRoomResponseDto createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
 
@@ -95,7 +98,8 @@ public class ChatRoomService {
         return responseDto;
 
     }
-    
+
+    // 단체 채팅방 생성
     @Transactional
     public CreateGroupChatRoomResponseDto createGroupChatRoom(Long userId, CreateGroupChatRoomRequestDto requestDto) {
     	
@@ -147,6 +151,23 @@ public class ChatRoomService {
     	// 응답 DTO 생성
     	return CreateGroupChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
     	
+    }
+
+    // 채팅방 목록 조회
+    public List<ChatRoomListResponseDto> findAllChatRooms(Long userId) {
+
+        // 유저 존재하는지 체크
+        User findUser = userMapper.findById(userId);
+        if(findUser == null || findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 채팅방 목록 조회후 응답 DTO로 변환하여 return
+        return chatRoomMapper.findAllChatRoomsByUserId(userId)
+                .stream()
+                .map(ChatRoomListResponseDto::from)
+                .toList();
+
     }
 
 }
