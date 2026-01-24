@@ -106,5 +106,13 @@ public class ChatRoomUser {
     public void setJoinedAt() {
         joinedAt = LocalDateTime.now();
     }
+
+    public void setChatRoomUserStatus(ChatRoomUserStatus chatRoomUserStatus) {
+        this.chatRoomUserStatus = chatRoomUserStatus;
+    }
+
+    public void setLastReadSeq(Long lastReadSeq) {
+        this.lastReadSeq = lastReadSeq;
+    }
 	
 }
