@@ -74,6 +74,9 @@ public class ChatRoom {
 	
 	// 채팅방 마지막 메시지 생성 시각
 	private LocalDateTime lastMessageAt;
+
+    // 채팅방 마지막 메시지 seq
+    private Long lastMessageSeq;
 	
 	@CreatedDate
 	@Column(nullable = false, updatable = false)
@@ -90,6 +93,7 @@ public class ChatRoom {
     ) {
         this.chatRoomType = chatRoomType;
         this.roomName = roomName;
+        this.lastMessageSeq = 0L;
     }
 
     // 1대1 채팅방 생성자
@@ -103,6 +107,7 @@ public class ChatRoom {
         this.roomName = roomName;
         this.directUser1 = directUser1;
         this.directUser2 = directUser2;
+        this.lastMessageSeq = 0L;
     }
 
     public static ChatRoom of(
