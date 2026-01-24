@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +45,14 @@ public class ChatRoomController {
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = CreateDirectChatRoomResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "채팅방을 만들 상대 userId",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
                     )
             ),
             @ApiResponse(
@@ -81,7 +90,7 @@ public class ChatRoomController {
     })
     public ResponseEntity<CreateDirectChatRoomResponseDto> createDirectChatRoom(
             Authentication authentication,
-            @RequestBody CreateDirectChatRoomRequestDto requestDto
+            @Valid @RequestBody CreateDirectChatRoomRequestDto requestDto
     ) {
 
         // Authentication 에서 로그인한 유저의 userId 추출
@@ -110,6 +119,22 @@ public class ChatRoomController {
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = CreateGroupChatRoomResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "friendIds는 필수입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "chatRoomName은 필수이며 공백일 수 없습니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
                     )
             ),
             @ApiResponse(
@@ -147,7 +172,7 @@ public class ChatRoomController {
     })
     public ResponseEntity<CreateGroupChatRoomResponseDto> createGroupChatRoom(
             Authentication authentication,
-            @RequestBody CreateGroupChatRoomRequestDto requestDto
+            @Valid @RequestBody CreateGroupChatRoomRequestDto requestDto
     ) {
 
         // Authentication 에서 로그인한 유저의 userId 추출
