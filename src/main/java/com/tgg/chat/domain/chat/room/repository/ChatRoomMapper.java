@@ -9,8 +9,6 @@ import java.util.List;
 @Mapper
 public interface ChatRoomMapper {
 
-    public boolean existsDirectChatRoom(Long userId1, Long userId2);
-
     public List<ChatRoomListRowDto> findAllChatRoomsByUserId(Long userId);
 
 }
