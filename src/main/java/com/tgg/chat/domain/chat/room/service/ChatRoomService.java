@@ -156,12 +156,6 @@ public class ChatRoomService {
     // 채팅방 목록 조회
     public List<ChatRoomListResponseDto> findAllChatRooms(Long userId) {
 
-        // 유저 존재하는지 체크
-        User findUser = userMapper.findById(userId);
-        if(findUser == null || findUser.getDeleted()) {
-            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-        }
-
         // 채팅방 목록 조회후 응답 DTO로 변환하여 return
         return chatRoomMapper.findAllChatRoomsByUserId(userId)
                 .stream()
