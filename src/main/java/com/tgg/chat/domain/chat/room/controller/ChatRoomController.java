@@ -127,7 +127,15 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "자기 자신과 단체 채팅방 생성할 수 없음",
+                    description = "단체 채팅은 2명 이상이 필요합니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "자기 자신과 채팅방을 만들 수 없습니다.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
@@ -136,14 +144,6 @@ public class ChatRoomController {
             @ApiResponse(
                     responseCode = "400",
                     description = "친구가 아닌 사람과 1대1 채팅방을 생성할 수 없음",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "단체 채팅방은 2명 이상의 유저가 필요",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
