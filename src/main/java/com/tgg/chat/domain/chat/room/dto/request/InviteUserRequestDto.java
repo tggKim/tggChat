@@ -18,7 +18,7 @@ public class InviteUserRequestDto {
     private List<Long> friendIds;
 
     @Schema(description = "채팅방 id", example = "1")
-    @NotBlank(message = "chatRoomId는 필수입니다.")
+    @NotNull(message = "chatRoomId는 필수입니다.")
     private Long chatRoomId;
 
 }
