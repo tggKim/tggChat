@@ -74,14 +74,6 @@ public class ChatRoomController {
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
                     )
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "이미 존재하는 1대1 채팅방 입니다.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
             )
     })
     public ResponseEntity<CreateDirectChatRoomResponseDto> createDirectChatRoom(
