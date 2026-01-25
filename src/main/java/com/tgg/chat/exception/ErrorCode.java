@@ -43,7 +43,7 @@ public enum ErrorCode {
     CANNOT_INVITE_CHAT_ROOM_WITH_INVALID_USER(HttpStatus.BAD_REQUEST, "CR006", "존재하지 않거나 친구가 아닌 사용자는 초대할 수 없습니다."),
     CHAT_ROOM_INVITE_MEMBER_REQUIRED(HttpStatus.BAD_REQUEST, "CR006", "채팅방 초대는 1명 이상이 필요합니다."),
     CANNOT_INVITE_CHAT_ROOM_WITH_SELF(HttpStatus.BAD_REQUEST, "CR007", "자기 자신을 채팅방에 초대할 수 없습니다."),
-    CHAT_ROOM_INVITE_PERMISSION_DENIED(HttpStatus.NOT_FOUND, "CR008", "채팅방의 멤버이면서 방장이어야 친구를 초대할 수 있습니다."),
+    CHAT_ROOM_INVITE_PERMISSION_DENIED(HttpStatus.FORBIDDEN, "CR008", "단체 채팅방의 멤버이면서 방장이어야 친구를 초대할 수 있습니다."),
     CHAT_ROOM_INVITE_ALREADY_MEMBER(HttpStatus.CONFLICT, "CR009", "이미 채팅방에 참여 중인 사용자가 포함되어 있습니다.");
 
 	private ErrorCode(HttpStatus status, String code, String message) {
