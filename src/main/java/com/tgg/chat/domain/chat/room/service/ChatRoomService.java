@@ -25,11 +25,7 @@ import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -61,36 +57,52 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
         }
 
+        // 존재하지 않거나 친구가 아닌 유저와는 채팅방 생성활 수 없다.
+        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, List.of(friendUserId));
+        if(friendCount != 1) {
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER);
+        }
+
         // 1대1 채팅방은 유저간에 유일해야 하므로 유니크 제약 조건에 걸릴 수 있도록 아래처럼 계산이 필요
         Long maxUseId = Math.max(userId, friendUserId);
         Long minUserId = Math.min(userId, friendUserId);
         User user1 = userRepository.getReferenceById(maxUseId);
         User user2 = userRepository.getReferenceById(minUserId);
 
-        // 존재하지 않거나 친구가 아닌 유저와는 채팅방 생성활 수 없다.
-        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, List.of(friendUserId));
-        if(friendCount != 1) {
-            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER);
+        // 1대1 채팅방을 조회
+        Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findByChatRoomTypeAndDirectUser1AndDirectUser2(ChatRoomType.DIRECT, user1, user2);
+        CreateDirectChatRoomResponseDto responseDto = null;
+        if(chatRoomOptional.isEmpty()) { // 1대1 채팅방이 존재하지 않는다면 ChatRoom 생성하고 ChatRoomUser 생성하면 된다.
+
+            // 채팅방 생성
+            ChatRoom chatRoom = ChatRoom.of(ChatRoomType.DIRECT, user1, user2);
+            ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+            // ChatRoom이 방금 생성되었으므로 ChatRoomUser의 중복 검사는 필요없다.
+            // ChatRoomUser 생성한다. 1대1 채팅방은 두 유저의 권한이 모두 MEMBER 이다.
+            ChatRoomUser chatRoomUser1 = ChatRoomUser.of(user1, savedChatRoom, ChatRoomUserRole.MEMBER, ChatRoomUserStatus.ACTIVE);
+            ChatRoomUser chatRoomUser2 = ChatRoomUser.of(user2, savedChatRoom, ChatRoomUserRole.MEMBER, ChatRoomUserStatus.ACTIVE);
+            chatRoomUserRepository.save(chatRoomUser1);
+            chatRoomUserRepository.save(chatRoomUser2);
+
+            // 응답 DTO 생성
+            responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
+
+        } else { // 1대1 채팅방이 존재한다면, 해당 ChatRoom에 대한 ChatRoomUser 들의 상태를 ACTIVE로 바꾼다.
+
+            ChatRoom chatRoom = chatRoomOptional.get();
+            List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoom(chatRoom);
+            chatRoomUsers.forEach(chatRoomUser -> {
+                if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+                    chatRoomUser.setJoinedAt();
+                    chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
+                    chatRoomUser.setLastReadSeq(chatRoom.getLastMessageSeq());
+                }
+            });
+
+            responseDto = CreateDirectChatRoomResponseDto.of(chatRoom.getChatRoomId());
+
         }
-        
-        // 1대1 채팅방 이미 존재시 예외
-        boolean directChatRoomExists = chatRoomMapper.existsDirectChatRoom(user1.getUserId(), user2.getUserId());
-        if(directChatRoomExists) {
-            throw new ErrorException(ErrorCode.DIRECT_CHAT_ROOM_ALREADY_EXISTS);
-        }
-
-        // 채팅방 생성
-        ChatRoom chatRoom = ChatRoom.of(ChatRoomType.DIRECT, user1, user2);
-        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-
-        // ChatRoomUser 생성한다, 1대1 채팅방은 두 유저의 권한이 모두 MEMBER 이다.
-        ChatRoomUser chatRoomUser1 = ChatRoomUser.of(user1, savedChatRoom, ChatRoomUserRole.MEMBER, ChatRoomUserStatus.ACTIVE);
-        ChatRoomUser chatRoomUser2 = ChatRoomUser.of(user2, savedChatRoom, ChatRoomUserRole.MEMBER, ChatRoomUserStatus.ACTIVE);
-        chatRoomUserRepository.save(chatRoomUser1);
-        chatRoomUserRepository.save(chatRoomUser2);
-
-        // 응답 DTO 생성
-        CreateDirectChatRoomResponseDto responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
 
         return responseDto;
 
