@@ -2,6 +2,7 @@ package com.tgg.chat.domain.chat.room.controller;
 
 import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
+import com.tgg.chat.domain.chat.room.dto.request.InviteUserRequestDto;
 import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
@@ -203,7 +204,7 @@ public class ChatRoomController {
                     description = "채팅방 목록 조회 성공",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = CreateGroupChatRoomResponseDto.class)
+                            schema = @Schema(implementation = ChatRoomListResponseDto.class)
                     )
             )
     })
@@ -215,12 +216,101 @@ public class ChatRoomController {
         Claims claims = (Claims)authentication.getPrincipal();
         Long loginUserId = Long.parseLong(claims.getSubject());
 
-        // 채팅방 생성 응답 DTO 생성
+        // 채팅방 목록 응답 DTO 생성
         List<ChatRoomListResponseDto> responseDto = chatRoomService.findAllChatRooms(loginUserId);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(responseDto);
+
+    }
+
+    @PostMapping("chatRooms/invites")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방 초대",
+            description =  "채팅방에 유저들을 초대합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방 유저 초대 성공",
+                    content = @Content(
+                            mediaType = "application/json"
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "friendIds는 필수입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "chatRoomId는 필수입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "채팅방 초대는 1명 이상이 필요합니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "자기 자신을 채팅방에 초대할 수 없습니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "단체 채팅방의 멤버이면서 방장이어야 친구를 초대할 수 있습니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "존재하지 않거나 친구가 아닌 사용자는 초대할 수 없습니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "이미 채팅방에 참여 중인 사용자가 포함되어 있습니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+    })
+    public ResponseEntity<Void> inviteUserToChatRoom(
+            Authentication authentication,
+            @Valid @RequestBody InviteUserRequestDto requestDto
+    ) {
+
+        // Authentication 에서 로그인한 유저의 userId 추출
+        Claims claims = (Claims)authentication.getPrincipal();
+        Long loginUserId = Long.parseLong(claims.getSubject());
+
+        // 채팅방 생성 응답 DTO 생성
+        chatRoomService.inviteUserToChatRoom(loginUserId, requestDto);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(null);
 
     }
 
