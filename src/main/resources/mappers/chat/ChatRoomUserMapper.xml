@@ -5,10 +5,14 @@
     <select id="existsByChatRoomIdAndUserId" parameterType="long" resultType="boolean">
         SELECT EXISTS (
             SELECT 1
-            FROM chat_room_user
-            WHERE chat_room_id = #{chatRoomId}
-            AND user_id = #{userId}
-            AND chat_room_user_status = 'ACTIVE'
+            FROM chat_room_user T1
+            INNER JOIN chat_room T2
+            ON T1.chat_room_id = T2.chat_room_id
+            WHERE T1.chat_room_id = #{chatRoomId}
+            AND T1.user_id = #{userId}
+            AND T1.chat_room_user_status = 'ACTIVE'
+            AND T1.chat_room_user_role = 'OWNER'
+            AND T2.chat_room_type = 'GROUP'
         )
     </select>
 
