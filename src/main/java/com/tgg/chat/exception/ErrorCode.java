@@ -1,7 +1,6 @@
 package com.tgg.chat.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 
 import lombok.Getter;
 
@@ -37,10 +36,15 @@ public enum ErrorCode {
 
     // 채팅방
     DIRECT_CHAT_ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR001", "이미 존재하는 1대1 채팅방 입니다."),
-    CHAT_ROOM_USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "CR002", "이미 채팅방에 존재하는 유저입니다."),
+    CHAT_ROOM_NOT_EXISTS(HttpStatus.NOT_FOUND, "CR002", "존재하지 않는 채팅방 입니다."),
     CANNOT_CREATE_CHAT_ROOM_WITH_SELF(HttpStatus.BAD_REQUEST, "CR003", "자기 자신과 채팅방을 만들 수 없습니다."),
     CHAT_ROOM_MEMBER_REQUIRED(HttpStatus.BAD_REQUEST, "CR004", "단체 채팅은 2명 이상이 필요합니다."),
-    CANNOT_CREATE_CHAT_ROOM_WITH_NON_FRIEND(HttpStatus.BAD_REQUEST, "CR005", "친구가 아닌 사용자와는 채팅방을 생성할 수 없습니다.");
+    CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER(HttpStatus.BAD_REQUEST, "CR005", "존재하지 않거나 친구가 아닌 사용자는 채팅방을 생성할 수 없습니다."),
+    CANNOT_INVITE_CHAT_ROOM_WITH_INVALID_USER(HttpStatus.BAD_REQUEST, "CR006", "존재하지 않거나 친구가 아닌 사용자는 초대할 수 없습니다."),
+    CHAT_ROOM_INVITE_MEMBER_REQUIRED(HttpStatus.BAD_REQUEST, "CR006", "채팅방 초대는 1명 이상이 필요합니다."),
+    CANNOT_INVITE_CHAT_ROOM_WITH_SELF(HttpStatus.BAD_REQUEST, "CR007", "자기 자신을 채팅방에 초대할 수 없습니다."),
+    CHAT_ROOM_INVITE_PERMISSION_DENIED(HttpStatus.NOT_FOUND, "CR008", "채팅방의 멤버이면서 방장이어야 친구를 초대할 수 있습니다."),
+    CHAT_ROOM_INVITE_ALREADY_MEMBER(HttpStatus.CONFLICT, "CR009", "이미 채팅방에 참여 중인 사용자가 포함되어 있습니다.");
 
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;

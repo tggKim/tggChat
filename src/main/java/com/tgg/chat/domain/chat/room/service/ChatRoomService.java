@@ -1,8 +1,10 @@
 package com.tgg.chat.domain.chat.room.service;
 
 import com.tgg.chat.domain.chat.room.dto.query.ChatRoomListRowDto;
+import com.tgg.chat.domain.chat.room.dto.query.ChatRoomUserStatusRowDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
+import com.tgg.chat.domain.chat.room.dto.request.InviteUserRequestDto;
 import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
@@ -59,21 +61,16 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
         }
 
-        // 자신의 친구가 아닌데 채팅방을 개설할 수 없음
-        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, List.of(friendUserId));
-        if(friendCount != 1) {
-            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_NON_FRIEND);
-        }
-
         // 1대1 채팅방은 유저간에 유일해야 하므로 유니크 제약 조건에 걸릴 수 있도록 아래처럼 계산이 필요
         Long maxUseId = Math.max(userId, friendUserId);
         Long minUserId = Math.min(userId, friendUserId);
-        
-        // 각 유저 조회
-        User user1 = userRepository.findById(maxUseId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-        User user2 = userRepository.findById(minUserId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-        if(user1.getDeleted() || user2.getDeleted()) {
-            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        User user1 = userRepository.getReferenceById(maxUseId);
+        User user2 = userRepository.getReferenceById(minUserId);
+
+        // 존재하지 않거나 친구가 아닌 유저와는 채팅방 생성활 수 없다.
+        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, List.of(friendUserId));
+        if(friendCount != 1) {
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER);
         }
         
         // 1대1 채팅방 이미 존재시 예외
@@ -103,8 +100,9 @@ public class ChatRoomService {
     @Transactional
     public CreateGroupChatRoomResponseDto createGroupChatRoom(Long userId, CreateGroupChatRoomRequestDto requestDto) {
     	
-    	// dto에서 필드 추출
+    	// 필드 추출, 리스트에서 중복 id들 제거
     	List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
+        friendIds = new ArrayList<>(new HashSet<>(friendIds));
     	String chatRoomName = requestDto.getChatRoomName();
 
         // 추가할 친구가 1명 이상이어야 한다.
@@ -117,29 +115,19 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
         }
 
-        // 자신의 친구가 아닌데 채팅방을 개설할 수 없음
+        // 존재하지 않거나 친구가 아닌 유저와는 채팅방 생성활 수 없다.
         int friendCount = userFriendMapper.countActiveFriendsByIds(userId, friendIds);
         if(friendCount != friendIds.size()) {
-            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_NON_FRIEND);
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER);
         }
-    	
-    	// 중복을 제거한 리스트 생성
-    	Set<Long> set = new HashSet<>(friendIds);
-        set.add(userId);
-        List<Long> memberIds = new ArrayList<>(set);
-    	
-    	// 채팅방 생성 요청받은 유저들이 존재하는지 확인하고 검증
-    	int existsCount = userMapper.countActiveUsersByIds(memberIds);
-    	if(existsCount != memberIds.size()) {
-    		throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-    	}
     	
     	// 채팅방 생성
     	ChatRoom chatRoom = ChatRoom.of(ChatRoomType.GROUP, chatRoomName);
     	ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
     	
     	// ChatRoomUser들 생성, 로그인 유저는 방장 권한을 가진다.
-    	List<ChatRoomUser> chatRoomUsers = memberIds.stream()
+        friendIds.add(userId);
+    	List<ChatRoomUser> chatRoomUsers = friendIds.stream()
     			.map(id -> {
 		    		User user = userRepository.getReferenceById(id);
 		    		ChatRoomUserRole chatRoomUserRole = id.equals(userId) ? ChatRoomUserRole.OWNER : ChatRoomUserRole.MEMBER;
@@ -167,6 +155,76 @@ public class ChatRoomService {
                 .stream()
                 .map(ChatRoomListResponseDto::from)
                 .toList();
+
+    }
+
+    // 채팅방 초대
+    @Transactional
+    public void inviteUserToChatRoom(Long userId, InviteUserRequestDto requestDto) {
+
+        // 필드 값 추출, 리스트에서 중복 id들 제거
+        List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
+        friendIds = new ArrayList<>(new HashSet<>(friendIds));
+        Long chatRoomId = requestDto.getChatRoomId();
+
+        // 채팅방에 초대할 친구가 1명 이상이어야 한다.
+        if(friendIds.isEmpty()) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_INVITE_MEMBER_REQUIRED);
+        }
+
+        // 자기자신을 채팅방에 초대할 수 없습니다.
+        if(friendIds.contains(userId)) {
+            throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_SELF);
+        }
+
+        // 요청 유저가 채팅방에 속하면서 방장인지 검사
+        // ChatRoomUser가 있다면 ChatRoom도 있는 것이므로 체크하지 않는다.
+        if(!chatRoomUserMapper.existsByChatRoomIdAndUserId(chatRoomId, userId)) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_INVITE_PERMISSION_DENIED);
+        }
+
+        // 존재하지 않거나 친구가 아닌 유저는 초대할 수 없습니다.
+        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, friendIds);
+        if(friendCount != friendIds.size()) {
+            throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_INVALID_USER);
+        }
+
+        // chatRoom 조회
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NOT_EXISTS));
+
+        // 이미 ChatRoomUser 가 존재시 상태가 ACTIVE면 예외, LEFT면 ACTIVE로 수정
+        List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdAndFriendIds(chatRoomId, friendIds);
+        List<Long> existingFriendIds = new ArrayList<>();
+        chatRoomUsers.forEach(dto -> {
+             if(dto.getChatRoomUserStatus() == ChatRoomUserStatus.ACTIVE) {
+                 throw new ErrorException(ErrorCode.CHAT_ROOM_INVITE_ALREADY_MEMBER);
+             } else {
+                 dto.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
+                 dto.setLastReadSeq(chatRoom.getLastMessageSeq());
+                 dto.setJoinedAt();
+                 existingFriendIds.add(dto.getUser().getUserId());
+             }
+        });
+
+        // 저장해야하는 friendId 들 분류
+        List<Long> insertFriendIds = friendIds.stream()
+                .filter(id -> !existingFriendIds.contains(id))
+                .toList();
+
+        // lastReadSeq 수정하고 ChatRoomUser 저장
+        List<ChatRoomUser> newEntities = insertFriendIds.stream()
+                .map(friendId -> {
+                    ChatRoomUser chatRoomUser = ChatRoomUser.of(
+                            userRepository.getReferenceById(friendId),
+                            chatRoom,
+                            ChatRoomUserRole.MEMBER,
+                            ChatRoomUserStatus.ACTIVE
+                    );
+                    chatRoomUser.setLastReadSeq(chatRoom.getLastMessageSeq());
+                    return chatRoomUser;
+                })
+                .toList();
+        chatRoomUserRepository.saveAll(newEntities);
 
     }
 
