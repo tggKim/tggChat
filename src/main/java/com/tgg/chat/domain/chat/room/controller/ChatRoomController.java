@@ -53,7 +53,7 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "채팅방을 만들 상대 userId",
+                    description = "friendId 는 필수입니다.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
@@ -61,7 +61,7 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "자기 자신과 1대1 채팅방 생성할 수 없음",
+                    description = "자기 자신과 채팅방을 만들 수 없습니다.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
@@ -69,15 +69,7 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "친구가 아닌 사람과 1대1 채팅방을 생성할 수 없음",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "존재하지 않는 유저",
+                    description = "존재하지 않거나 친구가 아닌 사용자는 채팅방을 생성할 수 없습니다.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
@@ -85,7 +77,7 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "409",
-                    description = "이미 생성된 1대1 채팅방",
+                    description = "이미 존재하는 1대1 채팅방 입니다.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
