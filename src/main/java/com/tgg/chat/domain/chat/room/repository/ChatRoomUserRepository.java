@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.chat.room.repository;
 
+import com.tgg.chat.domain.chat.room.entity.ChatRoom;
 import com.tgg.chat.domain.chat.room.entity.ChatRoomUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,5 +19,7 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
         and cru.user.userId in :friendIds
     """)
     List<ChatRoomUser> findByChatRoomIdAndFriendIds(Long chatRoomId, List<Long> friendIds);
+
+    List<ChatRoomUser> findByChatRoom(ChatRoom chatRoom);
 
 }
