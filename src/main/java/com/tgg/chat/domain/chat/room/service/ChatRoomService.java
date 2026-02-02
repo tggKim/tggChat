@@ -23,6 +23,8 @@ import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
+
+import ch.qos.logback.core.spi.ErrorCodes;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
@@ -232,6 +234,53 @@ public class ChatRoomService {
                 .toList();
         chatRoomUserRepository.saveAll(newEntities);
 
+    }
+    
+    // 채팅방 나가기
+    @Transactional
+    public void leaveChatRoom(Long userId, Long chatRoomId, Long nextOwnerId) {
+    	
+    	// 채팅방이 존재하지 않거나, 채팅방의 유저가 아닐 시 예외
+    	ChatRoomUser chatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoom(chatRoomId, userId)
+    			.orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+    	
+    	ChatRoom chatRoom = chatRoomUser.getChatRoom(); 
+    	
+    	// 1대1 채팅방은 생성시 모두 MEMBER
+    	// 유저가 OWNER 이라면 단체 채팅방이므로 채팅방의 타입 검사는 필요 x, 권한 양도 필요.
+    	if(chatRoomUser.getChatRoomUserRole() == ChatRoomUserRole.OWNER) {
+    		
+    		// 나 자신에게 권한을 양도할 수 없음
+    		if(userId.equals(nextOwnerId)) {
+    			throw new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID);
+    		}
+    		
+			// 권한을 양도할 유저의 ChatRoomUser 조회
+    		ChatRoomUser nextOwnerChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, nextOwnerId)
+        			.orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+    		
+    		// 권한을 양도할 유저의 삭제 여부 체크
+    		if(nextOwnerChatRoomUser.getUser().getDeleted()) {
+    			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+    		}
+    		
+    		// 권한을 양도할 유저의 상태 체크
+    		if(nextOwnerChatRoomUser.getChatRoomUserStatus() != ChatRoomUserStatus.ACTIVE) {
+    			throw new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID);
+    		}
+    		
+    		// 권한 양도
+    		nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
+    		chatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
+    		
+    		// 나가기 처리
+    		chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.LEFT);
+    		
+    	} else {
+    		// 1대1 채팅방, 단체 채팅방에서 일반유저는  ChatRoomUserStatus 수정
+    		chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.LEFT);
+    	}
+    	
     }
 
 }
