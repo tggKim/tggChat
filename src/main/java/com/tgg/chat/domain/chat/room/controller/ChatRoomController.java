@@ -273,6 +273,14 @@ public class ChatRoomController {
                     )
             ),
             @ApiResponse(
+                    responseCode = "404",
+                    description = "존재하지 않는 채팅방 입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
                     responseCode = "409",
                     description = "이미 채팅방에 참여 중인 사용자가 포함되어 있습니다.",
                     content = @Content(
