@@ -114,5 +114,9 @@ public class ChatRoomUser {
     public void setLastReadSeq(Long lastReadSeq) {
         this.lastReadSeq = lastReadSeq;
     }
+    
+    public void setChatRoomUserRole(ChatRoomUserRole chatRoomUserRole) {
+        this.chatRoomUserRole = chatRoomUserRole;
+    }
 	
 }
