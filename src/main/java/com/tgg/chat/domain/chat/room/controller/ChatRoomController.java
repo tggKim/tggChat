@@ -3,6 +3,7 @@ package com.tgg.chat.domain.chat.room.controller;
 import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.InviteUserRequestDto;
+import com.tgg.chat.domain.chat.room.dto.request.LeaveChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
@@ -94,7 +95,7 @@ public class ChatRoomController {
 
     }
     
-    @PostMapping("groupChatRooms")
+    @PostMapping("/groupChatRooms")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "단체 채팅방 생성",
@@ -176,7 +177,7 @@ public class ChatRoomController {
 
     }
 
-    @GetMapping("chatRooms")
+    @GetMapping("/chatRooms")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "채팅방 목록 조회",
@@ -209,7 +210,7 @@ public class ChatRoomController {
 
     }
 
-    @PostMapping("chatRooms/invites")
+    @PostMapping("/chatRooms/invites")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "채팅방 초대",
@@ -291,6 +292,79 @@ public class ChatRoomController {
 
         // 채팅방 생성 응답 DTO 생성
         chatRoomService.inviteUserToChatRoom(loginUserId, requestDto);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(null);
+
+    }
+    
+    @PostMapping("/chatRooms/leave")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방 나가기",
+            description =  "채팅방에서 나갑니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방 나가기 성공",
+                    content = @Content(
+                            mediaType = "application/json"
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "chatRoomId는 필수입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "nextOwnerId는 필수입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "채팅방이 존재하지 않거나, 채팅방의 유저가 아닙니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "방장을 양도할 수 없는 멤버입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "존재하지 않는 유저입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<Void> leaveChatRoom(
+            Authentication authentication,
+            @Valid @RequestBody LeaveChatRoomRequestDto requestDto
+    ) {
+
+        // Authentication 에서 로그인한 유저의 userId 추출
+        Claims claims = (Claims)authentication.getPrincipal();
+        Long loginUserId = Long.parseLong(claims.getSubject());
+
+        // 채팅방 생성 응답 DTO 생성
+        chatRoomService.leaveChatRoom(loginUserId, requestDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
