@@ -1,9 +1,12 @@
-package com.tgg.chat.exception;
+package com.tgg.chat.common.stomp;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
+import com.tgg.chat.exception.ErrorResponse;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -14,7 +17,6 @@ import org.springframework.web.socket.messaging.StompSubProtocolErrorHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.xml.bind.annotation.XmlAccessOrder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
