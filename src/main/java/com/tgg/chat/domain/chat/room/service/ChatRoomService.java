@@ -5,6 +5,7 @@ import com.tgg.chat.domain.chat.room.dto.query.ChatRoomUserStatusRowDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.request.InviteUserRequestDto;
+import com.tgg.chat.domain.chat.room.dto.request.LeaveChatRoomRequestDto;
 import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
@@ -238,7 +239,10 @@ public class ChatRoomService {
     
     // 채팅방 나가기
     @Transactional
-    public void leaveChatRoom(Long userId, Long chatRoomId, Long nextOwnerId) {
+    public void leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
+    	
+    	Long chatRoomId = requestDto.getChatRoomId();
+    	Long nextOwnerId = requestDto.getNextOwnerId();
     	
     	// 채팅방이 존재하지 않거나, 채팅방의 유저가 아닐 시 예외
     	ChatRoomUser chatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoom(chatRoomId, userId)
