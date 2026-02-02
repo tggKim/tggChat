@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long> {
@@ -21,5 +22,23 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
     List<ChatRoomUser> findByChatRoomIdAndFriendIds(Long chatRoomId, List<Long> friendIds);
 
     List<ChatRoomUser> findByChatRoom(ChatRoom chatRoom);
+    
+    @Query("""
+            select cru
+            from ChatRoomUser cru
+            join fetch cru.chatRoom cr
+            where cru.chatRoom.chatRoomId = :chatRoomId
+            and cru.user.userId = :userId
+    """)
+    Optional<ChatRoomUser> findByChatRoomIdAndUserIdWithChatRoom(Long chatRoomId, Long userId);
+    
+    @Query("""
+            select cru
+            from ChatRoomUser cru
+            join fetch cru.user u
+            where cru.chatRoom.chatRoomId = :chatRoomId
+            and cru.user.userId = :userId
+    """)
+    Optional<ChatRoomUser> findByChatRoomIdAndUserIdWithUser(Long chatRoomId, Long userId);
 
 }
