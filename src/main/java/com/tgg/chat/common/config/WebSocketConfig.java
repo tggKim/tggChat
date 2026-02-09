@@ -29,7 +29,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer{
 	
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
-		registry.enableSimpleBroker("/topic");					// 서버가 클라이언트들에게 메시지를 전달 할 때 사용하는 경로 접두어
+		registry.enableSimpleBroker("/topic", "/queue");					// 서버가 클라이언트들에게 메시지를 전달 할 때 사용하는 경로 접두어
+		registry.setUserDestinationPrefix("/user");				// "/user/**" 구독을 Principal 기반으로 구분하여 같은 Principal인 세션들에 라우팅, 기본값은 /user
 		registry.setApplicationDestinationPrefixes("/app");		// 클라이언트가 서버로 메시지 보낼 때 사용하는 경로 접두어
 	}
 
