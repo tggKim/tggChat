@@ -8,13 +8,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.common.redis.pubsub.RedisPublisher;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageRequest;
+import com.tgg.chat.domain.chat.repository.ChatMessageMapper;
+import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
 import com.tgg.chat.domain.chat.room.entity.ChatMessage;
 import com.tgg.chat.domain.chat.room.entity.ChatRoom;
 import com.tgg.chat.domain.chat.room.entity.ChatRoomUser;
 import com.tgg.chat.domain.chat.room.enums.ChatMessageType;
 import com.tgg.chat.domain.chat.room.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.room.enums.ChatRoomUserStatus;
-import com.tgg.chat.domain.chat.room.repository.ChatMessageRepository;
 import com.tgg.chat.domain.chat.room.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.exception.ErrorCode;
@@ -29,6 +30,7 @@ public class ChatService {
     private final RedisPublisher redisPublisher;
     private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final ChatMessageMapper chatMessageMapper;
 
     @Transactional
     public void sendMessage(
@@ -52,8 +54,11 @@ public class ChatService {
         
         if(chatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
         	
+        	// 채팅방별 ChatMessage의 최대 seq 조회
+        	Long seq = chatMessageMapper.getLastSeq(chatRoomId);
+        	
         	// 메시지 db에 저장
-        	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, 1L, message.getContent(), ChatMessageType.TEXT);
+        	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
         	chatMessageRepository.save(chatMessage);
         	
         	// 1대1 채팅방의 2명의 유저의 상태가 LEFT면 ACTIVE로 수정
@@ -73,8 +78,11 @@ public class ChatService {
         		throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
             }
         	
+        	// 채팅방별 ChatMessage의 최대 seq 조회
+        	Long seq = chatMessageMapper.getLastSeq(chatRoomId);
+        	
         	// 메시지 db에 저장
-        	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, 1L, message.getContent(), ChatMessageType.TEXT);
+        	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
         	chatMessageRepository.save(chatMessage);
         	
         }
