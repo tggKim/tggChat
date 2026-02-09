@@ -1,4 +1,4 @@
-package com.tgg.chat.domain.chat.room.repository;
+package com.tgg.chat.domain.chat.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
