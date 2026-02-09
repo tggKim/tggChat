@@ -1,6 +1,4 @@
-package com.tgg.chat.domain.chat.room.dto.request;
-
-import java.util.List;
+package com.tgg.chat.domain.chat.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

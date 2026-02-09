@@ -1,4 +1,4 @@
-package com.tgg.chat.domain.chat.room.repository;
+package com.tgg.chat.domain.chat.repository;
 
 import org.apache.ibatis.annotations.Mapper;
 

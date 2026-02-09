@@ -1,4 +1,4 @@
-package com.tgg.chat.domain.chat.room.enums;
+package com.tgg.chat.domain.chat.enums;
 
 public enum ChatRoomUserStatus {
 	ACTIVE, LEFT

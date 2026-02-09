@@ -1,6 +1,6 @@
-package com.tgg.chat.domain.chat.room.entity;
+package com.tgg.chat.domain.chat.entity;
 
-import com.tgg.chat.domain.chat.room.enums.ChatMessageType;
+import com.tgg.chat.domain.chat.enums.ChatMessageType;
 import com.tgg.chat.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

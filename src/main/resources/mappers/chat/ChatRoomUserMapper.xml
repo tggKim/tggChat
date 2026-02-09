@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.tgg.chat.domain.chat.room.repository.ChatRoomUserMapper">
+<mapper namespace="com.tgg.chat.domain.chat.repository.ChatRoomUserMapper">
 
     <select id="existsByChatRoomIdAndUserId" parameterType="long" resultType="boolean">
         SELECT EXISTS (

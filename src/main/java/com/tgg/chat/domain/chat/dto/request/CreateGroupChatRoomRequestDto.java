@@ -1,4 +1,4 @@
-package com.tgg.chat.domain.chat.room.dto.request;
+package com.tgg.chat.domain.chat.dto.request;
 
 import java.util.List;
 

@@ -1,14 +1,13 @@
-package com.tgg.chat.domain.chat.room.controller;
+package com.tgg.chat.domain.chat.controller;
 
-import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
-import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
-import com.tgg.chat.domain.chat.room.dto.request.InviteUserRequestDto;
-import com.tgg.chat.domain.chat.room.dto.request.LeaveChatRoomRequestDto;
-import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
-import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
-import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
-import com.tgg.chat.domain.chat.room.service.ChatRoomService;
-import com.tgg.chat.domain.user.dto.response.UserResponseDto;
+import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
+import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
+import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
+import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
+import com.tgg.chat.domain.chat.service.ChatRoomService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;

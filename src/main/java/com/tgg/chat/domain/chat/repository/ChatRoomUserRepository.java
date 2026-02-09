@@ -1,7 +1,7 @@
-package com.tgg.chat.domain.chat.room.repository;
+package com.tgg.chat.domain.chat.repository;
 
-import com.tgg.chat.domain.chat.room.entity.ChatRoom;
-import com.tgg.chat.domain.chat.room.entity.ChatRoomUser;
+import com.tgg.chat.domain.chat.entity.ChatRoom;
+import com.tgg.chat.domain.chat.entity.ChatRoomUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

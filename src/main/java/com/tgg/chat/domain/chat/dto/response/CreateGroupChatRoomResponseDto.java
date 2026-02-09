@@ -1,4 +1,4 @@
-package com.tgg.chat.domain.chat.room.dto.response;
+package com.tgg.chat.domain.chat.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

@@ -1,8 +1,7 @@
-package com.tgg.chat.domain.chat.room.repository;
+package com.tgg.chat.domain.chat.repository;
 
-import com.tgg.chat.domain.chat.room.dto.query.ChatRoomListRowDto;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomListRowDto;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 

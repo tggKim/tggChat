@@ -1,14 +1,13 @@
-package com.tgg.chat.domain.chat.room.entity;
+package com.tgg.chat.domain.chat.entity;
 
 import java.time.LocalDateTime;
 
-import com.tgg.chat.domain.chat.room.enums.ChatMessageType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.tgg.chat.domain.chat.room.enums.ChatRoomUserRole;
-import com.tgg.chat.domain.chat.room.enums.ChatRoomUserStatus;
+import com.tgg.chat.domain.chat.enums.ChatRoomUserRole;
+import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
 import com.tgg.chat.domain.user.entity.User;
 
 import jakarta.persistence.Column;

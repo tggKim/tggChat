@@ -1,6 +1,6 @@
-package com.tgg.chat.domain.chat.room.dto.query;
+package com.tgg.chat.domain.chat.dto.query;
 
-import com.tgg.chat.domain.chat.room.enums.ChatRoomType;
+import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

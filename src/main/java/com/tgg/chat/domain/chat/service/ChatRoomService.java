@@ -1,23 +1,21 @@
-package com.tgg.chat.domain.chat.room.service;
+package com.tgg.chat.domain.chat.service;
 
-import com.tgg.chat.domain.chat.room.dto.query.ChatRoomListRowDto;
-import com.tgg.chat.domain.chat.room.dto.query.ChatRoomUserStatusRowDto;
-import com.tgg.chat.domain.chat.room.dto.request.CreateDirectChatRoomRequestDto;
-import com.tgg.chat.domain.chat.room.dto.request.CreateGroupChatRoomRequestDto;
-import com.tgg.chat.domain.chat.room.dto.request.InviteUserRequestDto;
-import com.tgg.chat.domain.chat.room.dto.request.LeaveChatRoomRequestDto;
-import com.tgg.chat.domain.chat.room.dto.response.ChatRoomListResponseDto;
-import com.tgg.chat.domain.chat.room.dto.response.CreateDirectChatRoomResponseDto;
-import com.tgg.chat.domain.chat.room.dto.response.CreateGroupChatRoomResponseDto;
-import com.tgg.chat.domain.chat.room.entity.ChatRoom;
-import com.tgg.chat.domain.chat.room.entity.ChatRoomUser;
-import com.tgg.chat.domain.chat.room.enums.ChatRoomType;
-import com.tgg.chat.domain.chat.room.enums.ChatRoomUserRole;
-import com.tgg.chat.domain.chat.room.enums.ChatRoomUserStatus;
-import com.tgg.chat.domain.chat.room.repository.ChatRoomMapper;
-import com.tgg.chat.domain.chat.room.repository.ChatRoomRepository;
-import com.tgg.chat.domain.chat.room.repository.ChatRoomUserMapper;
-import com.tgg.chat.domain.chat.room.repository.ChatRoomUserRepository;
+import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
+import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
+import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
+import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
+import com.tgg.chat.domain.chat.entity.ChatRoom;
+import com.tgg.chat.domain.chat.entity.ChatRoomUser;
+import com.tgg.chat.domain.chat.enums.ChatRoomType;
+import com.tgg.chat.domain.chat.enums.ChatRoomUserRole;
+import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
+import com.tgg.chat.domain.chat.repository.ChatRoomMapper;
+import com.tgg.chat.domain.chat.repository.ChatRoomRepository;
+import com.tgg.chat.domain.chat.repository.ChatRoomUserMapper;
+import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
@@ -25,7 +23,6 @@ import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 
-import ch.qos.logback.core.spi.ErrorCodes;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;

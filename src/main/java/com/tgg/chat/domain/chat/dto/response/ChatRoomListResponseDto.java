@@ -1,7 +1,7 @@
-package com.tgg.chat.domain.chat.room.dto.response;
+package com.tgg.chat.domain.chat.dto.response;
 
-import com.tgg.chat.domain.chat.room.dto.query.ChatRoomListRowDto;
-import com.tgg.chat.domain.chat.room.enums.ChatRoomType;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomListRowDto;
+import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
