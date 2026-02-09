@@ -27,7 +27,7 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
             select cru
             from ChatRoomUser cru
             join fetch cru.chatRoom cr
-            where cru.chatRoom.chatRoomId = :chatRoomId
+            where cr.chatRoomId = :chatRoomId
             and cru.user.userId = :userId
     """)
     Optional<ChatRoomUser> findByChatRoomIdAndUserIdWithChatRoom(Long chatRoomId, Long userId);
@@ -37,8 +37,18 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
             from ChatRoomUser cru
             join fetch cru.user u
             where cru.chatRoom.chatRoomId = :chatRoomId
-            and cru.user.userId = :userId
+            and u.userId = :userId
     """)
     Optional<ChatRoomUser> findByChatRoomIdAndUserIdWithUser(Long chatRoomId, Long userId);
+    
+    @Query("""
+            select cru
+            from ChatRoomUser cru
+            join fetch cru.chatRoom cr
+            join fetch cru.user u
+            where cr.chatRoomId = :chatRoomId
+            and u.userId = :userId
+    """)
+    Optional<ChatRoomUser> findWithAllDetails(Long chatRoomId, Long userId);
 
 }
