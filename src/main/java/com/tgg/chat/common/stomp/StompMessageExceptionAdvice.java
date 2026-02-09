@@ -21,11 +21,6 @@ public class StompMessageExceptionAdvice {
     @MessageExceptionHandler(ErrorException.class)
     @SendToUser("/queue/errors")
     protected ErrorResponse handleErrorException(ErrorException e, Message<?> message) {
-
-    	var acc = StompHeaderAccessor.wrap(message);
-        var user = acc.getUser();
-        log.warn("stompUser={}, name={}, sessionId={}",
-            user, user != null ? user.getName() : null, acc.getSessionId());
     	
         ErrorCode errorCode = e.getErrorCode();
         String errorMessage = e.getMessage();
