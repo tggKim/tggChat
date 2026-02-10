@@ -57,7 +57,6 @@ public class ChatService {
         if(chatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
         	
         	// 채팅방별 ChatMessage의 최대 seq 조회
-        	//Long seq = chatRoomMapper.getLastSeq(chatRoomId);
         	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
         	
         	// chatRoom 의 lastSeq 증가
@@ -85,7 +84,6 @@ public class ChatService {
             }
         	
         	// 채팅방별 ChatMessage의 최대 seq 조회
-        	//Long seq = chatRoomMapper.getLastSeq(chatRoomId);
         	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
         	
         	// chatRoom 의 lastSeq 증가
