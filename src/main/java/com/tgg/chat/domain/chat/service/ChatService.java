@@ -35,7 +35,7 @@ public class ChatService {
     private final ChatRoomMapper chatRoomMapper;
     
     @Transactional
-    public void saveMessage(
+    public ChatEvent saveMessage(
     		Long userId, 
     		Long chatRoomId, 
     		ChatMessageRequest message
@@ -53,7 +53,8 @@ public class ChatService {
         if(user.getDeleted()) {
         	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
-        
+
+        ChatEvent chatEvent = null;
         if(chatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
         	
         	// 채팅방별 ChatMessage의 최대 seq 조회
@@ -76,6 +77,16 @@ public class ChatService {
                     findChatRoomUser.setHistoryStartSeq(seq); // 현재
                 }
             });
+
+            chatEvent = ChatEvent.of(
+                    chatRoomId,
+                    userId,
+                    message.getContent(),
+                    seq + 1,
+                    ChatMessageType.TEXT,
+                    chatMessage.getCreatedAt(),
+                    1L
+            );
         	
         } else {
         	
@@ -93,17 +104,26 @@ public class ChatService {
         	// 메시지 db에 저장
         	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
         	chatMessageRepository.save(chatMessage);
-        	
+
+            chatEvent = ChatEvent.of(
+                    chatRoomId,
+                    userId,
+                    message.getContent(),
+                    seq + 1,
+                    ChatMessageType.TEXT,
+                    chatMessage.getCreatedAt(),
+                    1L
+            );
+
         }
-		
+
+        return chatEvent;
+
     }
     
     public void sendMessage(
-    		Long userId, 
-    		Long chatRoomId, 
-    		ChatMessageRequest message
+    		ChatEvent chatEvent
     ) {
-    	ChatEvent chatEvent = ChatEvent.of(chatRoomId, userId, message.getContent());
 		redisPublisher.publishChatEvent(chatEvent);
     }
     

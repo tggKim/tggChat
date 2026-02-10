@@ -2,6 +2,7 @@ package com.tgg.chat.domain.chat.controller;
 
 import java.security.Principal;
 
+import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.domain.chat.service.ChatService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -26,9 +27,9 @@ public class ChatController {
 
 		Long userId = Long.parseLong(principal.getName());
 		
-        chatService.saveMessage(userId, chatRoomId, message);
+        ChatEvent chatEvent = chatService.saveMessage(userId, chatRoomId, message);
         
-        chatService.sendMessage(userId, chatRoomId, message);
+        chatService.sendMessage(chatEvent);
 
 	}
 	
