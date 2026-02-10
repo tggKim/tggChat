@@ -262,11 +262,11 @@ public class ChatRoomService {
 			// 권한을 양도할 유저의 ChatRoomUser 조회
             // 채팅방이 존재하는 것은 위에서 검증 되었으므로 권한을 양도할 유저가 같은 채팅방 소속인지 검사하는 것
     		ChatRoomUser nextOwnerChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, nextOwnerId)
-        			.orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+        			.orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID));
     		
     		// 권한을 양도할 유저의 삭제 여부 체크
     		if(nextOwnerChatRoomUser.getUser().getDeleted()) {
-    			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+    			throw new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID);
     		}
     		
     		// 권한을 양도할 유저의 상태 체크

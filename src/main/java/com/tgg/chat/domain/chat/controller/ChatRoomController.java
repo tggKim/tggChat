@@ -351,14 +351,6 @@ public class ChatRoomController {
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
                     )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "존재하지 않는 유저입니다.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
             )
     })
     public ResponseEntity<Void> leaveChatRoom(
