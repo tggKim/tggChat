@@ -7,4 +7,6 @@ public interface ChatRoomUserMapper {
 
     public boolean existsByChatRoomIdAndUserId(Long chatRoomId, Long userId);
 
+    public Long getMemberCount(Long chatRoomId);
+
 }

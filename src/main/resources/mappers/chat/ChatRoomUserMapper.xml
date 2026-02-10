@@ -28,4 +28,10 @@
         </foreach>
     </select>
 
+    <select id="getMemberCount">
+        SELECT COUNT(*)
+        FROM chat_room_user
+        WHERE chat_room_id = #{chatRoomId}
+    </select>
+
 </mapper>
