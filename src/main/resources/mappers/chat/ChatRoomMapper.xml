@@ -17,13 +17,6 @@
         AND T1.chat_room_user_status = 'ACTIVE'
         ORDER BY T2.last_message_at DESC
     </select>
-    
-    <select id='getLastSeq'>
-		SELECT
-			last_message_seq
-		FROM chat_room
-		WHERE chat_room_id = #{chatRoomId}
-	</select>
 
 	<select id='getLastSeqLock'>
 		SELECT

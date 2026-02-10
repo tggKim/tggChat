@@ -10,8 +10,6 @@ public interface ChatRoomMapper {
 
     public List<ChatRoomListRowDto> findAllChatRoomsByUserId(Long userId);
     
-    public Long getLastSeq(Long chatRoomId);
-    
     public Long getLastSeqLock(Long chatRoomId);
     
     public int updateLastSeq(Long seq, Long chatRoomId);
