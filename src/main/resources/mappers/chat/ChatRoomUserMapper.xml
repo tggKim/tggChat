@@ -31,7 +31,7 @@
     <select id="getMemberCount">
         SELECT COUNT(*)
         FROM chat_room_user
-        WHERE chat_room_id = #{chatRoomId}
+        WHERE chat_room_id = #{chatRoomId} AND chat_room_user_status = 'ACTIVE'
     </select>
 
 </mapper>
