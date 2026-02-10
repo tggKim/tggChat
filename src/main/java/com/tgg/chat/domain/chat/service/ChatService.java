@@ -10,6 +10,7 @@ import com.tgg.chat.common.redis.pubsub.RedisPublisher;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageRequest;
 import com.tgg.chat.domain.chat.repository.ChatMessageMapper;
 import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
+import com.tgg.chat.domain.chat.repository.ChatRoomMapper;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
@@ -31,7 +32,8 @@ public class ChatService {
     private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatMessageMapper chatMessageMapper;
-
+    private final ChatRoomMapper chatRoomMapper;
+    
     @Transactional
     public void sendMessage(
     		Long userId, 
@@ -55,7 +57,11 @@ public class ChatService {
         if(chatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
         	
         	// 채팅방별 ChatMessage의 최대 seq 조회
-        	Long seq = chatMessageMapper.getLastSeq(chatRoomId);
+        	//Long seq = chatRoomMapper.getLastSeq(chatRoomId);
+        	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
+        	
+        	// chatRoom 의 lastSeq 증가
+        	chatRoomMapper.updateLastSeq(seq + 1, chatRoomId);
         	
         	// 메시지 db에 저장
         	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
@@ -67,7 +73,7 @@ public class ChatService {
                 if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
                 	findChatRoomUser.setJoinedAt();
                 	findChatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
-                	findChatRoomUser.setLastReadSeq(chatRoom.getLastMessageSeq());
+                	findChatRoomUser.setLastReadSeq(seq + 1);
                 }
             });
         	
@@ -79,7 +85,11 @@ public class ChatService {
             }
         	
         	// 채팅방별 ChatMessage의 최대 seq 조회
-        	Long seq = chatMessageMapper.getLastSeq(chatRoomId);
+        	//Long seq = chatRoomMapper.getLastSeq(chatRoomId);
+        	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
+        	
+        	// chatRoom 의 lastSeq 증가
+        	chatRoomMapper.updateLastSeq(seq + 1, chatRoomId);
         	
         	// 메시지 db에 저장
         	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
