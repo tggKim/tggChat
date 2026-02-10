@@ -9,6 +9,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,8 @@ import com.tgg.chat.domain.chat.repository.ChatRoomRepository;
 import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
+import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariPoolMXBean;
 
 @SpringBootTest(properties = {
         "SECRET=your_test_secret_key_value_here_at_least_32_chars",
@@ -48,6 +52,19 @@ class ChatServiceLockTest {
     private UserRepository userRepository;
     @Autowired
     private ChatRoomUserRepository chatRoomUserRepository;
+    
+    @Autowired
+    private DataSource dataSource;
+    
+    private void printHikariStatus() {
+        HikariDataSource conPool = (HikariDataSource) dataSource;
+        HikariPoolMXBean poolProxy = conPool.getHikariPoolMXBean();
+
+        System.out.printf("[Hikari Status] Active: %d, Idle: %d, ThreadsAwaiting: %d%n",
+                poolProxy.getActiveConnections(),    // 현재 DB와 연결되어 일을 하고 있는 커넥션
+                poolProxy.getIdleConnections(),      // 대기 중인 유휴 커넥션
+                poolProxy.getThreadsAwaitingConnection()); // 커넥션이 없어서 줄 서서 기다리는 스레드 수
+    }
 
     private Long user1Id;
     private Long user2Id;
@@ -78,8 +95,8 @@ class ChatServiceLockTest {
     @DisplayName("동시에 100개의 메시지를 보낼 때 seq 중복 발생 확인 (락 미사용)")
     void sendMessage_Concurrency_Test() throws InterruptedException {
         // given
-        int totalRequests = 100;
-        int threadPoolSize = 2; // 딱 2개의 스레드만 사용
+        int totalRequests = 1000;
+        int threadPoolSize = 100; // 딱 2개의 스레드만 사용
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
         CountDownLatch latch = new CountDownLatch(totalRequests);
@@ -90,6 +107,15 @@ class ChatServiceLockTest {
         ChatMessageRequest request = new ChatMessageRequest();
         ReflectionTestUtils.setField(request, "content", "리플렉션으로 넣은 메시지");
 
+        // 모니터링 스레드 시작
+        Thread monitor = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                printHikariStatus();
+                try { Thread.sleep(100); } catch (InterruptedException e) { break; }
+            }
+        });
+        monitor.start();
+        
         // when
         for (int i = 0; i < totalRequests; i++) {
             final Long currentUserId = (i % 2 == 0) ? user1Id : user2Id; // 홀짝 번갈아가며 유저 할당
@@ -112,6 +138,7 @@ class ChatServiceLockTest {
 
         latch.await(); // 100개 작업이 모두 끝날 때까지 대기
         executorService.shutdown();
+        monitor.interrupt();
 
         // then
         List<ChatMessage> allMessages = chatMessageRepository.findAll();
