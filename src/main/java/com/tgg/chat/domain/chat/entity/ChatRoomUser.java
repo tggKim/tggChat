@@ -70,6 +70,10 @@ public class ChatRoomUser {
 	// 읽은 마지막 메시지 시퀸스 번호
     @Column(nullable = false)
 	private Long lastReadSeq;
+
+    // 이 seq 초과하는 메시지들이 유저에게 노출된다
+    @Column(nullable = false)
+    private Long historyStartSeq;
 	
 	@CreatedDate
 	@Column(nullable = false, updatable = false)
@@ -91,6 +95,7 @@ public class ChatRoomUser {
         this.chatRoomUserStatus = chatRoomUserStatus;
         this.joinedAt = LocalDateTime.now();
         this.lastReadSeq = 0L;
+        this.historyStartSeq = 0L;
     }
 
     public static ChatRoomUser of(
@@ -117,5 +122,9 @@ public class ChatRoomUser {
     public void setChatRoomUserRole(ChatRoomUserRole chatRoomUserRole) {
         this.chatRoomUserRole = chatRoomUserRole;
     }
-	
+
+    public void setHistoryStartSeq(Long historyStartSeq) {
+        this.historyStartSeq = historyStartSeq;
+    }
+
 }
