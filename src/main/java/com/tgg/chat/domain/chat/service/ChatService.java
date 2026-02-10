@@ -35,7 +35,7 @@ public class ChatService {
     private final ChatRoomMapper chatRoomMapper;
     
     @Transactional
-    public void sendMessage(
+    public void saveMessage(
     		Long userId, 
     		Long chatRoomId, 
     		ChatMessageRequest message
@@ -94,10 +94,16 @@ public class ChatService {
         	chatMessageRepository.save(chatMessage);
         	
         }
-
-        ChatEvent chatEvent = ChatEvent.of(chatRoomId, userId, message.getContent());
-		redisPublisher.publishChatEvent(chatEvent);
 		
+    }
+    
+    public void sendMessage(
+    		Long userId, 
+    		Long chatRoomId, 
+    		ChatMessageRequest message
+    ) {
+    	ChatEvent chatEvent = ChatEvent.of(chatRoomId, userId, message.getContent());
+		redisPublisher.publishChatEvent(chatEvent);
     }
     
 }

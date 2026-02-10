@@ -26,6 +26,8 @@ public class ChatController {
 
 		Long userId = Long.parseLong(principal.getName());
 		
+        chatService.saveMessage(userId, chatRoomId, message);
+        
         chatService.sendMessage(userId, chatRoomId, message);
 
 	}
