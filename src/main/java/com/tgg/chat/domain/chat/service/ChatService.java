@@ -72,7 +72,8 @@ public class ChatService {
                 if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
                 	findChatRoomUser.setJoinedAt();
                 	findChatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
-                	findChatRoomUser.setLastReadSeq(seq + 1);
+                	findChatRoomUser.setLastReadSeq(seq); // 현재 보내지는 메시지 부터 읽지 않음 처리가 필요
+                    findChatRoomUser.setHistoryStartSeq(seq); // 현재
                 }
             });
         	
