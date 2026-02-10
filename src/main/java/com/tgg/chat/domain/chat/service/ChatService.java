@@ -2,22 +2,19 @@ package com.tgg.chat.domain.chat.service;
 
 import java.util.List;
 
+import com.tgg.chat.domain.chat.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.common.redis.pubsub.RedisPublisher;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageRequest;
-import com.tgg.chat.domain.chat.repository.ChatMessageMapper;
-import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
-import com.tgg.chat.domain.chat.repository.ChatRoomMapper;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
 import com.tgg.chat.domain.chat.enums.ChatMessageType;
 import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
-import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -31,7 +28,7 @@ public class ChatService {
     private final RedisPublisher redisPublisher;
     private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final ChatMessageMapper chatMessageMapper;
+    private final ChatRoomUserMapper chatRoomUserMapper;
     private final ChatRoomMapper chatRoomMapper;
     
     @Transactional
@@ -78,6 +75,8 @@ public class ChatService {
                 }
             });
 
+            Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
+
             chatEvent = ChatEvent.of(
                     chatRoomId,
                     userId,
@@ -85,7 +84,7 @@ public class ChatService {
                     seq + 1,
                     ChatMessageType.TEXT,
                     chatMessage.getCreatedAt(),
-                    1L
+                    memberCount
             );
         	
         } else {
@@ -105,6 +104,8 @@ public class ChatService {
         	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
         	chatMessageRepository.save(chatMessage);
 
+            Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
+
             chatEvent = ChatEvent.of(
                     chatRoomId,
                     userId,
@@ -112,7 +113,7 @@ public class ChatService {
                     seq + 1,
                     ChatMessageType.TEXT,
                     chatMessage.getCreatedAt(),
-                    1L
+                    memberCount
             );
 
         }
