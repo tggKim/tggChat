@@ -97,6 +97,7 @@ public class ChatRoomService {
                     chatRoomUser.setJoinedAt();
                     chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
                     chatRoomUser.setLastReadSeq(chatRoom.getLastMessageSeq());
+                    chatRoomUser.setHistoryStartSeq(chatRoom.getLastMessageSeq());
                 }
             });
 
@@ -207,6 +208,7 @@ public class ChatRoomService {
              } else {
                  dto.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
                  dto.setLastReadSeq(chatRoom.getLastMessageSeq());
+                 dto.setHistoryStartSeq(chatRoom.getLastMessageSeq());
                  dto.setJoinedAt();
                  existingFriendIds.add(dto.getUser().getUserId());
              }
@@ -227,6 +229,7 @@ public class ChatRoomService {
                             ChatRoomUserStatus.ACTIVE
                     );
                     chatRoomUser.setLastReadSeq(chatRoom.getLastMessageSeq());
+                    chatRoomUser.setHistoryStartSeq(chatRoom.getLastMessageSeq());
                     return chatRoomUser;
                 })
                 .toList();
