@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.chat.controller;
 
 import java.security.Principal;
+import java.util.List;
 
 import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.domain.chat.service.ChatService;
@@ -27,9 +28,9 @@ public class ChatController {
 
 		Long userId = Long.parseLong(principal.getName());
 		
-        ChatEvent chatEvent = chatService.saveMessage(userId, chatRoomId, message);
+        List<ChatEvent> chatEvents = chatService.saveMessage(userId, chatRoomId, message);
         
-        chatService.sendMessage(chatEvent);
+        chatService.sendMessage(chatEvents);
 
 	}
 	
