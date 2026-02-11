@@ -30,6 +30,8 @@
 		UPDATE chat_room
 		SET
 			last_message_seq = #{seq}
+        ,   last_message_preview = #{lastMessagePreview}
+        ,   last_message_at = #{lastMessageAt}
 		WHERE chat_room_id = #{chatRoomId}
 	</update>
 
