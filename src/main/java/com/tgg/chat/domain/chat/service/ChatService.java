@@ -42,6 +42,10 @@ public class ChatService {
         // 채팅방의 존재여부와, 유저가 채팅방에 속한 유저인지 검증
         ChatRoomUser chatRoomUser = chatRoomUserRepository.findWithAllDetails(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+//        if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+//            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+//        }
         
         // ChatRoom, User 추출
         ChatRoom chatRoom = chatRoomUser.getChatRoom();
@@ -105,8 +109,8 @@ public class ChatService {
             
             chatEvents.add(chatEvent);
         	
-        	// chatRoom 의 lastSeq 증가
-        	chatRoomMapper.updateLastSeq(seq + addNumber, chatRoomId);
+        	// chatRoom 의 lastSeq, lastMessagePreview, lastMessageAt 수정
+        	chatRoomMapper.updateLastSeq(seq + addNumber, message.getContent(), savedChatMessage.getCreatedAt() ,chatRoomId);
         } else {
         	// 단체 채팅방이면 요청한 유저의 상태가 LEFT면 예외
         	if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
@@ -118,7 +122,7 @@ public class ChatService {
         	
         	// 메시지 db에 저장
         	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
-        	chatMessageRepository.save(chatMessage);
+            ChatMessage savedChatMessage = chatMessageRepository.save(chatMessage);
 
         	// 채팅방에 참여중인 인원들 수 조회
             Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
@@ -129,14 +133,14 @@ public class ChatService {
                     message.getContent(),
                     seq + 1,
                     ChatMessageType.TEXT,
-                    chatMessage.getCreatedAt(),
+                    savedChatMessage.getCreatedAt(),
                     memberCount
             );
             
             chatEvents.add(chatEvent);
             
         	// chatRoom 의 lastSeq 증가
-        	chatRoomMapper.updateLastSeq(seq + 1, chatRoomId);
+        	chatRoomMapper.updateLastSeq(seq + 1, message.getContent(), savedChatMessage.getCreatedAt(), chatRoomId);
         }
 
         return chatEvents;
