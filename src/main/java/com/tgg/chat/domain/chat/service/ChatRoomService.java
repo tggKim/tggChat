@@ -97,6 +97,9 @@ public class ChatRoomService {
 
             long addNumber = 1L;
 
+            boolean flag = false;
+            ChatMessage flagChatMessage = null;
+
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoom.getChatRoomId());
             for(ChatRoomUser findChatRoomUser : chatRoomUsers) {
                 if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
@@ -124,11 +127,16 @@ public class ChatRoomService {
                     chatEvents.add(joinChatEvent);
 
                     addNumber++;
+
+                    flag = true;
+                    flagChatMessage = savedJoinChatMessage;
                 }
             }
 
-            // chatRoom 의 lastSeq 증가, addNumber 는 1증감이 필요
-            chatRoomMapper.updateLastSeq(seq + (addNumber - 1) , chatRoom.getChatRoomId());
+            if(flag) {
+                // chatRoom 의 lastSeq 증가, addNumber 는 1증감이 필요
+                chatRoomMapper.updateLastSeq(seq + (addNumber - 1) , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), chatRoom.getChatRoomId());
+            }
         }
 
         Map<String, Object> payload = new HashMap<>();
