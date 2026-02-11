@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.chat.controller;
 
+import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -8,6 +9,7 @@ import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.service.ChatRoomService;
+import com.tgg.chat.domain.chat.service.ChatService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "ChatRoom API", description = "채팅방 API")
 @RestController
@@ -35,6 +38,7 @@ import java.util.List;
 public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
+    private final ChatService chatService;
 
     @PostMapping("/directChatRooms")
     @SecurityRequirement(name = "JWT Auth")
@@ -86,7 +90,12 @@ public class ChatRoomController {
         Long loginUserId = Long.parseLong(claims.getSubject());
 
         // 채팅방 생성 응답 DTO 생성
-        CreateDirectChatRoomResponseDto responseDto = chatRoomService.createDirectChatRoom(loginUserId, requestDto);
+        Map<String, Object> payload = chatRoomService.createDirectChatRoom(loginUserId, requestDto);
+
+        CreateDirectChatRoomResponseDto responseDto = (CreateDirectChatRoomResponseDto)payload.get("responseDto");
+        List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
+
+        chatService.sendMessage(chatEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

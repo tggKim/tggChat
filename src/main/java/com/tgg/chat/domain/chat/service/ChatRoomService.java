@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.chat.service;
 
+import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -7,15 +8,14 @@ import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
+import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
+import com.tgg.chat.domain.chat.enums.ChatMessageType;
 import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserRole;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
-import com.tgg.chat.domain.chat.repository.ChatRoomMapper;
-import com.tgg.chat.domain.chat.repository.ChatRoomRepository;
-import com.tgg.chat.domain.chat.repository.ChatRoomUserMapper;
-import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
+import com.tgg.chat.domain.chat.repository.*;
 import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
@@ -46,9 +46,11 @@ public class ChatRoomService {
 
     private final UserFriendMapper userFriendMapper;
 
+    private final ChatMessageRepository chatMessageRepository;
+
     // 1대1 채팅방 생성
     @Transactional
-    public CreateDirectChatRoomResponseDto createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
+    public Map<String, Object> createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
 
         Long friendUserId = requestDto.getFriendId();
 
@@ -72,8 +74,8 @@ public class ChatRoomService {
         // 1대1 채팅방을 조회
         Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findByChatRoomTypeAndDirectUser1AndDirectUser2(ChatRoomType.DIRECT, user1, user2);
         CreateDirectChatRoomResponseDto responseDto = null;
+        List<ChatEvent> chatEvents = new ArrayList<>();
         if(chatRoomOptional.isEmpty()) { // 1대1 채팅방이 존재하지 않는다면 ChatRoom 생성하고 ChatRoomUser 생성하면 된다.
-
             // 채팅방 생성
             ChatRoom chatRoom = ChatRoom.of(ChatRoomType.DIRECT, user1, user2);
             ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
@@ -87,25 +89,53 @@ public class ChatRoomService {
 
             // 응답 DTO 생성
             responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
-
         } else { // 1대1 채팅방이 존재한다면, 해당 ChatRoom에 대한 ChatRoomUser 들의 상태를 ACTIVE로 바꾼다.
-
             ChatRoom chatRoom = chatRoomOptional.get();
-            List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoom(chatRoom);
-            chatRoomUsers.forEach(chatRoomUser -> {
-                if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
-                    chatRoomUser.setJoinedAt();
-                    chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
-                    chatRoomUser.setLastReadSeq(chatRoom.getLastMessageSeq());
-                    chatRoomUser.setHistoryStartSeq(chatRoom.getLastMessageSeq());
+
+            // 채팅방별 ChatMessage의 최대 seq 조회
+            Long seq = chatRoomMapper.getLastSeqLock(chatRoom.getChatRoomId());
+
+            long addNumber = 1L;
+
+            List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoom.getChatRoomId());
+            for(ChatRoomUser findChatRoomUser : chatRoomUsers) {
+                if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+                    findChatRoomUser.setJoinedAt();
+                    findChatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
+                    findChatRoomUser.setLastReadSeq(seq);
+                    findChatRoomUser.setHistoryStartSeq(seq);
+
+                    User findUser = findChatRoomUser.getUser();
+
+                    ChatMessage joinChatMessage = ChatMessage.of(chatRoom, findUser, seq + addNumber, findUser.getUsername() + "가 채팅에 참여했습니다.", ChatMessageType.JOIN_TEXT);
+                    ChatMessage savedJoinChatMessage = chatMessageRepository.save(joinChatMessage);
+
+                    // 1대1 채팅방 멤버는 2명이므로 2로 고정
+                    ChatEvent joinChatEvent = ChatEvent.of(
+                            chatRoom.getChatRoomId(),
+                            findChatRoomUser.getUser().getUserId(),
+                            findUser.getUsername() + "가 채팅에 참여했습니다.",
+                            seq + addNumber,
+                            ChatMessageType.JOIN_TEXT,
+                            savedJoinChatMessage.getCreatedAt(),
+                            2L
+                    );
+
+                    chatEvents.add(joinChatEvent);
+
+                    addNumber++;
                 }
-            });
+            }
 
-            responseDto = CreateDirectChatRoomResponseDto.of(chatRoom.getChatRoomId());
-
+            // chatRoom 의 lastSeq 증가, addNumber 는 1증감이 필요
+            chatRoomMapper.updateLastSeq(seq + (addNumber - 1) , chatRoom.getChatRoomId());
         }
 
-        return responseDto;
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("chatEvents", chatEvents);
+        payload.put("responseDto", responseDto);
+
+        return payload;
 
     }
 
