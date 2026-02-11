@@ -42,7 +42,8 @@ public class ChatService {
         // 채팅방의 존재여부와, 유저가 채팅방에 속한 유저인지 검증
         ChatRoomUser chatRoomUser = chatRoomUserRepository.findWithAllDetails(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
-
+        
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
         if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
             throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
@@ -112,11 +113,6 @@ public class ChatService {
         	// chatRoom 의 lastSeq, lastMessagePreview, lastMessageAt 수정
         	chatRoomMapper.updateLastSeq(seq + addNumber, message.getContent(), savedChatMessage.getCreatedAt() ,chatRoomId);
         } else {
-        	// 단체 채팅방이면 요청한 유저의 상태가 LEFT면 예외
-        	if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
-        		throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
-            }
-        	
         	// 채팅방별 ChatMessage의 최대 seq 조회
         	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
         	
