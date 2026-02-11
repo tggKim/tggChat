@@ -43,9 +43,9 @@ public class ChatService {
         ChatRoomUser chatRoomUser = chatRoomUserRepository.findWithAllDetails(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
 
-//        if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
-//            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
-//        }
+        if(chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
         
         // ChatRoom, User 추출
         ChatRoom chatRoom = chatRoomUser.getChatRoom();
