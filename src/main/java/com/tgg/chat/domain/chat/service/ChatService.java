@@ -75,8 +75,7 @@ public class ChatService {
                 }
             });
 
-            Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
-
+            // 1대1 채팅방 멤버는 2명이므로 2로 고정
             chatEvent = ChatEvent.of(
                     chatRoomId,
                     userId,
@@ -84,7 +83,7 @@ public class ChatService {
                     seq + 1,
                     ChatMessageType.TEXT,
                     chatMessage.getCreatedAt(),
-                    memberCount
+                    2L
             );
         	
         } else {
@@ -104,6 +103,7 @@ public class ChatService {
         	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
         	chatMessageRepository.save(chatMessage);
 
+        	// 채팅방에 참여중인 인원들 수 조회
             Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
 
             chatEvent = ChatEvent.of(
