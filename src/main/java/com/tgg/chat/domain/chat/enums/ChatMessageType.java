@@ -1,5 +1,5 @@
 package com.tgg.chat.domain.chat.enums;
 
 public enum ChatMessageType {
-    TEXT
+    TEXT, LEAVE_TEXT, JOIN_TEXT
 }
