@@ -50,5 +50,13 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
             and u.userId = :userId
     """)
     Optional<ChatRoomUser> findWithAllDetails(Long chatRoomId, Long userId);
+    
+    @Query("""
+            select cru
+            from ChatRoomUser cru
+            join fetch cru.user u
+            where cru.chatRoom.chatRoomId = :chatRoomId
+    """)
+    List<ChatRoomUser> findByChatRoomIdWithUser(Long chatRoomId);
 
 }
