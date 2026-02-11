@@ -371,8 +371,9 @@ public class ChatRoomController {
         Claims claims = (Claims)authentication.getPrincipal();
         Long loginUserId = Long.parseLong(claims.getSubject());
 
-        // 채팅방 생성 응답 DTO 생성
-        chatRoomService.leaveChatRoom(loginUserId, requestDto);
+        ChatEvent chatEvent = chatRoomService.leaveChatRoom(loginUserId, requestDto);
+
+        chatService.sendMessage(List.of(chatEvent));
 
         return ResponseEntity
                 .status(HttpStatus.OK)

@@ -277,13 +277,13 @@ public class ChatRoomService {
     
     // 채팅방 나가기
     @Transactional
-    public void leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
+    public ChatEvent leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
     	
     	Long chatRoomId = requestDto.getChatRoomId();
     	Long nextOwnerId = requestDto.getNextOwnerId();
     	
     	// 채팅방이 존재하지 않거나, 채팅방의 유저가 아닐 시 예외
-    	ChatRoomUser chatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoom(chatRoomId, userId)
+    	ChatRoomUser chatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
     			.orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
     	
     	ChatRoom chatRoom = chatRoomUser.getChatRoom(); 
@@ -291,7 +291,6 @@ public class ChatRoomService {
     	// 1대1 채팅방은 생성시 모두 MEMBER
     	// 유저가 OWNER 이라면 단체 채팅방이므로 채팅방의 타입 검사는 필요 x, 권한 양도 필요.
     	if(chatRoomUser.getChatRoomUserRole() == ChatRoomUserRole.OWNER) {
-    		
     		// 나 자신에게 권한을 양도할 수 없음
     		if(userId.equals(nextOwnerId)) {
     			throw new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID);
@@ -315,15 +314,40 @@ public class ChatRoomService {
     		// 권한 양도
     		nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
     		chatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
-    		
-    		// 나가기 처리
-    		chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.LEFT);
-    		
-    	} else {
-    		// 1대1 채팅방, 단체 채팅방에서 일반유저는  ChatRoomUserStatus 수정
-    		chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.LEFT);
     	}
-    	
+
+        // 1대1 채팅방, 단체 채팅방에서 일반유저는  ChatRoomUserStatus 수정
+        chatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.LEFT);
+
+        // 수정사항 flush
+        chatRoomUserRepository.flush();
+
+        // 채팅방별 ChatMessage의 최대 seq 조회
+        Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
+
+        // 메시지 db에 저장
+        User user = chatRoomUser.getUser();
+        ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, user.getUsername() + "가 채팅에서 나갔습니다.", ChatMessageType.LEAVE_TEXT);
+        ChatMessage savedChatMessage = chatMessageRepository.save(chatMessage);
+
+        // 채팅방에 참여중인 인원들 수 조회
+        Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
+
+        ChatEvent chatEvent = ChatEvent.of(
+                chatRoomId,
+                userId,
+                user.getUsername() + "가 채팅에서 나갔습니다.",
+                seq + 1,
+                ChatMessageType.LEAVE_TEXT,
+                savedChatMessage.getCreatedAt(),
+                memberCount
+        );
+
+        // chatRoom 의 lastSeq 증가
+        chatRoomMapper.updateLastSeq(seq + 1, user.getUsername() + "가 채팅에서 나갔습니다.", savedChatMessage.getCreatedAt(), chatRoomId);
+
+        return chatEvent;
+
     }
 
 }
