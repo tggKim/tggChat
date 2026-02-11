@@ -77,7 +77,7 @@ public class ChatService {
                     ChatEvent joinChatEvent = ChatEvent.of(
                             chatRoomId,
                             findChatRoomUser.getUser().getUserId(),
-                            "상대가 채팅에 참여했습니다.",
+                            findUser.getUsername() + "가 채팅에 참여했습니다.",
                             seq + addNumber,
                             ChatMessageType.JOIN_TEXT,
                             savedJoinChatMessage.getCreatedAt(),
