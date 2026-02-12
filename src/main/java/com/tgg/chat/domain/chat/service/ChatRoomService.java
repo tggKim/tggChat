@@ -223,7 +223,7 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_SELF);
         }
 
-        // 요청 유저가 채팅방에 속하면서 방장인지 검사
+        // 요청 유저가 단체 채팅방에 속하면서 방장인지 검사
         // ChatRoomUser가 있다면 ChatRoom도 있는 것이므로 체크하지 않는다.
         if(!chatRoomUserMapper.existsByChatRoomIdAndUserId(chatRoomId, userId)) {
             throw new ErrorException(ErrorCode.CHAT_ROOM_INVITE_PERMISSION_DENIED);
@@ -245,7 +245,6 @@ public class ChatRoomService {
         Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
 
         long addNumber = 1L;
-
         boolean flag = false;
         ChatMessage flagChatMessage = null;
         List<ChatEvent> chatEvents = new ArrayList<>();
@@ -257,22 +256,77 @@ public class ChatRoomService {
         	if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.ACTIVE) {
                 throw new ErrorException(ErrorCode.CHAT_ROOM_INVITE_ALREADY_MEMBER);
             } else {
+                User findUser = findChatRoomUser.getUser();
+
             	findChatRoomUser.setJoinedAt();
             	findChatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.ACTIVE);
             	findChatRoomUser.setLastReadSeq(seq);
             	findChatRoomUser.setHistoryStartSeq(seq);
-                existingFriendIds.add(findChatRoomUser.getUser().getUserId());
-                
-                User findUser = findChatRoomUser.getUser();
+                existingFriendIds.add(findUser.getUserId());
 
                 ChatMessage joinChatMessage = ChatMessage.of(chatRoom, findUser, seq + addNumber, findUser.getUsername() + "가 채팅에 참여했습니다.", ChatMessageType.JOIN_TEXT);
+                ChatMessage savedJoinChatMessage = chatMessageRepository.save(joinChatMessage);
+
+                ChatEvent joinChatEvent = ChatEvent.of(
+                        chatRoom.getChatRoomId(),
+                        findUser.getUserId(),
+                        findUser.getUsername() + "가 채팅에 참여했습니다.",
+                        seq + addNumber,
+                        ChatMessageType.JOIN_TEXT,
+                        savedJoinChatMessage.getCreatedAt(),
+                        memberCount++
+                );
+
+                chatEvents.add(joinChatEvent);
+
+                addNumber++;
+
+                flag = true;
+                flagChatMessage = savedJoinChatMessage;
+            }
+        }
+
+        // 저장해야하는 friendId 들 분류
+        List<Long> insertFriendIds = friendIds.stream()
+                .filter(id -> !existingFriendIds.contains(id))
+                .toList();
+
+        // 저장해야할 friendId가 있으면 실행
+        if(!insertFriendIds.isEmpty()) {
+            // lastReadSeq 수정하고 ChatRoomUser 저장
+            List<ChatRoomUser> newEntities = insertFriendIds.stream()
+                    .map(friendId -> {
+                        ChatRoomUser chatRoomUser = ChatRoomUser.of(
+                                userRepository.getReferenceById(friendId),
+                                chatRoom,
+                                ChatRoomUserRole.MEMBER,
+                                ChatRoomUserStatus.ACTIVE
+                        );
+                        chatRoomUser.setLastReadSeq(seq);
+                        chatRoomUser.setHistoryStartSeq(seq);
+                        return chatRoomUser;
+                    })
+                    .toList();
+            chatRoomUserRepository.saveAll(newEntities);
+
+            Map<Long, String> userNameById = userMapper.getUserNames(insertFriendIds).stream()
+                    .collect(Collectors.toMap(
+                            UserIdUsernameQueryDto::getUserId,
+                            UserIdUsernameQueryDto::getUsername
+                    ));
+
+            for(ChatRoomUser findChatRoomUser : newEntities) {
+                User findUser = findChatRoomUser.getUser();
+                String username = userNameById.get(findUser.getUserId());
+
+                ChatMessage joinChatMessage = ChatMessage.of(chatRoom, findUser, seq + addNumber,  username + "가 채팅에 참여했습니다.", ChatMessageType.JOIN_TEXT);
                 ChatMessage savedJoinChatMessage = chatMessageRepository.save(joinChatMessage);
 
                 // 1대1 채팅방 멤버는 2명이므로 2로 고정
                 ChatEvent joinChatEvent = ChatEvent.of(
                         chatRoom.getChatRoomId(),
-                        findChatRoomUser.getUser().getUserId(),
-                        findUser.getUsername() + "가 채팅에 참여했습니다.",
+                        findUser.getUserId(),
+                        username + "가 채팅에 참여했습니다.",
                         seq + addNumber,
                         ChatMessageType.JOIN_TEXT,
                         savedJoinChatMessage.getCreatedAt(),
@@ -289,64 +343,6 @@ public class ChatRoomService {
         }
         
         if(flag) {
-            // chatRoom 의 lastSeq 수정, addNumber 는 1증감이 필요
-            chatRoomMapper.updateLastSeq(seq + (addNumber - 1) , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), chatRoomId);
-        }
-
-        // 저장해야하는 friendId 들 분류
-        List<Long> insertFriendIds = friendIds.stream()
-                .filter(id -> !existingFriendIds.contains(id))
-                .toList();
-
-        // lastReadSeq 수정하고 ChatRoomUser 저장
-        long currentSeq = seq + (addNumber - 1);
-        List<ChatRoomUser> newEntities = insertFriendIds.stream()
-                .map(friendId -> {
-                    ChatRoomUser chatRoomUser = ChatRoomUser.of(
-                            userRepository.getReferenceById(friendId),
-                            chatRoom,
-                            ChatRoomUserRole.MEMBER,
-                            ChatRoomUserStatus.ACTIVE
-                    );
-                    chatRoomUser.setLastReadSeq(currentSeq);
-                    chatRoomUser.setHistoryStartSeq(currentSeq);
-                    return chatRoomUser;
-                })
-                .toList();
-        chatRoomUserRepository.saveAll(newEntities);
-        
-        Map<Long, String> userNameById = userMapper.getUserNames(insertFriendIds).stream()
-        	      .collect(Collectors.toMap(
-        	          UserIdUsernameQueryDto::getUserId,
-        	          UserIdUsernameQueryDto::getUsername
-        	      ));
-        
-        for(ChatRoomUser findChatRoomUser : newEntities) {
-            User findUser = findChatRoomUser.getUser();
-            String username = userNameById.get(findUser.getUserId());
-
-            ChatMessage joinChatMessage = ChatMessage.of(chatRoom, findUser, seq + addNumber,  username + "가 채팅에 참여했습니다.", ChatMessageType.JOIN_TEXT);
-            ChatMessage savedJoinChatMessage = chatMessageRepository.save(joinChatMessage);
-
-            // 1대1 채팅방 멤버는 2명이므로 2로 고정
-            ChatEvent joinChatEvent = ChatEvent.of(
-                    chatRoom.getChatRoomId(),
-                    findUser.getUserId(),
-                    username + "가 채팅에 참여했습니다.",
-                    seq + addNumber,
-                    ChatMessageType.JOIN_TEXT,
-                    savedJoinChatMessage.getCreatedAt(),
-                    memberCount++
-            );
-
-            chatEvents.add(joinChatEvent);
-
-            addNumber++;
-            
-            flagChatMessage = savedJoinChatMessage;
-        }
-        
-        if(newEntities.size() > 0) {
         	// chatRoom 의 lastSeq 수정, addNumber 는 1증감이 필요
             chatRoomMapper.updateLastSeq(seq + (addNumber - 1) , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), chatRoomId);
         }
