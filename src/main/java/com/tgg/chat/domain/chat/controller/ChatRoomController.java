@@ -307,8 +307,10 @@ public class ChatRoomController {
         Long loginUserId = Long.parseLong(claims.getSubject());
 
         // 채팅방 생성 응답 DTO 생성
-        chatRoomService.inviteUserToChatRoom(loginUserId, requestDto);
+        List<ChatEvent> chatEvents = chatRoomService.inviteUserToChatRoom(loginUserId, requestDto);
 
+        chatService.sendMessage(chatEvents);
+        
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(null);
