@@ -177,7 +177,12 @@ public class ChatRoomController {
         Long loginUserId = Long.parseLong(claims.getSubject());
 
         // 채팅방 생성 응답 DTO 생성
-        CreateGroupChatRoomResponseDto responseDto = chatRoomService.createGroupChatRoom(loginUserId, requestDto);
+        Map<String, Object> payload = chatRoomService.createGroupChatRoom(loginUserId, requestDto);
+
+        CreateGroupChatRoomResponseDto responseDto = (CreateGroupChatRoomResponseDto)payload.get("responseDto");
+        List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
+
+        chatService.sendMessage(chatEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -287,15 +292,7 @@ public class ChatRoomController {
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
                     )
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "이미 채팅방에 참여 중인 사용자가 포함되어 있습니다.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
+            )
     })
     public ResponseEntity<Void> inviteUserToChatRoom(
             Authentication authentication,
@@ -373,9 +370,9 @@ public class ChatRoomController {
         Claims claims = (Claims)authentication.getPrincipal();
         Long loginUserId = Long.parseLong(claims.getSubject());
 
-        ChatEvent chatEvent = chatRoomService.leaveChatRoom(loginUserId, requestDto);
+        List<ChatEvent> chatEvents = chatRoomService.leaveChatRoom(loginUserId, requestDto);
 
-        chatService.sendMessage(List.of(chatEvent));
+        chatService.sendMessage(chatEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
