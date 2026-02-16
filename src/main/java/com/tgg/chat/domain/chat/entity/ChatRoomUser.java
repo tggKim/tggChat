@@ -127,4 +127,13 @@ public class ChatRoomUser {
         this.historyStartSeq = historyStartSeq;
     }
 
+    public void joinChatRoom(
+            Long seq
+    ) {
+        this.joinedAt = LocalDateTime.now();
+        this.chatRoomUserStatus = ChatRoomUserStatus.ACTIVE;
+        this.lastReadSeq = seq;
+        this.historyStartSeq = seq;
+    }
+
 }
