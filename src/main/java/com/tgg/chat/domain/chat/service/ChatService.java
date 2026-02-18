@@ -64,16 +64,16 @@ public class ChatService {
         	// 채팅방별 ChatMessage의 최대 seq 조회
         	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
 
+            List<Long> eventUserIds = chatRoomUserRepository.findAllUserIds(chatRoomId);
+
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
 
-            ChatEventResult chatEventResult = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, chatRoomId, seq);
+            ChatEventResult chatEventResult = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, chatRoomId, seq);
             Long lastSeq = chatEventResult.getLastSeq();
             chatEvents = chatEventResult.getChatEvents();
 
             ChatMessage chatMessage = ChatMessage.of(chatRoom, user, lastSeq + 1, message.getContent(), ChatMessageType.TEXT);
             ChatMessage savedChatMessage = chatMessageRepository.save(chatMessage);
-
-            List<Long> chatRoomUserIds = chatRoomUserRepository.findActiveUserIds(chatRoom.getChatRoomId());
 
             // 1대1 채팅방 멤버는 2명이므로 2로 고정
             ChatEvent chatEvent = ChatEvent.of(
@@ -84,7 +84,7 @@ public class ChatService {
                     ChatMessageType.TEXT,
                     savedChatMessage.getCreatedAt(),
                     2L,
-                    chatRoomUserIds
+                    eventUserIds
             );
             
             chatEvents.add(chatEvent);
@@ -94,6 +94,8 @@ public class ChatService {
         } else {
         	// 채팅방별 ChatMessage의 최대 seq 조회
         	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
+
+            List<Long> eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
         	
         	// 메시지 db에 저장
         	ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
@@ -101,8 +103,6 @@ public class ChatService {
 
         	// 채팅방에 참여중인 인원들 수 조회
             Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
-
-            List<Long> chatRoomUserIds = chatRoomUserRepository.findActiveUserIds(chatRoom.getChatRoomId());
 
             ChatEvent chatEvent = ChatEvent.of(
                     chatRoomId,
@@ -112,7 +112,7 @@ public class ChatService {
                     ChatMessageType.TEXT,
                     savedChatMessage.getCreatedAt(),
                     memberCount,
-                    chatRoomUserIds
+                    eventUserIds
             );
 
             chatEvents.add(chatEvent);
