@@ -37,6 +37,7 @@ public class ChatMessageService {
     @Transactional(propagation = Propagation.REQUIRED)
     public ChatEventResult chatRoomJoinEvent(
             List<ChatRoomUser> insertChatRoomUsers,
+            List<Long> eventUserIds,
             Long chatRoomId,
             Long seq
     ) {
@@ -64,7 +65,7 @@ public class ChatMessageService {
                 // 입장 Message 저장하고 ChatEvent 생성
                 User user = insertChatRoomUser.getUser();
                 String username = userNameById.get(user.getUserId());
-                lastChatMessage = processJoinOrExitEvent(chatRoom, user, username, seq + addNumber, ChatMessageType.JOIN_TEXT, chatEvents);
+                lastChatMessage = processJoinOrExitEvent(chatRoom, user, username, seq + addNumber, ChatMessageType.JOIN_TEXT, chatEvents, eventUserIds);
                 addNumber++;
             }
         }
@@ -75,6 +76,7 @@ public class ChatMessageService {
     @Transactional(propagation = Propagation.REQUIRED)
     public ChatEventResult chatRoomRejoinEvent(
             List<ChatRoomUser> chatRoomUsers,
+            List<Long> eventUserIds,
             Long chatRoomId,
             Long seq
     ) {
@@ -93,7 +95,7 @@ public class ChatMessageService {
 
                 // 입장 Message 저장하고 ChatEvent 생성
                 User findUser = chatRoomUser.getUser();
-                flagChatMessage = processJoinOrExitEvent(chatRoom, findUser, findUser.getUsername(), seq + addNumber, ChatMessageType.JOIN_TEXT, chatEvents);
+                flagChatMessage = processJoinOrExitEvent(chatRoom, findUser, findUser.getUsername(), seq + addNumber, ChatMessageType.JOIN_TEXT, chatEvents, eventUserIds);
                 addNumber++;
             }
         }
@@ -104,6 +106,7 @@ public class ChatMessageService {
     @Transactional(propagation = Propagation.REQUIRED)
     public ChatEventResult processLeaveEvent(
             List<ChatRoomUser> chatRoomUsers,
+            List<Long> eventUserIds,
             Long chatRoomId,
             Long seq
     ) {
@@ -116,12 +119,14 @@ public class ChatMessageService {
         ChatMessage flagChatMessage = null;
 
         for(ChatRoomUser findChatRoomUser : chatRoomUsers) {
-            findChatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.LEFT);
+            if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.ACTIVE) {
+                findChatRoomUser.setChatRoomUserStatus(ChatRoomUserStatus.LEFT);
 
-            // 입장 Message 저장하고 ChatEvent 생성
-            User findUser = findChatRoomUser.getUser();
-            flagChatMessage = processJoinOrExitEvent(chatRoom, findUser, findUser.getUsername(), seq + addNumber, ChatMessageType.LEAVE_TEXT, chatEvents);
-            addNumber++;
+                // 입장 Message 저장하고 ChatEvent 생성
+                User findUser = findChatRoomUser.getUser();
+                flagChatMessage = processJoinOrExitEvent(chatRoom, findUser, findUser.getUsername(), seq + addNumber, ChatMessageType.LEAVE_TEXT, chatEvents, eventUserIds);
+                addNumber++;
+            }
         }
 
         return ChatEventResult.of(chatEvents, seq + (addNumber - 1), flagChatMessage);
@@ -133,7 +138,8 @@ public class ChatMessageService {
             String username,
             Long seq,
             ChatMessageType chatMessageType,
-            List<ChatEvent> chatEvents
+            List<ChatEvent> chatEvents,
+            List<Long> eventUserIds
     ) {
         String content = null;
         if(chatMessageType == ChatMessageType.JOIN_TEXT) {
@@ -145,8 +151,6 @@ public class ChatMessageService {
         ChatMessage joinChatMessage = ChatMessage.of(chatRoom, user, seq, content, chatMessageType);
         ChatMessage savedJoinChatMessage = chatMessageRepository.save(joinChatMessage);
 
-        List<Long> chatRoomUserIds = chatRoomUserRepository.findActiveUserIds(chatRoom.getChatRoomId());
-
         // 참여를 알리는 메시지는 읽음 처리 필요없으므로 0값 보낸다
         ChatEvent chatEvent = ChatEvent.of(
                 chatRoom.getChatRoomId(),
@@ -156,7 +160,7 @@ public class ChatMessageService {
                 chatMessageType,
                 savedJoinChatMessage.getCreatedAt(),
                 0L,
-                chatRoomUserIds
+                eventUserIds
         );
 
         chatEvents.add(chatEvent);
