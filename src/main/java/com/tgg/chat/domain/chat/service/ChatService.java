@@ -65,6 +65,9 @@ public class ChatService {
         	Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
 
             List<Long> eventUserIds = chatRoomUserRepository.findAllUserIds(chatRoomId);
+            if (eventUserIds.size() != 2) {
+                throw new ErrorException(ErrorCode.CHAT_PARTNER_DELETED);
+            }
 
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
 

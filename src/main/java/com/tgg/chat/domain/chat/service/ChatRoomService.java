@@ -75,9 +75,6 @@ public class ChatRoomService {
         User user1 = userRepository.getReferenceById(maxUseId);
         User user2 = userRepository.getReferenceById(minUserId);
 
-        // 메시지 이벤트를 받을 유저 리스트 생성
-        List<Long> eventUserIds = List.of(user1.getUserId(), user2.getUserId());
-
         // 1대1 채팅방을 조회
         Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findByChatRoomTypeAndDirectUser1AndDirectUser2(ChatRoomType.DIRECT, user1, user2);
         CreateDirectChatRoomResponseDto responseDto = null;
@@ -91,6 +88,9 @@ public class ChatRoomService {
             // 채팅방별 ChatMessage의 최대 seq 조회
             // chatRoom에 대한 락 시작
             Long seq = chatRoomMapper.getLastSeqLock(chatRoom.getChatRoomId());
+
+            // 메시지 이벤트를 받을 유저 리스트 생성
+            List<Long> eventUserIds = List.of(user1.getUserId(), user2.getUserId());
 
             // ChatRoom이 방금 생성되었으므로 ChatRoomUser의 중복 검사는 필요없다.
             // ChatRoomUser 생성한다. 1대1 채팅방은 두 유저의 권한이 모두 MEMBER 이다.
@@ -114,6 +114,11 @@ public class ChatRoomService {
             // chatRoom에 대한 락 시작
             Long seq = chatRoomMapper.getLastSeqLock(savedChatRoom.getChatRoomId());
 
+            // 메시지 이벤트를 받을 유저 리스트 생성
+            List<Long> eventUserIds = chatRoomUserRepository.findAllUserIds(savedChatRoom.getChatRoomId());
+            if (eventUserIds.size() != 2) {
+                throw new ErrorException(ErrorCode.CHAT_PARTNER_DELETED);
+            }
 
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(savedChatRoom.getChatRoomId());
 
