@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -27,6 +28,12 @@ public class RedisSubscriber implements MessageListener {
 
             // STOMP 의 /topic/chatRooms/* 경로로 발행한다.
             messagingTemplate.convertAndSend("/topic/chatRooms/" + event.getRoomId(), event);
+
+            // 채팅방 목록에서 구독중인 /user/queue/chatRooms/list 경로로 메시지가 전송되었다는 프레임 보낸다.
+            List<Long> eventUserIds = event.getEventUserIds();
+            eventUserIds.forEach(userId -> {
+                messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/chatRooms/list", event);
+            });
 
         } catch (Exception e) {
             throw new RuntimeException(e);
