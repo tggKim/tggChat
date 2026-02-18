@@ -30,11 +30,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
-    private final ChatRoomMapper chatRoomMapper;
     private final UserMapper userMapper;
-    private final UserRepository userRepository;
-    private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatRoomUserRepository chatRoomUserRepository;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public ChatEventResult chatRoomJoinEvent(
@@ -147,6 +145,8 @@ public class ChatMessageService {
         ChatMessage joinChatMessage = ChatMessage.of(chatRoom, user, seq, content, chatMessageType);
         ChatMessage savedJoinChatMessage = chatMessageRepository.save(joinChatMessage);
 
+        List<Long> chatRoomUserIds = chatRoomUserRepository.findActiveUserIds(chatRoom.getChatRoomId());
+
         // 참여를 알리는 메시지는 읽음 처리 필요없으므로 0값 보낸다
         ChatEvent chatEvent = ChatEvent.of(
                 chatRoom.getChatRoomId(),
@@ -155,7 +155,8 @@ public class ChatMessageService {
                 seq,
                 chatMessageType,
                 savedJoinChatMessage.getCreatedAt(),
-                0L
+                0L,
+                chatRoomUserIds
         );
 
         chatEvents.add(chatEvent);

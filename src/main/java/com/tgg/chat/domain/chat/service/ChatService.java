@@ -73,6 +73,8 @@ public class ChatService {
             ChatMessage chatMessage = ChatMessage.of(chatRoom, user, lastSeq + 1, message.getContent(), ChatMessageType.TEXT);
             ChatMessage savedChatMessage = chatMessageRepository.save(chatMessage);
 
+            List<Long> chatRoomUserIds = chatRoomUserRepository.findActiveUserIds(chatRoom.getChatRoomId());
+
             // 1대1 채팅방 멤버는 2명이므로 2로 고정
             ChatEvent chatEvent = ChatEvent.of(
                     chatRoomId,
@@ -81,7 +83,8 @@ public class ChatService {
                     lastSeq + 1,
                     ChatMessageType.TEXT,
                     savedChatMessage.getCreatedAt(),
-                    2L
+                    2L,
+                    chatRoomUserIds
             );
             
             chatEvents.add(chatEvent);
@@ -99,6 +102,8 @@ public class ChatService {
         	// 채팅방에 참여중인 인원들 수 조회
             Long memberCount = chatRoomUserMapper.getMemberCount(chatRoomId);
 
+            List<Long> chatRoomUserIds = chatRoomUserRepository.findActiveUserIds(chatRoom.getChatRoomId());
+
             ChatEvent chatEvent = ChatEvent.of(
                     chatRoomId,
                     userId,
@@ -106,7 +111,8 @@ public class ChatService {
                     seq + 1,
                     ChatMessageType.TEXT,
                     savedChatMessage.getCreatedAt(),
-                    memberCount
+                    memberCount,
+                    chatRoomUserIds
             );
 
             chatEvents.add(chatEvent);
