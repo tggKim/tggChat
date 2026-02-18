@@ -44,7 +44,8 @@ public enum ErrorCode {
     CANNOT_INVITE_CHAT_ROOM_WITH_SELF(HttpStatus.BAD_REQUEST, "CR007", "자기 자신을 채팅방에 초대할 수 없습니다."),
     CHAT_ROOM_INVITE_PERMISSION_DENIED(HttpStatus.FORBIDDEN, "CR008", "단체 채팅방의 멤버이면서 방장이어야 친구를 초대할 수 있습니다."),
     CHAT_ROOM_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "CR010", "채팅방이 존재하지 않거나, 채팅방의 유저가 아닙니다."),
-    CHAT_ROOM_NEXT_OWNER_INVALID(HttpStatus.BAD_REQUEST, "CR011", "방장을 양도할 수 없는 멤버입니다.");
+    CHAT_ROOM_NEXT_OWNER_INVALID(HttpStatus.BAD_REQUEST, "CR011", "방장을 양도할 수 없는 멤버입니다."),
+    CHAT_PARTNER_DELETED(HttpStatus.NOT_FOUND, "CR0012", "존재하지 않는 대화 상대입니다.");
 
 	private ErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;
