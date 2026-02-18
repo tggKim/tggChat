@@ -30,8 +30,11 @@
 
     <select id="getMemberCount">
         SELECT COUNT(*)
-        FROM chat_room_user
-        WHERE chat_room_id = #{chatRoomId} AND chat_room_user_status = 'ACTIVE'
+        FROM chat_room_user T1
+        INNER JOIN user T2
+        ON T1.user_id = T2.user_id
+        WHERE T1.chat_room_id = #{chatRoomId} AND T1.chat_room_user_status = 'ACTIVE'
+        AND T2.deleted = 0
     </select>
 
 </mapper>
