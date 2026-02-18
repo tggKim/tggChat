@@ -75,6 +75,9 @@ public class ChatRoomService {
         User user1 = userRepository.getReferenceById(maxUseId);
         User user2 = userRepository.getReferenceById(minUserId);
 
+        // 메시지 이벤트를 받을 유저 리스트 생성
+        List<Long> eventUserIds = List.of(user1.getUserId(), user2.getUserId());
+
         // 1대1 채팅방을 조회
         Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findByChatRoomTypeAndDirectUser1AndDirectUser2(ChatRoomType.DIRECT, user1, user2);
         CreateDirectChatRoomResponseDto responseDto = null;
@@ -98,7 +101,7 @@ public class ChatRoomService {
             List<ChatRoomUser> newEntities = List.of(chatRoomUser1, chatRoomUser2);
 
             // 유저들에 대한 입장 메시지 저장하고 전송
-            chatEventResult = chatMessageService.chatRoomJoinEvent(newEntities, savedChatRoom.getChatRoomId(), seq);
+            chatEventResult = chatMessageService.chatRoomJoinEvent(newEntities, eventUserIds, savedChatRoom.getChatRoomId(), seq);
 
             // 응답 DTO 생성
             responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
@@ -111,9 +114,11 @@ public class ChatRoomService {
             // chatRoom에 대한 락 시작
             Long seq = chatRoomMapper.getLastSeqLock(savedChatRoom.getChatRoomId());
 
-            // 유저들에 대한 입장 메시지 저장하고 전송
+
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(savedChatRoom.getChatRoomId());
-            chatEventResult = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, savedChatRoom.getChatRoomId(), seq);
+
+            // 유저들에 대한 입장 메시지 저장하고 전송
+            chatEventResult = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, savedChatRoom.getChatRoomId(), seq);
 
             // 응답 DTO 생성
             responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
@@ -183,7 +188,7 @@ public class ChatRoomService {
         chatRoomUserRepository.saveAll(newEntities);
 
         // friendId들 저장 수행
-        ChatEventResult chatEventResult = chatMessageService.chatRoomJoinEvent(newEntities, savedChatRoom.getChatRoomId(), seq);
+        ChatEventResult chatEventResult = chatMessageService.chatRoomJoinEvent(newEntities, friendIds, savedChatRoom.getChatRoomId(), seq);
         ChatMessage flagChatMessage = chatEventResult.getFlagChatMessage();
         List<ChatEvent> chatEvents = chatEventResult.getChatEvents();
 
@@ -247,9 +252,14 @@ public class ChatRoomService {
         // chatRoom에 대한 락 시작
         Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
 
+        // 채팅방 목록에서 메시지 전송 프레임을 받을 유저id 목록
+        List<Long> eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
+        eventUserIds.addAll(friendIds);
+        eventUserIds = eventUserIds.stream().distinct().toList();
+
         // ChatRoomUser 가 LEFT면 ACTIVE로 수정 후 메시지 저장
         List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdAndFriendIds(chatRoomId, friendIds);
-        ChatEventResult chatEventResult1 = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, chatRoomId, seq);
+        ChatEventResult chatEventResult1 = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, chatRoomId, seq);
         ChatMessage flagChatMessage1 = chatEventResult1.getFlagChatMessage();
         List<ChatEvent> chatEvents1 = chatEventResult1.getChatEvents();
 
@@ -278,7 +288,7 @@ public class ChatRoomService {
         chatRoomUserRepository.saveAll(newEntities);
 
         // friendId들 저장 수행
-        ChatEventResult chatEventResult2 = chatMessageService.chatRoomJoinEvent(newEntities, chatRoomId, chatEventResult1.getLastSeq());
+        ChatEventResult chatEventResult2 = chatMessageService.chatRoomJoinEvent(newEntities, eventUserIds, chatRoomId, chatEventResult1.getLastSeq());
         ChatMessage flagChatMessage2 = chatEventResult2.getFlagChatMessage();
         List<ChatEvent> chatEvents2 = chatEventResult2.getChatEvents();
 
@@ -345,7 +355,9 @@ public class ChatRoomService {
          **/
         Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
 
-        ChatEventResult chatEventResult = chatMessageService.processLeaveEvent(List.of(chatRoomUser), chatRoomId, seq);
+        List<Long> eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
+
+        ChatEventResult chatEventResult = chatMessageService.processLeaveEvent(List.of(chatRoomUser), eventUserIds, chatRoomId, seq);
         List<ChatEvent> chatEvents = chatEventResult.getChatEvents();
         ChatMessage flagChatMessage = chatEventResult.getFlagChatMessage();
 
