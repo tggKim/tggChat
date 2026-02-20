@@ -2,11 +2,13 @@ package com.tgg.chat.domain.chat.service;
 
 import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.domain.chat.dto.internal.ChatEventResult;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomListRowDto;
 import com.tgg.chat.domain.chat.dto.query.UserIdUsernameQueryDto;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
 import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.response.ChatRoomListItemReseponseDto;
 import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
@@ -212,14 +214,15 @@ public class ChatRoomService {
     }
 
     // 채팅방 목록 조회
-    public List<ChatRoomListResponseDto> findAllChatRooms(Long userId) {
-
-        // 채팅방 목록 조회후 응답 DTO로 변환하여 return
-        return chatRoomMapper.findAllChatRoomsByUserId(userId)
-                .stream()
-                .map(ChatRoomListResponseDto::from)
-                .toList();
-
+    public ChatRoomListResponseDto findAllChatRooms(Long userId) {
+    	User user = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+    	
+		List<ChatRoomListItemReseponseDto> chatRooms = chatRoomMapper.findAllChatRoomsByUserId(userId)
+				.stream()
+				.map(ChatRoomListItemReseponseDto::from)
+				.toList();
+		 
+      return ChatRoomListResponseDto.of(userId, user.getUsername(), chatRooms);
     }
 
     // 채팅방 초대

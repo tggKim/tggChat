@@ -206,7 +206,7 @@ public class ChatRoomController {
                     )
             )
     })
-    public ResponseEntity<List<ChatRoomListResponseDto>> findAllChatRooms(
+    public ResponseEntity<ChatRoomListResponseDto> findAllChatRooms(
             Authentication authentication
     ) {
 
@@ -215,7 +215,7 @@ public class ChatRoomController {
         Long loginUserId = Long.parseLong(claims.getSubject());
 
         // 채팅방 목록 응답 DTO 생성
-        List<ChatRoomListResponseDto> responseDto = chatRoomService.findAllChatRooms(loginUserId);
+        ChatRoomListResponseDto responseDto = chatRoomService.findAllChatRooms(loginUserId);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

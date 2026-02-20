@@ -18,8 +18,6 @@ public class ChatRoomListRowDto {
 
     private LocalDateTime lastMessageAt;
 
-    private Long lastMessageSeq;
-
-    private Long lastReadSeq;
+    private Long unreadCount;
 
 }
