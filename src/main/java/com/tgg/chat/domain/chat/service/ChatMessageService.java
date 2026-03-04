@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.tgg.chat.domain.chat.dto.internal.ChatEventResult;
+import com.tgg.chat.domain.chat.dto.query.ChatMessageListRowDto;
 import com.tgg.chat.domain.chat.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tgg.chat.common.redis.pubsub.ChatEvent;
 import com.tgg.chat.common.redis.pubsub.RedisPublisher;
+import com.tgg.chat.domain.chat.dto.request.ChatMessageListRequestDto;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageRequest;
+import com.tgg.chat.domain.chat.dto.response.ChatMessageListResponseDto;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
@@ -28,10 +31,15 @@ import lombok.RequiredArgsConstructor;
 public class ChatMessageService {
 	
     private final RedisPublisher redisPublisher;
+    
     private final ChatRoomUserRepository chatRoomUserRepository;
-    private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomUserMapper chatRoomUserMapper;
+    
+    private final ChatMessageRepository chatMessageRepository;
+    private final ChatMessageMapper chatMessageMapper;
+    
     private final ChatRoomMapper chatRoomMapper;
+    
     private final ChatRoomJoinLeaveService chatRoomJoinLeaveService;
     
     @Transactional
@@ -134,6 +142,16 @@ public class ChatMessageService {
     	chatEvents.forEach(chatEvent -> {
     		redisPublisher.publishChatEvent(chatEvent);
     	});
+    }
+    
+    @Transactional(readOnly = true)
+    public List<ChatMessageListResponseDto> findChatMessages(Long userId, ChatMessageListRequestDto requestDto) {
+    	Long chatRoomId = requestDto.getChatRoomId();
+    	Long offsetSeq = requestDto.getOffsetSeq();
+    	
+    	List<ChatMessageListRowDto> chatMessages = chatMessageMapper.findChatMessages(userId, chatRoomId, offsetSeq);
+    	
+    	return chatMessages.stream().map(ChatMessageListResponseDto::from).toList();
     }
 
 }

@@ -2,4 +2,31 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tgg.chat.domain.chat.repository.ChatMessageMapper">
 
+	<select id="findChatMessages">
+		SELECT 
+			COUNT(T3.chat_room_user_id) AS unreadCount
+		,	T1.seq AS seq
+		,	ANY_VALUE(T1.chat_message_type) AS chatMessageType
+		,	ANY_VALUE(T1.content) AS content
+		,	ANY_VALUE(T1.created_at) AS createdAt
+		FROM chat_message T1
+		INNER JOIN chat_room_user ME
+		ON T1.chat_room_id = ME.chat_room_id
+		AND ME.user_id = #{userId}
+		AND ME.chat_room_user_status = 'ACTIVE'
+		LEFT JOIN chat_room_user T3 
+		ON T1.chat_room_id = T3.chat_room_id 
+		AND T3.chat_room_user_status = 'ACTIVE'
+		AND T3.last_read_seq &lt; T1.seq
+		AND T3.history_start_seq &lt; T1.seq
+		WHERE T1.chat_room_id = #{chatRoomId}
+		AND ME.history_start_seq &lt; T1.seq
+		<if test="offsetSeq != 0">
+			AND T1.seq &lt; #{offsetSeq}
+		</if>
+		GROUP BY T1.seq
+		ORDER BY T1.seq DESC
+		LIMIT 100
+	</select>
+
 </mapper>
