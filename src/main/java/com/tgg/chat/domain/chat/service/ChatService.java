@@ -32,7 +32,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomUserMapper chatRoomUserMapper;
     private final ChatRoomMapper chatRoomMapper;
-    private final ChatMessageService chatMessageService;
+    private final ChatRoomJoinLeaveService chatRoomJoinLeaveService;
     
     @Transactional
     public List<ChatEvent> saveMessage(
@@ -71,7 +71,7 @@ public class ChatService {
 
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
 
-            ChatEventResult chatEventResult = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, chatRoomId, seq);
+            ChatEventResult chatEventResult = chatRoomJoinLeaveService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, chatRoomId, seq);
             Long lastSeq = chatEventResult.getLastSeq();
             chatEvents = chatEventResult.getChatEvents();
 

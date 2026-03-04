@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ChatMessageService {
+public class ChatRoomJoinLeaveService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserMapper userMapper;
     private final ChatRoomRepository chatRoomRepository;

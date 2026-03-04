@@ -52,7 +52,7 @@ public class ChatRoomService {
 
     private final ChatMessageRepository chatMessageRepository;
 
-    private final ChatMessageService chatMessageService;
+    private final ChatRoomJoinLeaveService chatRoomJoinLeaveService;
 
     // 1대1 채팅방 생성
     @Transactional
@@ -103,7 +103,7 @@ public class ChatRoomService {
             List<ChatRoomUser> newEntities = List.of(chatRoomUser1, chatRoomUser2);
 
             // 유저들에 대한 입장 메시지 저장하고 전송
-            chatEventResult = chatMessageService.chatRoomJoinEvent(newEntities, eventUserIds, savedChatRoom.getChatRoomId(), seq);
+            chatEventResult = chatRoomJoinLeaveService.chatRoomJoinEvent(newEntities, eventUserIds, savedChatRoom.getChatRoomId(), seq);
 
             // 응답 DTO 생성
             responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
@@ -125,7 +125,7 @@ public class ChatRoomService {
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(savedChatRoom.getChatRoomId());
 
             // 유저들에 대한 입장 메시지 저장하고 전송
-            chatEventResult = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, savedChatRoom.getChatRoomId(), seq);
+            chatEventResult = chatRoomJoinLeaveService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, savedChatRoom.getChatRoomId(), seq);
 
             // 응답 DTO 생성
             responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
@@ -195,7 +195,7 @@ public class ChatRoomService {
         chatRoomUserRepository.saveAll(newEntities);
 
         // friendId들 저장 수행
-        ChatEventResult chatEventResult = chatMessageService.chatRoomJoinEvent(newEntities, friendIds, savedChatRoom.getChatRoomId(), seq);
+        ChatEventResult chatEventResult = chatRoomJoinLeaveService.chatRoomJoinEvent(newEntities, friendIds, savedChatRoom.getChatRoomId(), seq);
         ChatMessage flagChatMessage = chatEventResult.getFlagChatMessage();
         List<ChatEvent> chatEvents = chatEventResult.getChatEvents();
 
@@ -267,7 +267,7 @@ public class ChatRoomService {
 
         // ChatRoomUser 가 LEFT면 ACTIVE로 수정 후 메시지 저장
         List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdAndFriendIds(chatRoomId, friendIds);
-        ChatEventResult chatEventResult1 = chatMessageService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, chatRoomId, seq);
+        ChatEventResult chatEventResult1 = chatRoomJoinLeaveService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, chatRoomId, seq);
         ChatMessage flagChatMessage1 = chatEventResult1.getFlagChatMessage();
         List<ChatEvent> chatEvents1 = chatEventResult1.getChatEvents();
 
@@ -296,7 +296,7 @@ public class ChatRoomService {
         chatRoomUserRepository.saveAll(newEntities);
 
         // friendId들 저장 수행
-        ChatEventResult chatEventResult2 = chatMessageService.chatRoomJoinEvent(newEntities, eventUserIds, chatRoomId, chatEventResult1.getLastSeq());
+        ChatEventResult chatEventResult2 = chatRoomJoinLeaveService.chatRoomJoinEvent(newEntities, eventUserIds, chatRoomId, chatEventResult1.getLastSeq());
         ChatMessage flagChatMessage2 = chatEventResult2.getFlagChatMessage();
         List<ChatEvent> chatEvents2 = chatEventResult2.getChatEvents();
 
@@ -365,7 +365,7 @@ public class ChatRoomService {
 
         List<Long> eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
 
-        ChatEventResult chatEventResult = chatMessageService.processLeaveEvent(List.of(chatRoomUser), eventUserIds, chatRoomId, seq);
+        ChatEventResult chatEventResult = chatRoomJoinLeaveService.processLeaveEvent(List.of(chatRoomUser), eventUserIds, chatRoomId, seq);
         List<ChatEvent> chatEvents = chatEventResult.getChatEvents();
         ChatMessage flagChatMessage = chatEventResult.getFlagChatMessage();
 
