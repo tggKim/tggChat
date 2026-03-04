@@ -43,7 +43,7 @@ import com.zaxxer.hikari.HikariPoolMXBean;
 class ChatServiceLockTest {
 
     @Autowired
-    private ChatService chatService;
+    private ChatMessageService chatService;
     @Autowired
     private ChatMessageRepository chatMessageRepository;
     @Autowired

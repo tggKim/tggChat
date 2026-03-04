@@ -9,7 +9,7 @@ import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.service.ChatRoomService;
-import com.tgg.chat.domain.chat.service.ChatService;
+import com.tgg.chat.domain.chat.service.ChatMessageService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +38,7 @@ import java.util.Map;
 public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
-    private final ChatService chatService;
+    private final ChatMessageService chatMessageService;
 
     @PostMapping("/directChatRooms")
     @SecurityRequirement(name = "JWT Auth")
@@ -95,7 +95,7 @@ public class ChatRoomController {
         CreateDirectChatRoomResponseDto responseDto = (CreateDirectChatRoomResponseDto)payload.get("responseDto");
         List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
 
-        chatService.sendMessage(chatEvents);
+        chatMessageService.sendMessage(chatEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -182,7 +182,7 @@ public class ChatRoomController {
         CreateGroupChatRoomResponseDto responseDto = (CreateGroupChatRoomResponseDto)payload.get("responseDto");
         List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
 
-        chatService.sendMessage(chatEvents);
+        chatMessageService.sendMessage(chatEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -306,7 +306,7 @@ public class ChatRoomController {
         // 채팅방 생성 응답 DTO 생성
         List<ChatEvent> chatEvents = chatRoomService.inviteUserToChatRoom(loginUserId, requestDto);
 
-        chatService.sendMessage(chatEvents);
+        chatMessageService.sendMessage(chatEvents);
         
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -372,7 +372,7 @@ public class ChatRoomController {
 
         List<ChatEvent> chatEvents = chatRoomService.leaveChatRoom(loginUserId, requestDto);
 
-        chatService.sendMessage(chatEvents);
+        chatMessageService.sendMessage(chatEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

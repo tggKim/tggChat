@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class ChatService {
+public class ChatMessageService {
 	
     private final RedisPublisher redisPublisher;
     private final ChatRoomUserRepository chatRoomUserRepository;

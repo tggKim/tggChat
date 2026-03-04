@@ -4,7 +4,7 @@ import java.security.Principal;
 import java.util.List;
 
 import com.tgg.chat.common.redis.pubsub.ChatEvent;
-import com.tgg.chat.domain.chat.service.ChatService;
+import com.tgg.chat.domain.chat.service.ChatMessageService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final ChatService chatService;
+    private final ChatMessageService chatMessageService;
 	
 	@MessageMapping("/chatRooms/{chatRoomId}/message")
 	public void sendMessage(
@@ -28,9 +28,9 @@ public class ChatController {
 
 		Long userId = Long.parseLong(principal.getName());
 		
-        List<ChatEvent> chatEvents = chatService.saveMessage(userId, chatRoomId, message);
+        List<ChatEvent> chatEvents = chatMessageService.saveMessage(userId, chatRoomId, message);
         
-        chatService.sendMessage(chatEvents);
+        chatMessageService.sendMessage(chatEvents);
 
 	}
 	
