@@ -214,6 +214,7 @@ public class ChatRoomService {
     }
 
     // 채팅방 목록 조회
+    @Transactional(readOnly = true)
     public ChatRoomListResponseDto findAllChatRooms(Long userId) {
     	User user = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
     	

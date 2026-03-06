@@ -6,12 +6,24 @@
         SELECT
                 T2.chat_room_id
             ,   T2.chat_room_type
-            ,   T2.room_name
+            ,   CASE
+            		WHEN T2.chat_room_type = 'DIRECT' AND (T3.deleted = 1 OR T3.user_id IS NULL) THEN '알 수 없음'
+            		WHEN T2.chat_room_type = 'DIRECT' THEN T3.username
+            		ELSE T2.room_name
+            	END	AS room_name
             ,   T2.last_message_preview
             ,   T2.last_message_at
             ,	T2.last_message_seq - T1.last_read_seq AS unread_count
         FROM chat_room_user T1
-        INNER JOIN chat_room T2 ON T1.chat_room_id = T2.chat_room_id
+        INNER JOIN chat_room T2 
+        	ON T1.chat_room_id = T2.chat_room_id
+        LEFT JOIN user T3
+       		ON T2.chat_room_type = 'DIRECT' 
+       		AND (
+       			(T3.user_id = T2.direct_user1_id AND T2.direct_user2_id = #{userId}) 
+       			OR 
+       			(T3.user_id = T2.direct_user2_id AND T2.direct_user1_id = #{userId})
+       		)
         WHERE T1.user_id = #{userId}
         AND T1.chat_room_user_status = 'ACTIVE'
         ORDER BY T2.last_message_at DESC
