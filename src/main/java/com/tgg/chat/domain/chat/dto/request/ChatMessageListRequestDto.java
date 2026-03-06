@@ -13,7 +13,7 @@ public class ChatMessageListRequestDto {
     @NotNull(message = "chatRoomId 은 필수입니다.")
     private Long chatRoomId;
     
-    @Schema(description = "메시지 조회 기준 offset", example = "1")
+    @Schema(description = "메시지 조회 기준 offset, 기본값은 0 전달", example = "1")
     @NotNull(message = "offsetSeq 은 필수입니다.")
     private Long offsetSeq;
 }
