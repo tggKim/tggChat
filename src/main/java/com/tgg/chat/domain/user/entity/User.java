@@ -49,7 +49,6 @@ public class User {
 
     public static User of(String email, String password, String username) {
         return new User(email, password, username, false);
-    
     }
 
     public void deleteUser() {
