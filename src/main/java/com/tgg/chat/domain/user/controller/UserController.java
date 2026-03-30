@@ -54,7 +54,7 @@ public class UserController {
 				)
 		),
 		@ApiResponse(
-				responseCode = "403", 
+				responseCode = "409",
 				description = "중복된 이메일",
 				content = @Content(
 					mediaType = "application/json",
@@ -62,7 +62,7 @@ public class UserController {
 				)
 		),
         @ApiResponse(
-                responseCode = "403",
+                responseCode = "409",
                 description = "중복된 유저명",
                 content = @Content(
                         mediaType = "application/json",
