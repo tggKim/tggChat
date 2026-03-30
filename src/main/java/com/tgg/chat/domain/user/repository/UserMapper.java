@@ -12,7 +12,7 @@ public interface UserMapper {
 	
 	User findByEmail(String email);
 	
-	User findById(Long id);
+	User findById(Long userId);
 	
 	User findByUsername(String username);
 
