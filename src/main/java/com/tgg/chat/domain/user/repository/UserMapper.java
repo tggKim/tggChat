@@ -20,8 +20,6 @@ public interface UserMapper {
 	
 	boolean existsByUsername(String username);
 	
-	int countActiveUsersByIds(List<Long> userIds);
-	
 	List<UserIdUsernameQueryDto> getUserNames(List<Long> userIds);
 	
 }
