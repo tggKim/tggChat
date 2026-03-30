@@ -60,7 +60,15 @@ public class UserController {
 					mediaType = "application/json",
 					schema = @Schema(implementation = ErrorResponse.class)
 				)
-		)
+		),
+        @ApiResponse(
+                responseCode = "403",
+                description = "중복된 유저명",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        )    
 	})
 	public ResponseEntity<SignUpResponseDto> signUpUser(@RequestBody @Valid SignUpRequestDto signUpRequestDto) {
 		
