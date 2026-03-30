@@ -2,6 +2,7 @@ package com.tgg.chat.domain.chat.dto.response;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomListRowDto;
 import com.tgg.chat.domain.chat.enums.ChatRoomType;
 
@@ -23,6 +24,7 @@ public class ChatRoomListItemReseponseDto {
     @Schema(description = "마지막 메시지 미리보기", example = "안녕하세요")
     private final String lastMessagePreview;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "마지막 메시지 시각")
     private final LocalDateTime lastMessageAt;
 
