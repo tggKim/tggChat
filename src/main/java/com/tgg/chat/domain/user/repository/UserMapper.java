@@ -10,8 +10,6 @@ import com.tgg.chat.domain.user.entity.User;
 @Mapper
 public interface UserMapper {
 	
-	User findByEmail(String email);
-	
 	User findById(Long userId);
 	
 	User findByUsername(String username);

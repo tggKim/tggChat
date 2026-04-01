@@ -5,7 +5,9 @@ import org.springframework.stereotype.Repository;
 
 import com.tgg.chat.domain.user.entity.User;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>{
-
+    public Optional<User> findByEmail(String email);
 }

@@ -34,10 +34,11 @@ public class AuthService {
 	
 	// 로그인
 	public TokenPair login(LoginRequestDto loginRequestDto) {
-		
-		User findUser = userMapper.findByEmail(loginRequestDto.getEmail());
 
-		if(findUser == null || findUser.getDeleted()) {
+        User findUser = userRepository.findByEmail(loginRequestDto.getEmail())
+                .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+		if(findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
 		}
 		
@@ -58,12 +59,13 @@ public class AuthService {
 	
 	// 로그인 여부 확인
 	public LoginStatusResponseDto isLoggedIn(LoginStatusRequestDto loginStatusRequestDto) {
-		
-		User findUser = userMapper.findByEmail(loginStatusRequestDto.getEmail());
-		
-		if(findUser == null || findUser.getDeleted()) {
-			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-		}
+
+        User findUser = userRepository.findByEmail(loginStatusRequestDto.getEmail())
+                .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
 		
 		String refreshToken = redisUtils.getRefreshToken(findUser.getUserId());
 		
