@@ -58,11 +58,9 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 			}
 
 			String jwtString = bearerString.substring(7);
-
-			jwtUtils.validateToken(jwtString);
 			
 			// claims 추출
-			Claims claims = jwtUtils.getClaims(jwtString);
+			Claims claims = jwtUtils.parseClaims(jwtString);
 			
 			// 레디스에 저장된 accessToken 과 비교
 			Long userId = Long.parseLong(claims.getSubject());

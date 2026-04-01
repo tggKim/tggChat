@@ -91,10 +91,8 @@ public class AuthService {
 
 	// 토큰 재발급
 	public TokenPair refresh(String refreshToken) {
+		Claims claims = jwtUtils.parseClaims(refreshToken);
 
-		jwtUtils.validateToken(refreshToken);
-
-		Claims claims = jwtUtils.getClaims(refreshToken);
 		Long userId = Long.parseLong(claims.getSubject());
 
 		String findRefreshToken = redisUtils.getRefreshToken(userId);
@@ -116,8 +114,8 @@ public class AuthService {
 	
 	private void storeTokenSet(Long userId, String accessToken, String refreshToken) {
 
-		Claims accessTokenClaims = jwtUtils.getClaims(accessToken);
-		Claims refreshTokenClaims = jwtUtils.getClaims(refreshToken);
+		Claims accessTokenClaims = jwtUtils.parseClaims(accessToken);
+		Claims refreshTokenClaims = jwtUtils.parseClaims(refreshToken);
 		
 		Long accessTokenExpireTime = accessTokenClaims.getExpiration().getTime();
 		Long refreshTokenExpireTime = refreshTokenClaims.getExpiration().getTime();
