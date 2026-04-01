@@ -113,13 +113,13 @@ public class AuthService {
 		Claims accessTokenClaims = jwtUtils.parseClaims(accessToken);
 		Claims refreshTokenClaims = jwtUtils.parseClaims(refreshToken);
 		
-		Long accessTokenExpireTime = accessTokenClaims.getExpiration().getTime();
-		Long refreshTokenExpireTime = refreshTokenClaims.getExpiration().getTime();
+		long accessTokenExpireTime = accessTokenClaims.getExpiration().getTime();
+		long refreshTokenExpireTime = refreshTokenClaims.getExpiration().getTime();
 		
-		Long currentTime = System.currentTimeMillis();
+		long currentTime = System.currentTimeMillis();
 		
-		Long accessTokenTTL = accessTokenExpireTime - currentTime;
-		Long refreshTokenTTL = refreshTokenExpireTime - currentTime;
+		long accessTokenTTL = accessTokenExpireTime - currentTime;
+		long refreshTokenTTL = refreshTokenExpireTime - currentTime;
 		
 		redisUtils.saveAccessToken(userId , accessToken, accessTokenTTL);
 		redisUtils.saveRefreshToken(userId, refreshToken, refreshTokenTTL);
