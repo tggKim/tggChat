@@ -2,6 +2,7 @@ package com.tgg.chat.common.jwt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,64 +27,52 @@ import io.jsonwebtoken.security.SignatureException;
 public class JwtUtils {
 	
 	// 비밀키 생성
-	private final Key SECREAT_KEY;
+	private final Key SECRET_KEY;
 
 	public JwtUtils(@Value("${JWT_SECRET_KEY}") String jwtSecretKey) {
-		SECREAT_KEY = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
+        SECRET_KEY = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
 	}
 	
-	// accessToken, refreshToekn 유효기간 설정
-	private static final Long ACCESS_TOKEN_MILLIS = 30 * 60 * 1000L;
-	private static final Long REFRESH_TOKEN_MILLS = 7 * 24 * 60 * 60 * 1000L;
-	
-	public String createAccessToken(User user) {
-		
-		Date now = new Date();
-		Date expiration = new Date(now.getTime() + ACCESS_TOKEN_MILLIS);
-		
-		Map<String, Object> claims = new HashMap<>();
-		claims.put("email", user.getEmail());
-		claims.put("username", user.getUsername());
-		
-		String subject = String.valueOf(user.getUserId());
-		
-		return Jwts.builder()
-			.setHeaderParam("typ", "JWT")
-			.setClaims(claims)
-			.setSubject(subject)
-			.setIssuedAt(now)
-			.setExpiration(expiration)
-			.signWith(SECREAT_KEY, SignatureAlgorithm.HS256)
-			.compact();
-		
-	}
-	
-	public String createRefreshToken(User user) {
-		
-		Date now = new Date();
-		Date expiration = new Date(now.getTime() + REFRESH_TOKEN_MILLS);
-		
-		Map<String, Object> claims = new HashMap<>();
-		claims.put("email", user.getEmail());
-		claims.put("username", user.getUsername());
-		
-		String subject = String.valueOf(user.getUserId());
-		
-		return Jwts.builder()
-			.setHeaderParam("typ", "JWT")
-			.setClaims(claims)
-			.setSubject(subject)
-			.setIssuedAt(now)
-			.setExpiration(expiration)
-			.signWith(SECREAT_KEY, SignatureAlgorithm.HS256)
-			.compact();
-		
-	}
+	// accessToken, refreshToken 유효기간 설정
+    private static final long ACCESS_TOKEN_MILLIS = Duration.ofMinutes(30).toMillis();
+    private static final long REFRESH_TOKEN_MILLIS = Duration.ofDays(7).toMillis();
+
+    public String createAccessToken(User user) {
+        return createToken(user, ACCESS_TOKEN_MILLIS);
+    }
+
+    public String createRefreshToken(User user) {
+        return createToken(user, REFRESH_TOKEN_MILLIS);
+    }
+
+    private String createToken(User user, long ttlMillis) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + ttlMillis);
+
+        String userId = String.valueOf(user.getUserId());
+        Map<String, Object> claims = buildClaims(user);
+
+        return Jwts.builder()
+                .setHeaderParam("typ", "JWT")
+                .setClaims(claims)
+                .setSubject(userId)
+                .setIssuedAt(now)
+                .setExpiration(expiration)
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    private Map<String, Object> buildClaims(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", user.getEmail());
+        claims.put("username", user.getUsername());
+        return claims;
+    }
 
     public Claims parseClaims(String token) {
         try {
             return Jwts.parserBuilder()
-                    .setSigningKey(SECREAT_KEY)
+                    .setSigningKey(SECRET_KEY)
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
