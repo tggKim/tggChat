@@ -3,7 +3,7 @@ package com.tgg.chat.domain.chat.controller;
 import java.security.Principal;
 import java.util.List;
 
-import com.tgg.chat.common.redis.pubsub.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.domain.chat.service.ChatMessageService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;

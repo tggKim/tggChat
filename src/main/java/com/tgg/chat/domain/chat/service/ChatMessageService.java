@@ -9,8 +9,8 @@ import com.tgg.chat.domain.chat.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tgg.chat.common.redis.pubsub.ChatEvent;
-import com.tgg.chat.common.redis.pubsub.RedisPublisher;
+import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageListRequestDto;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageRequest;
 import com.tgg.chat.domain.chat.dto.response.ChatMessageListResponseDto;

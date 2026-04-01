@@ -1,21 +1,18 @@
 package com.tgg.chat.domain.chat.service;
 
-import com.tgg.chat.common.redis.pubsub.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.domain.chat.dto.internal.ChatEventResult;
 import com.tgg.chat.domain.chat.dto.query.UserIdUsernameQueryDto;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
 import com.tgg.chat.domain.chat.enums.ChatMessageType;
-import com.tgg.chat.domain.chat.enums.ChatRoomUserRole;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
 import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
-import com.tgg.chat.domain.chat.repository.ChatRoomMapper;
 import com.tgg.chat.domain.chat.repository.ChatRoomRepository;
 import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
-import com.tgg.chat.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;

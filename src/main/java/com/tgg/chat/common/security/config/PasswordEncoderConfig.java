@@ -1,4 +1,4 @@
-package com.tgg.chat.common.config;
+package com.tgg.chat.common.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

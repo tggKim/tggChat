@@ -1,7 +1,8 @@
-package com.tgg.chat.common.stomp;
+package com.tgg.chat.common.messaging.stomp;
 
 import java.security.Principal;
 
+import com.tgg.chat.common.messaging.principal.StompPrincipal;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -10,8 +11,8 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
-import com.tgg.chat.common.jwt.JwtUtils;
-import com.tgg.chat.common.redis.RedisUtils;
+import com.tgg.chat.common.security.jwt.JwtUtils;
+import com.tgg.chat.common.messaging.redis.RedisUtils;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 

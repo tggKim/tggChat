@@ -1,9 +1,7 @@
 package com.tgg.chat.domain.chat.service;
 
-import com.tgg.chat.common.redis.pubsub.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.domain.chat.dto.internal.ChatEventResult;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomListRowDto;
-import com.tgg.chat.domain.chat.dto.query.UserIdUsernameQueryDto;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -15,7 +13,6 @@ import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
-import com.tgg.chat.domain.chat.enums.ChatMessageType;
 import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserRole;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
@@ -30,7 +27,6 @@ import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,4 +1,4 @@
-package com.tgg.chat.common.config;
+package com.tgg.chat.common.swagger.config;
 
 import org.springframework.context.annotation.Configuration;
 

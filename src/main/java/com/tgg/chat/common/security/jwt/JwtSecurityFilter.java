@@ -1,24 +1,17 @@
-package com.tgg.chat.common.filter;
+package com.tgg.chat.common.security.jwt;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tgg.chat.common.jwt.JwtUtils;
-import com.tgg.chat.common.redis.RedisUtils;
-import com.tgg.chat.common.security.SecurityWhitelist;
+import com.tgg.chat.common.messaging.redis.RedisUtils;
+import com.tgg.chat.common.security.config.SecurityWhitelist;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import com.tgg.chat.exception.ErrorResponse;

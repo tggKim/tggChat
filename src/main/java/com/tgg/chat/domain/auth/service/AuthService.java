@@ -1,18 +1,14 @@
 package com.tgg.chat.domain.auth.service;
 
-import com.tgg.chat.domain.auth.dto.request.RefreshRequestDto;
-import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.SignatureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.tgg.chat.common.jwt.JwtUtils;
-import com.tgg.chat.common.redis.RedisUtils;
+import com.tgg.chat.common.security.jwt.JwtUtils;
+import com.tgg.chat.common.messaging.redis.RedisUtils;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
-import com.tgg.chat.domain.auth.dto.response.LoginResponseDto;
 import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;

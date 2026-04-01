@@ -1,9 +1,8 @@
-package com.tgg.chat.common.security;
+package com.tgg.chat.common.security.config;
 
 import java.util.List;
 
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
 
 import lombok.Getter;
 

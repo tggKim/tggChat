@@ -1,8 +1,7 @@
-package com.tgg.chat.common.redis.pubsub;
+package com.tgg.chat.common.messaging.event;
 
 import com.tgg.chat.domain.chat.enums.ChatMessageType;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;

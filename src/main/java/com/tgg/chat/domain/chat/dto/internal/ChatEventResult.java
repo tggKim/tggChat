@@ -1,6 +1,6 @@
 package com.tgg.chat.domain.chat.dto.internal;
 
-import com.tgg.chat.common.redis.pubsub.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import lombok.Getter;
 

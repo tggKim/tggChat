@@ -1,4 +1,4 @@
-package com.tgg.chat.common.stomp;
+package com.tgg.chat.common.messaging.principal;
 
 import java.security.Principal;
 

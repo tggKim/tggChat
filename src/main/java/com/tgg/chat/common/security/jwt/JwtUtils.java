@@ -1,4 +1,4 @@
-package com.tgg.chat.common.jwt;
+package com.tgg.chat.common.security.jwt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;

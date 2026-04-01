@@ -1,7 +1,7 @@
-package com.tgg.chat.common.redis.pubsub;
+package com.tgg.chat.common.messaging.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tgg.chat.exception.ErrorException;
+import com.tgg.chat.common.messaging.event.ChatEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;

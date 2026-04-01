@@ -1,4 +1,4 @@
-package com.tgg.chat.common.stomp;
+package com.tgg.chat.common.messaging.stomp;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;

@@ -1,6 +1,6 @@
 package com.tgg.chat.domain.chat.controller;
 
-import com.tgg.chat.common.redis.pubsub.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;

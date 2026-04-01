@@ -1,13 +1,12 @@
-package com.tgg.chat.common.config;
+package com.tgg.chat.common.messaging.config;
 
-import com.tgg.chat.common.redis.pubsub.RedisSubscriber;
+import com.tgg.chat.common.messaging.redis.RedisSubscriber;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration

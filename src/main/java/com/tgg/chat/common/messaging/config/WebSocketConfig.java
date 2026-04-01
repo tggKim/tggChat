@@ -1,7 +1,7 @@
-package com.tgg.chat.common.config;
+package com.tgg.chat.common.messaging.config;
 
-import com.tgg.chat.common.stomp.JwtChannelInterceptor;
-import com.tgg.chat.common.stomp.StompErrorHandler;
+import com.tgg.chat.common.messaging.stomp.JwtChannelInterceptor;
+import com.tgg.chat.common.messaging.stomp.StompErrorHandler;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
