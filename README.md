@@ -21,12 +21,13 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
  
 <summary>유저 관리</summary>
 
-### 유저 생성
+### 유저 생성(POST /user)
 1. 요청값 검증
 2. 이메일 중복 검사
 3. 유저명 중복 검사
 4. 비밀번호 인코딩
 5. 유저 저장
+6. 저장된 유저 정보 응답
 
 ### 타 유저 조회
 
@@ -47,6 +48,13 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 <details>
  
 <summary>인증/인가</summary>
+
+### 로그인(POST /login)
+1. 요청값 검증
+2. 이메일로 사용자 조회 후 존재/탈퇴 여부 확인
+3. 비밀번호 일치 검증
+4. AccessToken/RefreshToken 발급 후 Redis에 저장
+5. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
 </details>
 
