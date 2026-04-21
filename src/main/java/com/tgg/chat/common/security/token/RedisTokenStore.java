@@ -16,12 +16,12 @@ public class RedisTokenStore {
 	private static final String AT_PREFIX = "AT:";
 	private static final String RT_PREFIX = "RT:";
 	
-	public void saveAccessToken(Long userId, String accessToken, Long ttlMilliseconds) {
+	public void saveAccessToken(Long userId, String accessToken, long ttlMilliseconds) {
 		String key = createAccessTokenKey(userId);
 		redisTemplate.opsForValue().set(key, accessToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
 	}
 	
-	public void saveRefreshToken(Long userId, String refreshToken, Long ttlMilliseconds) {	
+	public void saveRefreshToken(Long userId, String refreshToken, long ttlMilliseconds) {	
 		String key = createRefreshTokenKey(userId);	
 		redisTemplate.opsForValue().set(key, refreshToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
 	}

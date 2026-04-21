@@ -28,7 +28,6 @@ public class JwtUtils {
 	
 	// 비밀키 생성
 	private final Key SECRET_KEY;
-
 	public JwtUtils(@Value("${JWT_SECRET_KEY}") String jwtSecretKey) {
         SECRET_KEY = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
 	}
@@ -91,4 +90,10 @@ public class JwtUtils {
         }
     }
 	
+    public long getAccessTokenTtlMillis() {
+        return ACCESS_TOKEN_MILLIS;
+    }
+    public long getRefreshTokenTtlMillis() {
+        return REFRESH_TOKEN_MILLIS;
+    }
 }

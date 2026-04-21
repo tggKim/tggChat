@@ -93,21 +93,11 @@ public class AuthService {
 	}
 	
 	private void storeTokenSet(Long userId, String accessToken, String refreshToken) {
-
-		Claims accessTokenClaims = jwtUtils.parseClaims(accessToken);
-		Claims refreshTokenClaims = jwtUtils.parseClaims(refreshToken);
-		
-		long accessTokenExpireTime = accessTokenClaims.getExpiration().getTime();
-		long refreshTokenExpireTime = refreshTokenClaims.getExpiration().getTime();
-		
-		long currentTime = System.currentTimeMillis();
-		
-		long accessTokenTTL = accessTokenExpireTime - currentTime;
-		long refreshTokenTTL = refreshTokenExpireTime - currentTime;
+		long accessTokenTTL = jwtUtils.getAccessTokenTtlMillis();
+		long refreshTokenTTL = jwtUtils.getRefreshTokenTtlMillis();
 		
 		redisTokenStore.saveAccessToken(userId , accessToken, accessTokenTTL);
 		redisTokenStore.saveRefreshToken(userId, refreshToken, refreshTokenTTL);
-		
 	}
 	
 }
