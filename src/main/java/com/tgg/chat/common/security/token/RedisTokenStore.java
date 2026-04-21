@@ -17,19 +17,13 @@ public class RedisTokenStore {
 	private static final String RT_PREFIX = "RT:";
 	
 	public void saveAccessToken(Long userId, String accessToken, Long ttlMilliseconds) {
-		
 		String key = createAccessTokenKey(userId);
-		
 		redisTemplate.opsForValue().set(key, accessToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
-		
 	}
 	
-	public void saveRefreshToken(Long userId, String refreshToken, Long ttlMilliseconds) {
-		
-		String key = createRefreshTokenKey(userId);
-		
+	public void saveRefreshToken(Long userId, String refreshToken, Long ttlMilliseconds) {	
+		String key = createRefreshTokenKey(userId);	
 		redisTemplate.opsForValue().set(key, refreshToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
-		
 	}
 
 	public boolean matchesAccessToken(Long userId, String accessToken) {
@@ -59,36 +53,21 @@ public class RedisTokenStore {
 		return true;
 	}
 	
-	public void deleteAccessToken(Long userId) {
-		
-		String key = createAccessTokenKey(userId);
-		
-		redisTemplate.delete(key);
-		
-	}
-	
-	public void deleteRefreshToken(Long userId) {
-		
-		String key = createRefreshTokenKey(userId);
-		
-		redisTemplate.delete(key);
-		
+	public void deleteUserTokenSets(Long userId) {
+		String accessTokenKey = createAccessTokenKey(userId);
+		String refreshTokenKey = createRefreshTokenKey(userId);
+		redisTemplate.delete(accessTokenKey);
+		redisTemplate.delete(refreshTokenKey);
 	}
 	
 	private String createAccessTokenKey(Long userId) {
-		
 		String key = AT_PREFIX + userId;	
-		
 		return key;
-		
 	}
 	
 	private String createRefreshTokenKey(Long userId) {
-		
 		String key = RT_PREFIX + userId;	
-		
 		return key;
-		
 	}
 	
 }

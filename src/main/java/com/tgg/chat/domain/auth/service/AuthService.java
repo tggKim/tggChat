@@ -69,10 +69,7 @@ public class AuthService {
 	
 	// 로그아웃
 	public void logout(Long userId) {
-		
-		redisTokenStore.deleteAccessToken(userId);
-		redisTokenStore.deleteRefreshToken(userId);
-		
+		redisTokenStore.deleteUserTokenSets(userId);
 	}
 
 	// 토큰 재발급

@@ -91,7 +91,6 @@ public class UserService {
 
 	@Transactional
 	public void deleteUser(Long loginUserId, Long userId) {
-
 		if(!loginUserId.equals(userId)) {
 			throw new ErrorException(ErrorCode.FORBIDDEN_USER_ACCESS);
 		}
@@ -105,9 +104,7 @@ public class UserService {
 		findUser.deleteUser();
 		
 		// 레디스에서 AccessToken, RefreshToken 제거
-		redisTokenStore.deleteAccessToken(findUser.getUserId());
-		redisTokenStore.deleteRefreshToken(findUser.getUserId());
-
+		redisTokenStore.deleteUserTokenSets(userId);
 	}
 	
 }
