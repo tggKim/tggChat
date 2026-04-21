@@ -12,7 +12,7 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
 import com.tgg.chat.common.security.jwt.JwtUtils;
-import com.tgg.chat.common.security.token.RedisUtils;
+import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 
@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtChannelInterceptor implements ChannelInterceptor {
 
 	private final JwtUtils jwtUtils;
-	private final RedisUtils redisUtils;
+	private final RedisTokenStore redisUtils;
 	
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {

@@ -11,7 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.config.SecurityWhitelist;
-import com.tgg.chat.common.security.token.RedisUtils;
+import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import com.tgg.chat.exception.ErrorResponse;
@@ -32,7 +32,7 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 	private final JwtUtils jwtUtils;
 	private final ObjectMapper objectMapper;
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
-	private final RedisUtils redisUtils;
+	private final RedisTokenStore redisUtils;
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

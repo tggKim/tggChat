@@ -6,7 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.tgg.chat.common.security.jwt.JwtUtils;
-import com.tgg.chat.common.security.token.RedisUtils;
+import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
@@ -26,7 +26,7 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
-	private final RedisUtils redisUtils;
+	private final RedisTokenStore redisUtils;
 	
 	// 로그인
 	public TokenPair login(LoginRequestDto loginRequestDto) {
