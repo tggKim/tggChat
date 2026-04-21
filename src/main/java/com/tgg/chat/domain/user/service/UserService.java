@@ -25,7 +25,7 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
-	private final RedisTokenStore redisUtils;
+	private final RedisTokenStore redisTokenStore;
 	
 	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
@@ -105,8 +105,8 @@ public class UserService {
 		findUser.deleteUser();
 		
 		// 레디스에서 AccessToken, RefreshToken 제거
-		redisUtils.deleteAccessToken(findUser.getUserId());
-		redisUtils.deleteRefreshToken(findUser.getUserId());
+		redisTokenStore.deleteAccessToken(findUser.getUserId());
+		redisTokenStore.deleteRefreshToken(findUser.getUserId());
 
 	}
 	

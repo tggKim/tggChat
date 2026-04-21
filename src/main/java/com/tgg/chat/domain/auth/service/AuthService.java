@@ -26,7 +26,7 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
-	private final RedisTokenStore redisUtils;
+	private final RedisTokenStore redisTokenStore;
 	
 	// 로그인
 	public TokenPair login(LoginRequestDto loginRequestDto) {
@@ -63,7 +63,7 @@ public class AuthService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 		
-		String refreshToken = redisUtils.getRefreshToken(findUser.getUserId());
+		String refreshToken = redisTokenStore.getRefreshToken(findUser.getUserId());
 		
 		boolean isLoggedIn;
 		
@@ -80,8 +80,8 @@ public class AuthService {
 	// 로그아웃
 	public void logout(Long userId) {
 		
-		redisUtils.deleteAccessToken(userId);
-		redisUtils.deleteRefreshToken(userId);
+		redisTokenStore.deleteAccessToken(userId);
+		redisTokenStore.deleteRefreshToken(userId);
 		
 	}
 
@@ -91,7 +91,7 @@ public class AuthService {
 
 		Long userId = Long.parseLong(claims.getSubject());
 
-		String findRefreshToken = redisUtils.getRefreshToken(userId);
+		String findRefreshToken = redisTokenStore.getRefreshToken(userId);
 		// RefreshToken 이 존재하지 않거나 유효하지 않으면 예외처리
 		if(findRefreshToken == null || !findRefreshToken.equals(refreshToken)) {
 			throw new ErrorException(ErrorCode.JWT_INVALID_REFRESH_TOKEN);
@@ -121,8 +121,8 @@ public class AuthService {
 		long accessTokenTTL = accessTokenExpireTime - currentTime;
 		long refreshTokenTTL = refreshTokenExpireTime - currentTime;
 		
-		redisUtils.saveAccessToken(userId , accessToken, accessTokenTTL);
-		redisUtils.saveRefreshToken(userId, refreshToken, refreshTokenTTL);
+		redisTokenStore.saveAccessToken(userId , accessToken, accessTokenTTL);
+		redisTokenStore.saveRefreshToken(userId, refreshToken, refreshTokenTTL);
 		
 	}
 	

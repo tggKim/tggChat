@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtChannelInterceptor implements ChannelInterceptor {
 
 	private final JwtUtils jwtUtils;
-	private final RedisTokenStore redisUtils;
+	private final RedisTokenStore redisTokenStore;
 	
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -51,7 +51,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 			
 			// 레디스에 저장된 accessToken 과 비교
 			Long userId = Long.parseLong(claims.getSubject());
-			String redisAccessToken = redisUtils.getAccessToken(userId);
+			String redisAccessToken = redisTokenStore.getAccessToken(userId);
 			if(redisAccessToken == null || !redisAccessToken.equals(jwtString)) {
 				throw new ErrorException(ErrorCode.ACCESS_TOKEN_MISMATCH);
 			}
