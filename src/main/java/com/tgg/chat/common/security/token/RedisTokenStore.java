@@ -43,12 +43,20 @@ public class RedisTokenStore {
 		return true;
 	}
 	
-	public String getRefreshToken(Long userId) {
-		
+	public boolean hasRefreshToken(Long userId) {
 		String key = createRefreshTokenKey(userId);	
+		String redisRefreshToken = redisTemplate.opsForValue().get(key);
+		return redisRefreshToken != null ? true : false;
+	}
+	
+	public boolean matchesRefreshToken(Long userId, String refreshToken) {
+		String key = createRefreshTokenKey(userId);	
+		String redisRefreshToken = redisTemplate.opsForValue().get(key);
+		if(redisRefreshToken == null || !redisRefreshToken.equals(refreshToken)) {
+			return false;
+		}
 		
-		return redisTemplate.opsForValue().get(key);
-		
+		return true;
 	}
 	
 	public void deleteAccessToken(Long userId) {

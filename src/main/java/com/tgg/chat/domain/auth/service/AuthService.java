@@ -55,7 +55,6 @@ public class AuthService {
 	
 	// 로그인 여부 확인
 	public LoginStatusResponseDto isLoggedIn(LoginStatusRequestDto loginStatusRequestDto) {
-
         User findUser = userRepository.findByEmail(loginStatusRequestDto.getEmail())
                 .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
 
@@ -63,18 +62,9 @@ public class AuthService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 		
-		String refreshToken = redisTokenStore.getRefreshToken(findUser.getUserId());
-		
-		boolean isLoggedIn;
-		
-		if(refreshToken == null) {
-			isLoggedIn = false;
-		} else {
-			isLoggedIn = true;
-		}
+		boolean isLoggedIn = redisTokenStore.hasRefreshToken(findUser.getUserId());
 		
 		return LoginStatusResponseDto.of(isLoggedIn);
-		
 	}
 	
 	// 로그아웃
@@ -90,10 +80,7 @@ public class AuthService {
 		Claims claims = jwtUtils.parseClaims(refreshToken);
 
 		Long userId = Long.parseLong(claims.getSubject());
-
-		String findRefreshToken = redisTokenStore.getRefreshToken(userId);
-		// RefreshToken 이 존재하지 않거나 유효하지 않으면 예외처리
-		if(findRefreshToken == null || !findRefreshToken.equals(refreshToken)) {
+		if(!redisTokenStore.matchesRefreshToken(userId, refreshToken)) {
 			throw new ErrorException(ErrorCode.JWT_INVALID_REFRESH_TOKEN);
 		}
 
