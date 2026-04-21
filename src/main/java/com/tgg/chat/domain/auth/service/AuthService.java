@@ -6,7 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.tgg.chat.common.security.jwt.JwtUtils;
-import com.tgg.chat.common.messaging.redis.RedisUtils;
+import com.tgg.chat.common.security.token.RedisUtils;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;

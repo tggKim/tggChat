@@ -12,7 +12,7 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
 import com.tgg.chat.common.security.jwt.JwtUtils;
-import com.tgg.chat.common.messaging.redis.RedisUtils;
+import com.tgg.chat.common.security.token.RedisUtils;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 

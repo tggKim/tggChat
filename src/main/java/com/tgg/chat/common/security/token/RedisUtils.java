@@ -1,4 +1,4 @@
-package com.tgg.chat.common.messaging.redis;
+package com.tgg.chat.common.security.token;
 
 import java.util.concurrent.TimeUnit;
 

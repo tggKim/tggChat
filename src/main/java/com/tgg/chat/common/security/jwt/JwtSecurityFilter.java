@@ -10,8 +10,8 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tgg.chat.common.messaging.redis.RedisUtils;
 import com.tgg.chat.common.security.config.SecurityWhitelist;
+import com.tgg.chat.common.security.token.RedisUtils;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import com.tgg.chat.exception.ErrorResponse;
