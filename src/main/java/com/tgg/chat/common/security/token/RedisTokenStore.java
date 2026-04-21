@@ -31,13 +31,16 @@ public class RedisTokenStore {
 		redisTemplate.opsForValue().set(key, refreshToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
 		
 	}
-	
-	public String getAccessToken(Long userId) {
-		
+
+	public boolean matchesAccessToken(Long userId, String accessToken) {
 		String key = createAccessTokenKey(userId);
+		String redisAccessToken = redisTemplate.opsForValue().get(key);
 		
-		return redisTemplate.opsForValue().get(key);
+		if(redisAccessToken == null || !redisAccessToken.equals(accessToken)) {
+			return false;
+		}
 		
+		return true;
 	}
 	
 	public String getRefreshToken(Long userId) {

@@ -57,8 +57,7 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 			
 			// 레디스에 저장된 accessToken 과 비교
 			Long userId = Long.parseLong(claims.getSubject());
-			String redisAccessToken = redisTokenStore.getAccessToken(userId);
-			if(redisAccessToken == null || !redisAccessToken.equals(jwtString)) {
+			if(!redisTokenStore.matchesAccessToken(userId, jwtString)) {
 				throw new ErrorException(ErrorCode.ACCESS_TOKEN_MISMATCH);
 			}
 			
