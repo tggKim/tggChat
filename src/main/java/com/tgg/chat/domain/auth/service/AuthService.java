@@ -31,12 +31,7 @@ public class AuthService {
 	// 로그인
 	public TokenPair login(LoginRequestDto loginRequestDto) {
 
-        User findUser = userRepository.findByEmail(loginRequestDto.getEmail())
-                .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-
-		if(findUser.getDeleted()) {
-			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-		}
+        User findUser = findActiveUserByEmail(loginRequestDto.getEmail());
 		
 		boolean passwordMatch = passwordEncoder.matches(loginRequestDto.getPassword(), findUser.getPassword());
 		if(!passwordMatch) {
@@ -55,12 +50,7 @@ public class AuthService {
 	
 	// 로그인 여부 확인
 	public LoginStatusResponseDto isLoggedIn(LoginStatusRequestDto loginStatusRequestDto) {
-        User findUser = userRepository.findByEmail(loginStatusRequestDto.getEmail())
-                .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-
-        if(findUser.getDeleted()) {
-            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-        }
+        User findUser = findActiveUserByEmail(loginStatusRequestDto.getEmail());
 		
 		boolean isLoggedIn = redisTokenStore.hasRefreshToken(findUser.getUserId());
 		
@@ -100,4 +90,14 @@ public class AuthService {
 		redisTokenStore.saveRefreshToken(userId, refreshToken, refreshTokenTTL);
 	}
 	
+	private User findActiveUserByEmail(String email) {
+		User findUser = userRepository.findByEmail(email)
+	              .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+	
+		if (findUser.getDeleted()) {
+	    	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+	    }
+	
+		return findUser;
+	}
 }
