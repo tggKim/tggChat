@@ -31,3 +31,10 @@ $env:SPRING_PROFILES_ACTIVE='local'
 $env:SECRET='0123456789abcdefghijklmnopqrstuvwxyz'
 .\gradlew.bat build
 ```
+
+### 2026-04-22 - `gradlew.bat clean build` 테스트 실패
+
+#### 1. Redis 미실행으로 인한 테스트 실패
+- 증상: `ChatApplicationTests.contextLoads()`, `ChatServiceLockTest` 실패, `Failed to start bean 'redisMessageListenerContainer'`, `Unable to connect to Redis`
+- 원인: 테스트 실행 시 `local` 프로필 기준 Redis(`localhost:6379`)에 연결하지 못했다.
+- 해결: 로컬 Redis가 실행 중인지 먼저 확인한 뒤 다시 빌드/테스트를 실행한다.
