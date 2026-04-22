@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginResponseDto;
@@ -40,6 +41,7 @@ import java.time.Duration;
 public class AuthController {
 	
 	private final AuthService authService;
+	private final JwtUtils jwtUtils;
 	
 	@PostMapping("/login")
 	@Operation(
@@ -80,27 +82,19 @@ public class AuthController {
 				)
 		)
 	})
-	public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto loginRequestDto) {
-		
+	public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto loginRequestDto) {	
         TokenPair tokenPair = authService.login(loginRequestDto);
 
         String accessToken = tokenPair.getAccessToken();
         String refreshToken = tokenPair.getRefreshToken();
 
-        ResponseCookie rtCookie = ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
-                .secure(false) // http 환경에서만 쿠키 전송
-                .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
-                .path("/") // 모든 경로의 요청에 쿠키 포함
-                .maxAge(Duration.ofDays(7)) // 만료시간 설정
-                .build();
+        ResponseCookie rtCookie = buildRefreshTokenCookie(refreshToken);
 
         LoginResponseDto loginResponseDto = LoginResponseDto.of(accessToken);
 		
 		return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, rtCookie.toString())
                 .body(loginResponseDto);
-		
 	}
 	
 	@PostMapping("/login-status")
@@ -201,26 +195,27 @@ public class AuthController {
 			)
 	})
 	public ResponseEntity<RefreshResponseDto> refresh(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
-
 		TokenPair tokenPair = authService.refresh(refreshToken);
 
         String newAccessToken = tokenPair.getAccessToken();
         String newRefreshToken = tokenPair.getRefreshToken();
 
-        ResponseCookie rtCookie = ResponseCookie.from("refreshToken", newRefreshToken)
-                .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(Duration.ofDays(7))
-                .build();
+        ResponseCookie rtCookie = buildRefreshTokenCookie(newRefreshToken);
 
         RefreshResponseDto refreshResponseDto = RefreshResponseDto.of(newAccessToken);
 
 		return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, rtCookie.toString())
                 .body(refreshResponseDto);
-
 	}
-	
+
+	private ResponseCookie buildRefreshTokenCookie(String refreshToken) {
+		return ResponseCookie.from("refreshToken", refreshToken)
+			.httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
+			.secure(false) // http 환경에서만 쿠키 전송
+			.sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
+			.path("/") // 모든 경로의 요청에 쿠키 포함
+			.maxAge(Duration.ofMillis(jwtUtils.getRefreshTokenTtlMillis())) // 만료시간 설정
+			.build();
+	}
 }
