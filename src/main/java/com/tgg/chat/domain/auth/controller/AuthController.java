@@ -1,6 +1,5 @@
 package com.tgg.chat.domain.auth.controller;
 
-import com.tgg.chat.domain.auth.dto.request.RefreshRequestDto;
 import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import org.springframework.http.HttpHeaders;
