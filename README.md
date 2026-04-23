@@ -49,23 +49,35 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
  
 <summary>인증/인가</summary>
 
-### 로그인(POST /login)
+### 토큰 관리 전략
+
+- 유저당 하나의 AccessToken/RefreshToken 세트만을 유효하게 유지하는 방식
+
+- 즉 유저는 단 하나의 세션만을 로그인상태로 유지할 수 있다
+
+### 레디스 Key 구조
+
+- RT:{userId} = refreshToken
+- AT:{userId} = accessToken
+
+### 1. 로그인(POST /login)
 1. 요청값 검증
 2. 이메일로 사용자 조회 후 존재/탈퇴 여부 검증
 3. 비밀번호 일치 검증
-4. AccessToken/RefreshToken 발급 후 Redis에 저장
+4. AccessToken/RefreshToken 발급 후 Redis에 저장(기존 유저의 토큰이 덮어씌워진다)
 5. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
-### 로그인 여부 확인(POST /login-status)
+### 2. 로그인 여부 확인(POST /login-status)
 1. 요청값 검증
 2. 이메일로 사용자 조회 후 존재/탈퇴 여부 검증
 3. redis에서 사용자 RefreshToken의 존재여부를 응답 바디로 리턴
+(프론트에서 이를 활용하여 유저의 다른 세션에서의 로그인 여부 파악)
 
-### 로그아웃(POST /logout)
+### 3. 로그아웃(POST /logout)
 1. SecurityContext 에서 userId 획득
 2. userId를 이용해 redis에서 사용자의 AccessToken, RefreshToken 모두 삭제
 
-### 토큰 재발급(POST /refresh)
+### 4. 토큰 재발급(POST /refresh)
 1. 쿠키에서 RefreshToken 획득
 2. redis에 동일한 RefreshToken이 저장되어 있는지 검증
 3. 검증 후 새로운 AccessToken, RefreshToken 생성
