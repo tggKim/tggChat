@@ -11,7 +11,6 @@ import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.user.entity.User;
-import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -24,7 +23,6 @@ public class AuthService {
 	
 	private final JwtUtils jwtUtils;
 	private final UserRepository userRepository;
-	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
 	private final RedisTokenStore redisTokenStore;
 	
@@ -71,7 +69,7 @@ public class AuthService {
 			throw new ErrorException(ErrorCode.JWT_INVALID_REFRESH_TOKEN);
 		}
 
-		User findUser = userMapper.findById(userId);
+		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
 
 		String newRefreshToken = jwtUtils.createRefreshToken(findUser);
 		String newAccessToken = jwtUtils.createAccessToken(findUser);
