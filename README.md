@@ -51,10 +51,25 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 
 ### 로그인(POST /login)
 1. 요청값 검증
-2. 이메일로 사용자 조회 후 존재/탈퇴 여부 확인
+2. 이메일로 사용자 조회 후 존재/탈퇴 여부 검증
 3. 비밀번호 일치 검증
 4. AccessToken/RefreshToken 발급 후 Redis에 저장
 5. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
+
+### 로그인 여부 확인(POST /login-status)
+1. 요청값 검증
+2. 이메일로 사용자 조회 후 존재/탈퇴 여부 검증
+3. redis에서 사용자 RefreshToken의 존재여부를 응답 바디로 리턴
+
+### 로그아웃(POST /logout)
+1. SecurityContext 에서 userId 획득
+2. userId를 이용해 redis에서 사용자의 AccessToken, RefreshToken 모두 삭제
+
+### 토큰 재발급(POST /refresh)
+1. 쿠키에서 RefreshToken 획득
+2. redis에 동일한 RefreshToken이 저장되어 있는지 검증
+3. 검증 후 새로운 AccessToken, RefreshToken 생성
+4. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
 </details>
 
