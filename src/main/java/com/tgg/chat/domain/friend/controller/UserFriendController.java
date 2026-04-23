@@ -1,12 +1,11 @@
 package com.tgg.chat.domain.friend.controller;
 
+import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
 import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
 import com.tgg.chat.domain.friend.service.UserFriendService;
-import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.exception.ErrorResponse;
 
-import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,7 +19,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -72,19 +71,12 @@ public class UserFriendController {
 				)
 		)
 	})
-    public ResponseEntity<Void> createUserFriend(Authentication authentication, @RequestBody CreateFriendRequestDto createFriendRequestDto) {
-
-    	// Authentication 에서 로그인한 유저의 userId 추출
-        Claims claims = (Claims)authentication.getPrincipal();
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        // 친구 추가
-        userFriendService.createFriend(loginUserId, createFriendRequestDto);
+    public ResponseEntity<Void> createUserFriend(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @RequestBody CreateFriendRequestDto createFriendRequestDto) {
+        userFriendService.createFriend(authenticatedUser.getUserId(), createFriendRequestDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(null);
-
     }
 
     @GetMapping("/friends")
@@ -111,19 +103,12 @@ public class UserFriendController {
 				)
 		)
 	})
-    public ResponseEntity<List<FriendListResponseDto>> findFriendList(Authentication authentication) {
-
-    	// Authentication 에서 로그인한 유저의 userId 추출
-        Claims claims = (Claims)authentication.getPrincipal();
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        // 친구 목록 조회
-        List<FriendListResponseDto> friendList = userFriendService.findFriendListByOwnerId(loginUserId);
+    public ResponseEntity<List<FriendListResponseDto>> findFriendList(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+        List<FriendListResponseDto> friendList = userFriendService.findFriendListByOwnerId(authenticatedUser.getUserId());
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(friendList);
-
     }
     
 }

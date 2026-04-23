@@ -2,12 +2,12 @@ package com.tgg.chat.domain.user.controller;
 
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
-import io.jsonwebtoken.Claims;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
@@ -71,13 +71,11 @@ public class UserController {
         )    
 	})
 	public ResponseEntity<SignUpResponseDto> signUpUser(@RequestBody @Valid SignUpRequestDto signUpRequestDto) {
-		
 		SignUpResponseDto signUpResponseDto = userService.signUpUser(signUpRequestDto);
 		
 		return ResponseEntity
 				.status(HttpStatus.OK)
-				.body(signUpResponseDto);
-		
+				.body(signUpResponseDto);		
 	}
 	
 	@GetMapping("/user/{userId}")
@@ -103,14 +101,12 @@ public class UserController {
 				)
 		)
 	})
-	public ResponseEntity<OtherUserResponseDto> findOtherUser(@PathVariable Long userId) {
-		
+	public ResponseEntity<OtherUserResponseDto> findOtherUser(@PathVariable Long userId) {	
 		OtherUserResponseDto otherUserResponseDto = userService.findOtherUser(userId);
 		
 		return ResponseEntity
 				.status(HttpStatus.OK)
 				.body(otherUserResponseDto);
-		
 	}
 
     @GetMapping("/me")
@@ -136,18 +132,12 @@ public class UserController {
                     )
             )
     })
-    public ResponseEntity<UserResponseDto> findOtherUser(Authentication authentication) {
-
-        Claims claims = (Claims)authentication.getPrincipal();
-
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        UserResponseDto userResponseDto = userService.findUser(loginUserId);
+    public ResponseEntity<UserResponseDto> findOtherUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+        UserResponseDto userResponseDto = userService.findUser(authenticatedUser.getUserId());
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(userResponseDto);
-
     }
 
 	@PatchMapping("/me")
@@ -173,18 +163,12 @@ public class UserController {
 				)
 		)
 	})
-	public ResponseEntity<Void> updateUser(Authentication authentication, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
-
-		Claims claims = (Claims)authentication.getPrincipal();
-
-		Long loginUserId = Long.parseLong(claims.getSubject());
-
-		userService.updateUser(loginUserId, userUpdateRequestDto);
+	public ResponseEntity<Void> updateUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
+		userService.updateUser(authenticatedUser.getUserId(), userUpdateRequestDto);
 
 		return ResponseEntity
 				.status(HttpStatus.OK)
 				.body(null);
-
 	}
 
 	@DeleteMapping("/user/{userId}")
@@ -210,18 +194,12 @@ public class UserController {
 				)
 		)
 	})
-	public ResponseEntity<Void> deleteUser(Authentication authentication, @PathVariable Long userId) {
-
-		Claims claims = (Claims)authentication.getPrincipal();
-
-		Long loginUserId = Long.parseLong(claims.getSubject());
-		
-		userService.deleteUser(loginUserId, userId);
+	public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @PathVariable Long userId) {
+		userService.deleteUser(authenticatedUser.getUserId(), userId);
 
 		return ResponseEntity
 				.status(HttpStatus.OK)
 				.body(null);
-
 	}
 	
 }

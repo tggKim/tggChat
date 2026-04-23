@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.chat.controller;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -11,7 +12,6 @@ import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.service.ChatRoomService;
 import com.tgg.chat.domain.chat.service.ChatMessageService;
 import com.tgg.chat.exception.ErrorResponse;
-import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,7 +23,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -81,16 +81,10 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<CreateDirectChatRoomResponseDto> createDirectChatRoom(
-            Authentication authentication,
+    		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody CreateDirectChatRoomRequestDto requestDto
     ) {
-
-        // Authentication 에서 로그인한 유저의 userId 추출
-        Claims claims = (Claims)authentication.getPrincipal();
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        // 채팅방 생성 응답 DTO 생성
-        Map<String, Object> payload = chatRoomService.createDirectChatRoom(loginUserId, requestDto);
+        Map<String, Object> payload = chatRoomService.createDirectChatRoom(authenticatedUser.getUserId(), requestDto);
 
         CreateDirectChatRoomResponseDto responseDto = (CreateDirectChatRoomResponseDto)payload.get("responseDto");
         List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
@@ -100,7 +94,6 @@ public class ChatRoomController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(responseDto);
-
     }
     
     @PostMapping("/groupChatRooms")
@@ -168,16 +161,10 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<CreateGroupChatRoomResponseDto> createGroupChatRoom(
-            Authentication authentication,
+    		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody CreateGroupChatRoomRequestDto requestDto
     ) {
-
-        // Authentication 에서 로그인한 유저의 userId 추출
-        Claims claims = (Claims)authentication.getPrincipal();
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        // 채팅방 생성 응답 DTO 생성
-        Map<String, Object> payload = chatRoomService.createGroupChatRoom(loginUserId, requestDto);
+        Map<String, Object> payload = chatRoomService.createGroupChatRoom(authenticatedUser.getUserId(), requestDto);
 
         CreateGroupChatRoomResponseDto responseDto = (CreateGroupChatRoomResponseDto)payload.get("responseDto");
         List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
@@ -187,7 +174,6 @@ public class ChatRoomController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(responseDto);
-
     }
 
     @GetMapping("/chatRooms")
@@ -207,20 +193,13 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<ChatRoomListResponseDto> findAllChatRooms(
-            Authentication authentication
+    		@AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-
-        // Authentication 에서 로그인한 유저의 userId 추출
-        Claims claims = (Claims)authentication.getPrincipal();
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        // 채팅방 목록 응답 DTO 생성
-        ChatRoomListResponseDto responseDto = chatRoomService.findAllChatRooms(loginUserId);
+        ChatRoomListResponseDto responseDto = chatRoomService.findAllChatRooms(authenticatedUser.getUserId());
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(responseDto);
-
     }
 
     @PostMapping("/chatRooms/invites")
@@ -295,23 +274,16 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<Void> inviteUserToChatRoom(
-            Authentication authentication,
+    		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody InviteUserRequestDto requestDto
     ) {
-
-        // Authentication 에서 로그인한 유저의 userId 추출
-        Claims claims = (Claims)authentication.getPrincipal();
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        // 채팅방 생성 응답 DTO 생성
-        List<ChatEvent> chatEvents = chatRoomService.inviteUserToChatRoom(loginUserId, requestDto);
+        List<ChatEvent> chatEvents = chatRoomService.inviteUserToChatRoom(authenticatedUser.getUserId(), requestDto);
 
         chatMessageService.sendMessage(chatEvents);
         
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(null);
-
     }
     
     @PostMapping("/chatRooms/leave")
@@ -362,22 +334,16 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<Void> leaveChatRoom(
-            Authentication authentication,
+    		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody LeaveChatRoomRequestDto requestDto
     ) {
-
-        // Authentication 에서 로그인한 유저의 userId 추출
-        Claims claims = (Claims)authentication.getPrincipal();
-        Long loginUserId = Long.parseLong(claims.getSubject());
-
-        List<ChatEvent> chatEvents = chatRoomService.leaveChatRoom(loginUserId, requestDto);
+        List<ChatEvent> chatEvents = chatRoomService.leaveChatRoom(authenticatedUser.getUserId(), requestDto);
 
         chatMessageService.sendMessage(chatEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(null);
-
     }
 
 }

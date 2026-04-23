@@ -6,23 +6,21 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tgg.chat.common.security.jwt.JwtUtils;
+import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginResponseDto;
 import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.auth.service.AuthService;
-import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
-import com.tgg.chat.domain.user.service.UserService;
 import com.tgg.chat.exception.ErrorResponse;
 
-import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -159,16 +157,9 @@ public class AuthController {
 				)
 		)
 	})
-	public ResponseEntity<Void> logout(Authentication authentication) {
-		
-		Claims claims = (Claims)authentication.getPrincipal();
-
-		Long loginUserId = Long.parseLong(claims.getSubject());
-		
-		authService.logout(loginUserId);
-		
+	public ResponseEntity<Void> logout(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {		
+		authService.logout(authenticatedUser.getUserId());
 		return ResponseEntity.status(HttpStatus.OK).body(null);
-		
 	}
 
 	@PostMapping("/refresh")
