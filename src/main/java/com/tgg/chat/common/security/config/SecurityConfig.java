@@ -2,6 +2,7 @@ package com.tgg.chat.common.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,6 +15,7 @@ import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.common.security.config.SecurityWhitelist.PermitRule;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,31 +30,48 @@ public class SecurityConfig {
 	private final AuthenticationEntryPoint authenticationEntryPoint;
 	
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		
-		http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+    @Order(1)
+	public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
+		AntPathMatcher antPathMatcher = new AntPathMatcher();
+
+        http
+                .securityMatcher(request -> {
+                    String path = request.getRequestURI();
+                    String method = request.getMethod();
+
+                    return SecurityWhitelist.WHITELIST.stream()
+                            .anyMatch(rule -> {
+                                return rule.getHttpMethod().matches(method) && antPathMatcher.match(rule.getPattern(), path);
+                            });
+                })
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .logout(logout -> logout.disable())
+		        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+
+				return http.build();
+	}
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain authenticatedFilterChain(HttpSecurity http) throws Exception {
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
+
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtSecurityFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                .logout(logout -> logout.disable());
-		
-		http.authorizeHttpRequests(auth -> {
-			
-			// 화이트 리스트에 대해서 누구나 접근 가능하게 설정
-			for(PermitRule permitRule : SecurityWhitelist.WHITELIST) {
-				auth.requestMatchers(permitRule.getHttpMethod(), permitRule.getPattern()).permitAll();
-			}
-			
-			// 화이트 리스트 이외의 요청들은 인증된 사용자만 접근 가능하게 설정
-			auth.anyRequest().authenticated();
-			
-		});
-		
-		return http.build();
-		
-	}
+                .logout(logout -> logout.disable())
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
+
+        return http.build();
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
