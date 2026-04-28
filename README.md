@@ -57,8 +57,8 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 
 ### 레디스 Key 구조
 
-- RT:{userId} = refreshToken
-- AT:{userId} = accessToken
+- RT:{userId} = RefreshToken
+- AT:{userId} = AccessToken
 
 ### 1. 로그인(POST /login)
 1. 요청값 검증
