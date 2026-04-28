@@ -30,7 +30,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletResponse response,
             AuthenticationException authException
     ) throws IOException {
-
         ErrorCode errorCode = (ErrorCode) request.getAttribute(ERROR_CODE_ATTRIBUTE);
         if (errorCode == null) {
             errorCode = ErrorCode.JWT_INVALID_TOKEN;
@@ -42,11 +41,10 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 errorCode.getMessage());
 
         ErrorResponse errorResponse = ErrorResponse.of(errorCode);
-        
-        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
 
         response.setStatus(errorCode.getStatus().value());
         response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write(jsonResponse);
+        
+        objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 }
