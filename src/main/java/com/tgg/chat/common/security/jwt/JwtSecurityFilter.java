@@ -7,15 +7,10 @@ import org.springframework.security.authentication.InsufficientAuthenticationExc
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tgg.chat.common.security.config.SecurityWhitelist;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
-import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
-import com.tgg.chat.exception.ErrorResponse;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class JwtSecurityFilter extends OncePerRequestFilter{
-	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 	private final AccessTokenAuthenticator accessTokenAuthenticator;
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 	
@@ -54,14 +48,5 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 		
 		// Security FilterChain의 다음 필터로 요청 전달
 		filterChain.doFilter(request, response);
-	}
-	
-	@Override
-	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-		String path = request.getRequestURI();
-		String httpMethod = request.getMethod();
-		
-		return SecurityWhitelist.WHITELIST.stream()
-			.anyMatch(permitRule -> permitRule.getHttpMethod().matches(httpMethod) && pathMatcher.match(permitRule.getPattern(), path));
 	}
 }
