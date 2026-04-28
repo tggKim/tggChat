@@ -83,6 +83,29 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 3. 검증 후 새로운 AccessToken, RefreshToken 생성
 4. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
+### 스프링 시큐리티 흐름
+
+1. 공개 요청용 시큐리티 체인과 인증 요청용 시큐리티 체인을 각각 빈으로 등록한다.
+
+  1-1. 화이트리스트에 해당하는 요청은 공개 요청용 시큐리티 체인에서 처리된다.
+  이때 먼저 매칭된 체인 하나만 적용된다.
+
+2. 화이트리스트에 해당하지 않는 요청은 인증 요청용 시큐리티 체인에서 처리된다.
+
+  2-1. 인증 요청용 체인에 등록된 `JwtSecurityFilter`가 `Authorization` 헤더에서 AccessToken을 추출하고 검증한다.
+
+  2-2. 토큰 검증 과정에서 발생한 `ErrorException`은 `JwtSecurityFilter`가 잡고,
+  `JwtAuthenticationEntryPoint`를 직접 호출하여 에러 응답을 생성한다.
+
+    2-2-1. `JwtAuthenticationEntryPoint`는 `SecurityConfig`의 `exceptionHandling()`에 전역 등록된 것이 아니라,
+  현재는 `JwtSecurityFilter` 내부에서 발생한 JWT 인증 예외 처리에만 사용된다.
+
+  2-3. 토큰 검증이 성공하면 `AuthenticatedUser`를 기반으로
+  `UsernamePasswordAuthenticationToken`을 생성하고, 이를 `SecurityContextHolder`에 저장한다.
+
+  2-4. 이후 컨트롤러에서는 `@AuthenticationPrincipal`을 통해 인증 사용자 정보를 꺼내 사용하고,
+  서비스는 전달받은 `userId`를 기반으로 비즈니스 로직을 수행한다.
+
 </details>
 
 <details>
