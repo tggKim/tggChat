@@ -1,5 +1,6 @@
 package com.tgg.chat.common.security.config;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -80,4 +81,11 @@ public class SecurityConfig {
         return source;
     }
 	
+    // JwtSecurityFilter가 서블릿 컨테이너의 글로벌 필터로 등록되는 것을 방지
+    @Bean
+    public FilterRegistrationBean<JwtSecurityFilter> jwtFilterRegistration(JwtSecurityFilter filter) {
+        FilterRegistrationBean<JwtSecurityFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false); 
+        return registration;
+    }
 }
