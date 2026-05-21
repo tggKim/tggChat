@@ -3,7 +3,9 @@ package com.tgg.chat.common.security.jwt;
 import java.io.IOException;
 import java.util.Collections;
 
-import org.springframework.security.authentication.InsufficientAuthenticationException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -24,8 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JwtSecurityFilter extends OncePerRequestFilter{
 	private final AccessTokenAuthenticator accessTokenAuthenticator;
-	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-	
+	private final ObjectMapper objectMapper;
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 		AuthenticatedUser authenticatedUser;
@@ -35,9 +37,21 @@ public class JwtSecurityFilter extends OncePerRequestFilter{
 			String bearerString = request.getHeader("Authorization");
 			authenticatedUser = accessTokenAuthenticator.authenticateBearerToken(bearerString);
 		} catch(ErrorException errorException) {
-			request.setAttribute(JwtAuthenticationEntryPoint.ERROR_CODE_ATTRIBUTE, errorException.getErrorCode());
-			jwtAuthenticationEntryPoint.commence(request, response, new InsufficientAuthenticationException(errorException.getMessage()));
-			return;
+            ErrorCode errorCode = errorException.getErrorCode();
+
+            log.warn("[AuthenticationError] code={}, status={}, message={}",
+                    errorCode.getCode(),
+                    errorCode.getStatus().value(),
+                    errorCode.getMessage());
+
+            ErrorResponse errorResponse = ErrorResponse.of(errorCode);
+
+            response.setStatus(errorCode.getStatus().value());
+            response.setContentType("application/json; charset=UTF-8");
+
+            objectMapper.writeValue(response.getWriter(), errorResponse);
+
+            return;
 		}
 		
 		// Authentication 객체 생성(현재는 권한이 없어서 빈 리스트)
