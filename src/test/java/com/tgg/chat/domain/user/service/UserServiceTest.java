@@ -109,4 +109,28 @@ class UserServiceTest {
         verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository, never()).save(any(User.class));
     }
+
+    @Test
+    @DisplayName("회원가입시 유저명 중복으로 실패")
+    void signup_fail_duplicated_username() {
+        // given
+        SignUpRequestDto requestDto = new SignUpRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+        ReflectionTestUtils.setField(requestDto, "password", "testPassword");
+        ReflectionTestUtils.setField(requestDto, "username", "testUsername");
+
+        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> userService.signUpUser(requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.DUPLICATE_USERNAME_ERROR);
+
+        verify(userRepository, times(1)).existsByEmail(requestDto.getEmail());
+        verify(userRepository, times(1)).existsByUsername(requestDto.getUsername());
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, never()).save(any(User.class));
+    }
 }
