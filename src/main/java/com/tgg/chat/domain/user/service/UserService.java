@@ -31,12 +31,12 @@ public class UserService {
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
 		
 		// 이메일 중복 검사
-		if(userMapper.existsByEmail(signUpRequestDto.getEmail())) {
+		if(userRepository.existsByEmail(signUpRequestDto.getEmail())) {
 			throw new ErrorException(ErrorCode.DUPLICATE_EMAIL_ERROR);
 		}
 		
 		// 유저명 중복 검사
-		if(userMapper.existsByUsername(signUpRequestDto.getUsername())) {
+		if(userRepository.existsByUsername(signUpRequestDto.getUsername())) {
 			throw new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR);
 		}
 		

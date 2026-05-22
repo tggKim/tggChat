@@ -9,15 +9,9 @@ import com.tgg.chat.domain.user.entity.User;
 
 @Mapper
 public interface UserMapper {
-	
 	User findById(Long userId);
 	
 	User findByUsername(String username);
-
-	boolean existsByEmail(String email);
-	
-	boolean existsByUsername(String username);
 	
 	List<UserIdUsernameQueryDto> getUserNames(List<Long> userIds);
-	
 }
