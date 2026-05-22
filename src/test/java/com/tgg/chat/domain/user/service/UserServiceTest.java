@@ -6,6 +6,8 @@ import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -82,5 +85,29 @@ class UserServiceTest {
         assertThat(captorUser.getPassword()).isEqualTo("encoded-password");
         assertThat(captorUser.getUsername()).isEqualTo(requestDto.getUsername());
         assertThat(captorUser.getDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("회원가입시 이메일 중복으로 실패")
+    void signup_fail_duplicated_email() {
+        // given
+        SignUpRequestDto requestDto = new SignUpRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+        ReflectionTestUtils.setField(requestDto, "password", "testPassword");
+        ReflectionTestUtils.setField(requestDto, "username", "testUsername");
+
+        // when
+        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(true);
+
+        // then
+        assertThatThrownBy(() -> userService.signUpUser(requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.DUPLICATE_EMAIL_ERROR);
+
+        verify(userRepository, times(1)).existsByEmail(requestDto.getEmail());
+        verify(userRepository, never()).existsByUsername(requestDto.getUsername());
+        verify(passwordEncoder, never()).encode(requestDto.getPassword());
+        verify(userRepository, never()).save(any(User.class));
     }
 }
