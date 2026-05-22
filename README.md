@@ -94,11 +94,7 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 
   2-1. 인증 요청용 체인에 등록된 `JwtSecurityFilter`가 `Authorization` 헤더에서 AccessToken을 추출하고 검증한다.
 
-  2-2. 토큰 검증 과정에서 발생한 `ErrorException`은 `JwtSecurityFilter`가 잡고,
-  `JwtAuthenticationEntryPoint`를 직접 호출하여 에러 응답을 생성한다.
-
-    2-2-1. `JwtAuthenticationEntryPoint`는 `SecurityConfig`의 `exceptionHandling()`에 전역 등록된 것이 아니라,
-  현재는 `JwtSecurityFilter` 내부에서 발생한 JWT 인증 예외 처리에만 사용된다.
+  2-2. 토큰 검증 과정에서 발생한 `ErrorException`은 `JwtSecurityFilter`에서 에러 응답을 생성한다.
 
   2-3. 토큰 검증이 성공하면 `AuthenticatedUser`를 기반으로
   `UsernamePasswordAuthenticationToken`을 생성하고, 이를 `SecurityContextHolder`에 저장한다.
