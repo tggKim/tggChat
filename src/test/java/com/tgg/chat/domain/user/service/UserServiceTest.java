@@ -96,18 +96,17 @@ class UserServiceTest {
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
         ReflectionTestUtils.setField(requestDto, "username", "testUsername");
 
-        // when
         when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(true);
 
-        // then
+        // when & then
         assertThatThrownBy(() -> userService.signUpUser(requestDto))
                 .isInstanceOf(ErrorException.class)
                 .extracting(ex -> ((ErrorException)ex).getErrorCode())
                 .isEqualTo(ErrorCode.DUPLICATE_EMAIL_ERROR);
 
         verify(userRepository, times(1)).existsByEmail(requestDto.getEmail());
-        verify(userRepository, never()).existsByUsername(requestDto.getUsername());
-        verify(passwordEncoder, never()).encode(requestDto.getPassword());
+        verify(userRepository, never()).existsByUsername(anyString());
+        verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository, never()).save(any(User.class));
     }
 }
