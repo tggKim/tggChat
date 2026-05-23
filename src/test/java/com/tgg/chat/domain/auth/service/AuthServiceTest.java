@@ -132,4 +132,33 @@ class AuthServiceTest {
         verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
     }
+
+    @Test
+    @DisplayName("로그인 실패 - 잘못된 비밀번호")
+    void login_fail_invalid_password() {
+        // given
+        LoginRequestDto requestDto = new LoginRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+        ReflectionTestUtils.setField(requestDto, "password", "testPassword");
+
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.of(findUser));
+
+        when(passwordEncoder.matches(requestDto.getPassword(), findUser.getPassword())).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> authService.login(requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_PASSWORD);
+
+        verify(userRepository, times(1)).findByEmail("test@test.com");
+        verify(passwordEncoder, times(1)).matches(requestDto.getPassword(), findUser.getPassword());
+        verify(jwtUtils, never()).createAccessToken(any(User.class));
+        verify(jwtUtils, never()).createRefreshToken(any(User.class));
+        verify(jwtUtils, never()).getAccessTokenTtlMillis();
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
+    }
 }
