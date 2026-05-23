@@ -6,6 +6,8 @@ import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 
@@ -74,5 +77,31 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
         verify(redisTokenStore, times(1)).saveAccessToken(findUser.getUserId(), "accessToken", 1000L);
         verify(redisTokenStore, times(1)).saveRefreshToken(findUser.getUserId(), "refreshToken", 2000L);
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 존재하지 않는 유저")
+    void login_fail_user_not_found() {
+        // given
+        LoginRequestDto requestDto = new LoginRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+        ReflectionTestUtils.setField(requestDto, "password", "testPassword");
+
+        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> authService.login(requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findByEmail("test@test.com");
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(jwtUtils, never()).createAccessToken(any(User.class));
+        verify(jwtUtils, never()).createRefreshToken(any(User.class));
+        verify(jwtUtils, never()).getAccessTokenTtlMillis();
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
     }
 }
