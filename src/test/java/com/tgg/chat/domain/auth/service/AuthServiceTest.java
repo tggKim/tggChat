@@ -104,4 +104,32 @@ class AuthServiceTest {
         verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
     }
+
+    @Test
+    @DisplayName("로그인 실패 - 삭제된 유저")
+    void login_fail_deleted_user() {
+        // given
+        LoginRequestDto requestDto = new LoginRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+        ReflectionTestUtils.setField(requestDto, "password", "testPassword");
+
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "deleted", true);
+        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.of(findUser));
+
+        // when & then
+        assertThatThrownBy(() -> authService.login(requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findByEmail("test@test.com");
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(jwtUtils, never()).createAccessToken(any(User.class));
+        verify(jwtUtils, never()).createRefreshToken(any(User.class));
+        verify(jwtUtils, never()).getAccessTokenTtlMillis();
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
+    }
 }
