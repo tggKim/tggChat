@@ -206,4 +206,26 @@ class AuthServiceTest {
         verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
         verify(redisTokenStore, never()).hasRefreshToken(anyLong());
     }
+
+    @Test
+    @DisplayName("로그인 여부 확인 실패 - 삭제된 유저")
+    void login_status_check_fail_deleted_user() {
+        // given
+        LoginStatusRequestDto requestDto = new LoginStatusRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "deleted", true);
+
+        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.of(findUser));
+
+        // when & then
+        assertThatThrownBy(() -> authService.isLoggedIn(requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
+        verify(redisTokenStore, never()).hasRefreshToken(anyLong());
+    }
 }
