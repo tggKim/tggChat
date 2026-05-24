@@ -6,6 +6,8 @@ import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import com.tgg.chat.domain.auth.service.AuthService;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -179,6 +181,31 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("비밀번호는 필수입니다."));
 
         verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
+
+    @Test
+    @DisplayName("로그인 API 실패 - 존재하지 않는 유저")
+    void login_api_fail_user_not_found() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "test@test.com",
+                "password", "testPassword"
+        );
+
+        when(authService.login(any(LoginRequestDto.class))).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("U003"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+        verify(authService, times(1)).login(any(LoginRequestDto.class));
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
 }
