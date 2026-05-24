@@ -228,4 +228,17 @@ class AuthServiceTest {
         verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
         verify(redisTokenStore, never()).hasRefreshToken(anyLong());
     }
+
+    @Test
+    @DisplayName("로그아웃 성공")
+    void logout_success() {
+        // given
+        Long userId = 1L;
+
+        // when
+        authService.logout(userId);
+
+        // then
+        verify(redisTokenStore, times(1)).deleteUserTokenSets(userId);
+    }
 }
