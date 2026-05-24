@@ -3,6 +3,8 @@ package com.tgg.chat.domain.auth.service;
 import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
+import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
+import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -160,5 +162,29 @@ class AuthServiceTest {
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
         verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
+    }
+
+    @Test
+    @DisplayName("로그인 여부 확인 성공")
+    void login_status_check_success() {
+        // given
+        LoginStatusRequestDto requestDto = new LoginStatusRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "userId", 1L);
+
+        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.of(findUser));
+
+        when(redisTokenStore.hasRefreshToken(findUser.getUserId())).thenReturn(true);
+
+        // when
+        LoginStatusResponseDto responseDto = authService.isLoggedIn(requestDto);
+
+        // then
+        assertThat(responseDto.getIsLoggedIn()).isTrue();
+
+        verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
+        verify(redisTokenStore, times(1)).hasRefreshToken(findUser.getUserId());
     }
 }
