@@ -3,6 +3,7 @@ package com.tgg.chat.domain.auth.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.common.security.jwt.JwtUtils;
+import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
@@ -18,9 +19,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -358,5 +362,27 @@ class AuthControllerTest {
         LoginStatusRequestDto loginStatusRequestDto = argumentCaptor.getValue();
 
         assertThat(loginStatusRequestDto.getEmail()).isEqualTo("test@test.com");
+    }
+
+    @Test
+    @DisplayName("로그아웃 api 성공")
+    void logout_api_success() throws Exception {
+        // given
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        // when & then
+        try {
+            mockMvc.perform(post("/logout")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk());
+
+            verify(authService, times(1)).logout(1L);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }
