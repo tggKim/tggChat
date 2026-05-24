@@ -263,4 +263,25 @@ class AuthControllerTest {
 
         assertThat(loginStatusRequestDto.getEmail()).isEqualTo("test@test.com");
     }
+
+    @Test
+    @DisplayName("로그인 여부 API 실패 - 잘못된 이메일 형식")
+    void login_status_api_fail_invalid_email_format() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "notEmail"
+        );
+
+        // when & then
+        mockMvc.perform(post("/login-status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("올바른 이메일 형식이 아닙니다."));
+
+        verify(authService, never()).isLoggedIn(any(LoginStatusRequestDto.class));
+    }
 }
