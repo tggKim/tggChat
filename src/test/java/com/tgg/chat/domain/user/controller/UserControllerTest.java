@@ -139,7 +139,11 @@ class UserControllerTest {
     @DisplayName("회원가입 API 실패 - 이메일 길이 초과")
     void signup_api_fail_email_too_long() throws Exception {
         // given
-        String longEmail = "a".repeat(249) + "@a.com";
+        String longEmail =
+                "a".repeat(64) + "@" +
+                        "b".repeat(63) + "." +
+                        "c".repeat(63) + "." +
+                        "d".repeat(63) + ".com";
 
         Map<String, Object> requestBody = Map.of(
                 "email", longEmail,

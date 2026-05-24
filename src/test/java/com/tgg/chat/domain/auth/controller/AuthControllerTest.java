@@ -106,4 +106,79 @@ class AuthControllerTest {
         verify(authService, never()).login(any(LoginRequestDto.class));
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
+
+    @Test
+    @DisplayName("로그인 API 실패 - 이메일 미입력")
+    void login_api_fail_blank_email() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "",
+                "password", "testPassword"
+        );
+
+        // when & then
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("이메일은 필수입니다."));
+
+        verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
+
+    @Test
+    @DisplayName("로그인 API 실패 - 이메일 길이 초과")
+    void login_api_fail_email_too_long() throws Exception {
+        // given
+        String longEmail =
+                "a".repeat(64) + "@" +
+                        "b".repeat(63) + "." +
+                        "c".repeat(63) + "." +
+                        "d".repeat(63) + ".com";
+
+        Map<String, Object> requestBody = Map.of(
+                "email", longEmail,
+                "password", "testPassword"
+        );
+
+        // when & then
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("이메일 길이는 254자 이하입니다."));
+
+        verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
+
+    @Test
+    @DisplayName("로그인 API 실패 - 비밀번호 미입력")
+    void login_api_fail_blank_password() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "test@test.com",
+                "password", ""
+        );
+
+        // when & then
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("비밀번호는 필수입니다."));
+
+        verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
 }
