@@ -185,8 +185,8 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("로그인 API 실패 - 존재하지 않는 유저")
-    void login_api_fail_user_not_found() throws Exception {
+    @DisplayName("로그인 API 실패 - 존재하지 않는 유저, 삭제된 유저")
+    void login_api_fail_user_not_found_or_deleted_user() throws Exception {
         // given
         Map<String, Object> requestBody = Map.of(
                 "email", "test@test.com",
@@ -204,6 +204,32 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value("U003"))
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+        verify(authService, times(1)).login(any(LoginRequestDto.class));
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
+
+    @Test
+    @DisplayName("로그인 API 실패 - 잘못된 비밀번호")
+    void login_api_fail_invalid_password() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "test@test.com",
+                "password", "wrongPassword"
+        );
+
+        when(authService.login(any(LoginRequestDto.class)))
+                .thenThrow(new ErrorException(ErrorCode.INVALID_PASSWORD));
+
+        // when & then
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("U004"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다."));
 
         verify(authService, times(1)).login(any(LoginRequestDto.class));
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
