@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
+import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
+import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import com.tgg.chat.domain.auth.service.AuthService;
 import com.tgg.chat.exception.ErrorCode;
@@ -233,5 +235,32 @@ class AuthControllerTest {
 
         verify(authService, times(1)).login(any(LoginRequestDto.class));
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
+
+    @Test
+    @DisplayName("로그인 여부 API 성공")
+    void login_status_api_success() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "test@test.com"
+        );
+
+        LoginStatusResponseDto responseDto = LoginStatusResponseDto.of(true);
+
+        when(authService.isLoggedIn(any(LoginStatusRequestDto.class))).thenReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(post("/login-status")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.isLoggedIn").value(true));
+
+        ArgumentCaptor<LoginStatusRequestDto> argumentCaptor = ArgumentCaptor.forClass(LoginStatusRequestDto.class);
+        verify(authService, times(1)).isLoggedIn(argumentCaptor.capture());
+        LoginStatusRequestDto loginStatusRequestDto = argumentCaptor.getValue();
+
+        assertThat(loginStatusRequestDto.getEmail()).isEqualTo("test@test.com");
     }
 }
