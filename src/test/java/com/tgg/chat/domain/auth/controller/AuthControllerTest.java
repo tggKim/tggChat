@@ -332,4 +332,31 @@ class AuthControllerTest {
 
         verify(authService, never()).isLoggedIn(any(LoginStatusRequestDto.class));
     }
+
+    @Test
+    @DisplayName("로그인 여부 API 실패 - 존재하지 않는 유저, 삭제된 유저")
+    void login_status_api_fail_user_not_found_or_deleted_user() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "test@test.com"
+        );
+
+        when(authService.isLoggedIn(any(LoginStatusRequestDto.class))).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(post("/login-status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("U003"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+        ArgumentCaptor<LoginStatusRequestDto> argumentCaptor = ArgumentCaptor.forClass(LoginStatusRequestDto.class);
+        verify(authService, times(1)).isLoggedIn(argumentCaptor.capture());
+        LoginStatusRequestDto loginStatusRequestDto = argumentCaptor.getValue();
+
+        assertThat(loginStatusRequestDto.getEmail()).isEqualTo("test@test.com");
+    }
 }
