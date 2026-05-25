@@ -10,6 +10,7 @@ import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -240,5 +241,46 @@ class AuthServiceTest {
 
         // then
         verify(redisTokenStore, times(1)).deleteUserTokenSets(userId);
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 성공")
+    void token_refresh_success() {
+        // given
+        String refreshToken = "refreshToken";
+
+        Claims claims = mock(Claims.class);
+        when(jwtUtils.parseClaims(refreshToken)).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("1");
+
+        when(redisTokenStore.matchesRefreshToken(1L, refreshToken)).thenReturn(true);
+
+        User user = User.of("test@test.com", "testPassword", "testUsername");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        String newRefreshToken = "newRefreshToken";
+        String newAccessToken = "newAccessToken";
+        when(jwtUtils.createRefreshToken(user)).thenReturn(newRefreshToken);
+        when(jwtUtils.createAccessToken(user)).thenReturn(newAccessToken);
+        when(jwtUtils.getAccessTokenTtlMillis()).thenReturn(1000L);
+        when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
+
+        // when
+        TokenPair tokenPair = authService.refresh(refreshToken);
+
+        // then
+        assertThat(tokenPair.getAccessToken()).isEqualTo(newAccessToken);
+        assertThat(tokenPair.getRefreshToken()).isEqualTo(newRefreshToken);
+
+        verify(jwtUtils, times(1)).parseClaims(refreshToken);
+        verify(claims, times(1)).getSubject();
+        verify(redisTokenStore, times(1)).matchesRefreshToken(1L, refreshToken);
+        verify(userRepository, times(1)).findById(1L);
+        verify(jwtUtils, times(1)).createRefreshToken(user);
+        verify(jwtUtils, times(1)).createAccessToken(user);
+        verify(jwtUtils, times(1)).getAccessTokenTtlMillis();
+        verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+        verify(redisTokenStore, times(1)).saveAccessToken(1L, newAccessToken, 1000L);
+        verify(redisTokenStore, times(1)).saveRefreshToken(1L, newRefreshToken, 2000L);
     }
 }
