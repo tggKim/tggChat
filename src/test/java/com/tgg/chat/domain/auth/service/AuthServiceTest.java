@@ -345,4 +345,38 @@ class AuthServiceTest {
         verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
     }
+
+    @Test
+    @DisplayName("토큰 재발급 실패 - 삭제된 유저")
+    void token_refresh_fail_deleted_user() {
+        // given
+        String refreshToken = "refreshToken";
+
+        Claims claims = mock(Claims.class);
+        when(jwtUtils.parseClaims(refreshToken)).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("1");
+
+        when(redisTokenStore.matchesRefreshToken(1L, refreshToken)).thenReturn(true);
+
+        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        ReflectionTestUtils.setField(findUser, "deleted", true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when & then
+        assertThatThrownBy(() -> authService.refresh(refreshToken))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(jwtUtils, times(1)).parseClaims(refreshToken);
+        verify(claims, times(1)).getSubject();
+        verify(redisTokenStore, times(1)).matchesRefreshToken(1L, refreshToken);
+        verify(userRepository, times(1)).findById(1L);
+        verify(jwtUtils, never()).createRefreshToken(any(User.class));
+        verify(jwtUtils, never()).createAccessToken(any(User.class));
+        verify(jwtUtils, never()).getAccessTokenTtlMillis();
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
+    }
 }
