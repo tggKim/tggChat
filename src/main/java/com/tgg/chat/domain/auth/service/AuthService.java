@@ -70,6 +70,9 @@ public class AuthService {
 		}
 
 		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
 
 		String newRefreshToken = jwtUtils.createRefreshToken(findUser);
 		String newAccessToken = jwtUtils.createAccessToken(findUser);
