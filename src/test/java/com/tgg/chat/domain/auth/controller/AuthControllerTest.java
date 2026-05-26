@@ -11,6 +11,7 @@ import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import com.tgg.chat.domain.auth.service.AuthService;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -384,5 +385,31 @@ class AuthControllerTest {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 API 성공")
+    void token_refresh_api_success() throws Exception {
+        // given
+        TokenPair tokenPair = TokenPair.of("newAccessToken", "newRefreshToken");
+        when(authService.refresh("refreshToken")).thenReturn(tokenPair);
+
+        when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
+
+        // when & then
+        mockMvc.perform(post("/refresh")
+                        .cookie(new Cookie("refreshToken", "refreshToken")))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.accessToken").value("newAccessToken"))
+                .andExpect(cookie().value("refreshToken", "newRefreshToken"))
+                .andExpect(cookie().httpOnly("refreshToken", true))
+                .andExpect(cookie().secure("refreshToken", false))
+                .andExpect(cookie().sameSite("refreshToken", "Lax"))
+                .andExpect(cookie().path("refreshToken", "/"))
+                .andExpect(cookie().maxAge("refreshToken", 2));
+
+        verify(authService, times(1)).refresh("refreshToken");
+        verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
     }
 }
