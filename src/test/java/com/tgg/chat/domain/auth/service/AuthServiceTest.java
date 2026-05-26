@@ -283,4 +283,34 @@ class AuthServiceTest {
         verify(redisTokenStore, times(1)).saveAccessToken(1L, newAccessToken, 1000L);
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, newRefreshToken, 2000L);
     }
+
+    @Test
+    @DisplayName("토큰 재발급 실패 - 유효하지 않은 리프레시 토큰")
+    void token_refresh_fail_invalid_refresh_token() {
+        // given
+        String refreshToken = "refreshToken";
+
+        Claims claims = mock(Claims.class);
+        when(jwtUtils.parseClaims(refreshToken)).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("1");
+
+        when(redisTokenStore.matchesRefreshToken(1L, refreshToken)).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> authService.refresh(refreshToken))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_INVALID_REFRESH_TOKEN);
+
+        verify(jwtUtils, times(1)).parseClaims(refreshToken);
+        verify(claims, times(1)).getSubject();
+        verify(redisTokenStore, times(1)).matchesRefreshToken(1L, refreshToken);
+        verify(userRepository, never()).findById(1L);
+        verify(jwtUtils, never()).createRefreshToken(any(User.class));
+        verify(jwtUtils, never()).createAccessToken(any(User.class));
+        verify(jwtUtils, never()).getAccessTokenTtlMillis();
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(redisTokenStore, never()).saveAccessToken(anyLong(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
+    }
 }
