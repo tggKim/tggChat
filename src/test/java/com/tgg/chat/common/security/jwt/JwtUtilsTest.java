@@ -6,6 +6,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class JwtUtilsTest {
@@ -49,5 +51,13 @@ class JwtUtilsTest {
         assertThat(claims.get("username", String.class)).isEqualTo("testUsername");
         assertThat(claims.getIssuedAt()).isNotNull();
         assertThat(claims.getExpiration()).isAfter(claims.getIssuedAt());
+    }
+
+    @Test
+    @DisplayName("토큰 만료 시간 조회 성공")
+    void get_token_ttl_millis_success() {
+        // when & then
+        assertThat(jwtUtils.getAccessTokenTtlMillis()).isEqualTo(Duration.ofMinutes(30).toMillis());
+        assertThat(jwtUtils.getRefreshTokenTtlMillis()).isEqualTo(Duration.ofDays(7).toMillis());
     }
 }
