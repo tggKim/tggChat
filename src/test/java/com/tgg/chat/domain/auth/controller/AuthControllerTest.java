@@ -431,4 +431,23 @@ class AuthControllerTest {
         verify(authService, times(1)).refresh("refreshToken");
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
+
+    @Test
+    @DisplayName("토큰 재발급 API 실패 - 존재하지 않는 유저, 삭제된 유저")
+    void token_refresh_api_fail_user_not_found_or_deleted_user() throws Exception {
+        // given
+        when(authService.refresh("refreshToken")).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(post("/refresh")
+                        .cookie(new Cookie("refreshToken", "refreshToken")))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("U003"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+        verify(authService, times(1)).refresh("refreshToken");
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
 }
