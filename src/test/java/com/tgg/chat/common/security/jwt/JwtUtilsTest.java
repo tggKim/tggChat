@@ -75,4 +75,22 @@ class JwtUtilsTest {
                 .extracting(ex -> ((ErrorException)ex).getErrorCode())
                 .isEqualTo(ErrorCode.JWT_INVALID_TOKEN);
     }
+
+    @Test
+    @DisplayName("Claims 파싱 실패 - 서명이 유효하지 않은 토큰")
+    void parse_claims_fail_invalid_signature() {
+        // given
+        JwtUtils anotherJwtUtils = new JwtUtils("0123456789abcdefghijklmnopqrstuvwxyzfake");
+
+        User user = User.of("test@test.com", "testPassword", "testUsername");
+        ReflectionTestUtils.setField(user, "userId", 1L);
+
+        String invalidToken = anotherJwtUtils.createAccessToken(user);
+
+        // when & then
+        assertThatThrownBy(() -> jwtUtils.parseClaims(invalidToken))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_INVALID_TOKEN);
+    }
 }
