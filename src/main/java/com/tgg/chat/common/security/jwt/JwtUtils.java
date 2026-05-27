@@ -75,7 +75,7 @@ public class JwtUtils {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-        } catch (SignatureException | SecurityException | MalformedJwtException e) {
+        } catch (SignatureException | MalformedJwtException e) {
             // 유효하지 않은 JWT
             throw new ErrorException(ErrorCode.JWT_INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
