@@ -1,6 +1,8 @@
 package com.tgg.chat.common.security.jwt;
 
 import com.tgg.chat.domain.user.entity.User;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,7 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 class JwtUtilsTest {
     private final String SECRET_KEY = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -59,5 +61,18 @@ class JwtUtilsTest {
         // when & then
         assertThat(jwtUtils.getAccessTokenTtlMillis()).isEqualTo(Duration.ofMinutes(30).toMillis());
         assertThat(jwtUtils.getRefreshTokenTtlMillis()).isEqualTo(Duration.ofDays(7).toMillis());
+    }
+
+    @Test
+    @DisplayName("Claims 파싱 실패 - 형식이 잘못된 토큰")
+    void parse_claims_fail_malformed_token() {
+        // given
+        String malformedToken = "invalid.token.value";
+
+        // when & then
+        assertThatThrownBy(() -> jwtUtils.parseClaims(malformedToken))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_INVALID_TOKEN);
     }
 }
