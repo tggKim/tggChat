@@ -412,4 +412,23 @@ class AuthControllerTest {
         verify(authService, times(1)).refresh("refreshToken");
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
     }
+
+    @Test
+    @DisplayName("토큰 재발급 API 실패 - 유효하지 않은 리프레시 토큰")
+    void token_refresh_api_fail_invalid_refresh_token() throws Exception {
+        // given
+        when(authService.refresh("refreshToken")).thenThrow(new ErrorException(ErrorCode.JWT_INVALID_REFRESH_TOKEN));
+
+        // when & then
+        mockMvc.perform(post("/refresh")
+                        .cookie(new Cookie("refreshToken", "refreshToken")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("J007"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 리프레시 토큰입니다."));
+
+        verify(authService, times(1)).refresh("refreshToken");
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+    }
 }
