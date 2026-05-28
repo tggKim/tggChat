@@ -4,11 +4,16 @@ import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Date;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -92,5 +97,24 @@ class JwtUtilsTest {
                 .isInstanceOf(ErrorException.class)
                 .extracting(ex -> ((ErrorException)ex).getErrorCode())
                 .isEqualTo(ErrorCode.JWT_INVALID_TOKEN);
+    }
+
+    @Test
+    @DisplayName("Claims 파싱 실패 - 기간이 만료된 토큰")
+    void parse_claims_fail_expired_token() {
+        // given
+        Date now = new Date();
+
+        String expiredToken = Jwts.builder()
+                .setIssuedAt(new Date(now.getTime() - Duration.ofMinutes(2).toMillis()))
+                .setExpiration(new Date(now.getTime() - Duration.ofMinutes(1).toMillis()))
+                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
+                .compact();
+
+        // when & then
+        assertThatThrownBy(() -> jwtUtils.parseClaims(expiredToken))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_EXPIRED_TOKEN);
     }
 }
