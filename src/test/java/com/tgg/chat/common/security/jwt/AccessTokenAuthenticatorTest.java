@@ -91,4 +91,31 @@ class AccessTokenAuthenticatorTest {
         verify(jwtUtils, never()).parseClaims(anyString());
         verify(redisTokenStore, never()).matchesAccessToken(anyLong(), anyString());
     }
+
+    @Test
+    @DisplayName("토큰 검증 실패 - Redis 저장 AccessToken과 불일치")
+    void authenticate_token_fail_access_token_mismatch() {
+        // given
+        String mismatchToken = "Bearer accessToken";
+
+        Claims claims = mock(Claims.class);
+
+        when(jwtUtils.parseClaims("accessToken")).thenReturn(claims);
+
+        when(claims.getSubject()).thenReturn("1");
+
+        when(redisTokenStore.matchesAccessToken(1L, "accessToken")).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> accessTokenAuthenticator.authenticateBearerToken(mismatchToken))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.ACCESS_TOKEN_MISMATCH);
+
+        verify(jwtUtils, times(1)).parseClaims("accessToken");
+        verify(claims, times(1)).getSubject();
+        verify(redisTokenStore, times(1)).matchesAccessToken(1L, "accessToken");
+        verify(claims, never()).get("email", String.class);
+        verify(claims, never()).get("username", String.class);
+    }
 }
