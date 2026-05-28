@@ -2,6 +2,8 @@ package com.tgg.chat.common.security.jwt;
 
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.common.security.token.RedisTokenStore;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -55,5 +58,21 @@ class AccessTokenAuthenticatorTest {
         verify(redisTokenStore, times(1)).matchesAccessToken(1L, "token");
         verify(claims, times(1)).get("email", String.class);
         verify(claims, times(1)).get("username", String.class);
+    }
+
+    @Test
+    @DisplayName("토큰 검증 실패 - Authorization 헤더 없음")
+    void authenticate_token_fail_missing_auth_header() {
+        // given
+        String nullBearerString = null;
+
+        // when & then
+        assertThatThrownBy(() -> accessTokenAuthenticator.authenticateBearerToken(nullBearerString))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_MISSING_AUTH_HEADER);
+
+        verify(jwtUtils, never()).parseClaims(anyString());
+        verify(redisTokenStore, never()).matchesAccessToken(anyLong(), anyString());
     }
 }
