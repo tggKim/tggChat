@@ -75,4 +75,20 @@ class AccessTokenAuthenticatorTest {
         verify(jwtUtils, never()).parseClaims(anyString());
         verify(redisTokenStore, never()).matchesAccessToken(anyLong(), anyString());
     }
+
+    @Test
+    @DisplayName("토큰 검증 실패 - Authorization 헤더가 Bearer 형식이 아님")
+    void authenticate_token_fail_invalid_auth_scheme() {
+        // given
+        String invalidAuthScheme = "Basic token";
+
+        // when & then
+        assertThatThrownBy(() -> accessTokenAuthenticator.authenticateBearerToken(invalidAuthScheme))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_INVALID_AUTH_SCHEME);
+
+        verify(jwtUtils, never()).parseClaims(anyString());
+        verify(redisTokenStore, never()).matchesAccessToken(anyLong(), anyString());
+    }
 }
