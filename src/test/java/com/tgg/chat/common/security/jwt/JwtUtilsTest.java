@@ -9,6 +9,8 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -131,5 +133,16 @@ class JwtUtilsTest {
                 .isInstanceOf(ErrorException.class)
                 .extracting(ex -> ((ErrorException)ex).getErrorCode())
                 .isEqualTo(ErrorCode.JWT_UNSUPPORTED_TOKEN);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @DisplayName("Claims 파싱 실패 - 빈값 혹은 null 값")
+    void parse_claims_fail_empty_or_null_token(String token) {
+        // when & then
+        assertThatThrownBy(() -> jwtUtils.parseClaims(token))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_EMPTY_TOKEN);
     }
 }
