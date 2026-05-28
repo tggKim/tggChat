@@ -117,4 +117,19 @@ class JwtUtilsTest {
                 .extracting(ex -> ((ErrorException)ex).getErrorCode())
                 .isEqualTo(ErrorCode.JWT_EXPIRED_TOKEN);
     }
+
+    @Test
+    @DisplayName("Claims 파싱 실패 - 지원되지 않는 JWT 형식")
+    void parse_claims_fail_unsupported_token() {
+        // given
+        String unsupportedToken = Jwts.builder()
+                .setSubject("1")
+                .compact();
+
+        // when & then
+        assertThatThrownBy(() -> jwtUtils.parseClaims(unsupportedToken))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.JWT_UNSUPPORTED_TOKEN);
+    }
 }
