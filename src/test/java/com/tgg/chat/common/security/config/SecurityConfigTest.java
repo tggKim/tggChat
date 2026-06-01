@@ -1,8 +1,8 @@
 package com.tgg.chat.common.security.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.AccessTokenAuthenticator;
 import com.tgg.chat.common.security.jwt.JwtUtils;
+import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.auth.controller.AuthController;
 import com.tgg.chat.domain.auth.service.AuthService;
 import com.tgg.chat.exception.ErrorCode;
@@ -13,14 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 
 @WebMvcTest(AuthController.class)
@@ -57,5 +55,21 @@ class SecurityConfigTest {
 
         verify(accessTokenAuthenticator, times(1)).authenticateBearerToken(null);
         verify(authService, never()).logout(anyLong());
+    }
+
+    @Test
+    @DisplayName("보안 설정 성공 - 보호 API는 JWT 인증 성공 시 컨트롤러까지 도달")
+    void protected_api_with_valid_jwt_reaches_controller() throws Exception {
+        // given
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        when(accessTokenAuthenticator.authenticateBearerToken("Bearer Token")).thenReturn(authenticatedUser);
+
+        // when & then
+        mockMvc.perform(post("/logout")
+                    .header("Authorization", "Bearer Token"))
+                .andExpect(status().isOk());
+
+        verify(accessTokenAuthenticator, times(1)).authenticateBearerToken("Bearer Token");
+        verify(authService, times(1)).logout(1L);
     }
 }
