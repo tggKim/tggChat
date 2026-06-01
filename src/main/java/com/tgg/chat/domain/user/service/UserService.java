@@ -64,7 +64,13 @@ public class UserService {
 	public void updateUser(Long loginUserId, UserUpdateRequestDto userUpdateRequestDto) {
 		User findUser = findActiveUserById(loginUserId);
 
-		findUser.update(userUpdateRequestDto.getUsername());
+        String newUsername = userUpdateRequestDto.getUsername();
+        // 기존 username과 다르면 db에서 중복된 username 있는지 검사
+        if(!findUser.getUsername().equals(newUsername) && userRepository.existsByUsername(newUsername)) {
+            throw new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR);
+        }
+
+		findUser.update(newUsername);
 	}
 
 	@Transactional
