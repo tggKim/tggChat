@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Schema(description = "유저 조회 응답 DTO")
 public class UserResponseDto {
 
-    @Schema(description = "생성된 유저 식별 ID", example = "1", type = "string")
+    @Schema(description = "유저 식별 ID", example = "1")
     private final Long userId;
 
     @Schema(description = "이메일", example = "test@example.com")
@@ -21,11 +21,11 @@ public class UserResponseDto {
     private final String username;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @Schema(description = "유저 조회 응답 DTO", example = "2025-02-13 14:23:44", type="string")
+    @Schema(description = "가입 일시", example = "2025-02-13 14:23:44")
     private final LocalDateTime createdAt;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @Schema(description = "유저 조회 응답 DTO", example = "2025-02-13 14:23:44", type="string")
+    @Schema(description = "마지막 수정 일시", example = "2025-02-13 14:23:44")
     private final LocalDateTime updatedAt;
 
     private UserResponseDto(Long userId, String email, String username, LocalDateTime createdAt, LocalDateTime updatedAt) {
