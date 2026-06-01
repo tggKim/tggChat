@@ -11,7 +11,6 @@ import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.entity.User;
-import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -23,13 +22,11 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
 
 	private final UserRepository userRepository;
-	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
 	private final RedisTokenStore redisTokenStore;
 	
 	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
-		
 		// 이메일 중복 검사
 		if(userRepository.existsByEmail(signUpRequestDto.getEmail())) {
 			throw new ErrorException(ErrorCode.DUPLICATE_EMAIL_ERROR);
@@ -47,46 +44,27 @@ public class UserService {
 		User savedUser = userRepository.save(requestUser);
 		
 		return SignUpResponseDto.of(savedUser);
-		
 	}
 	
 	@Transactional(readOnly = true)
 	public OtherUserResponseDto findOtherUser(Long userId) {
-		
-		User findUser = userMapper.findById(userId);
-
-		if(findUser == null || findUser.getDeleted()) {
-			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-		}
+		User findUser = findActiveUserById(userId);
 		
 		return OtherUserResponseDto.of(findUser);
-		
 	}
 
     @Transactional(readOnly = true)
     public UserResponseDto findUser(Long userId) {
-
-        User findUser = userMapper.findById(userId);
-
-        if(findUser == null || findUser.getDeleted()) {
-            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-        }
+        User findUser = findActiveUserById(userId);
 
         return UserResponseDto.of(findUser);
-
     }
 
 	@Transactional
 	public void updateUser(Long loginUserId, UserUpdateRequestDto userUpdateRequestDto) {
-
-		User findUser = userRepository.findById(loginUserId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-
-		if(findUser.getDeleted()) {
-			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-		}
+		User findUser = findActiveUserById(loginUserId);
 
 		findUser.update(userUpdateRequestDto.getUsername());
-
 	}
 
 	@Transactional
@@ -95,16 +73,20 @@ public class UserService {
 			throw new ErrorException(ErrorCode.FORBIDDEN_USER_ACCESS);
 		}
 		
-		User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-
-		if(findUser.getDeleted()) {
-			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-		}
+		User findUser = findActiveUserById(userId);
 
 		findUser.deleteUser();
 		
 		// 레디스에서 AccessToken, RefreshToken 제거
 		redisTokenStore.deleteUserTokenSets(userId);
 	}
-	
+
+    private User findActiveUserById(Long userId) {
+        User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return findUser;
+    }
 }
