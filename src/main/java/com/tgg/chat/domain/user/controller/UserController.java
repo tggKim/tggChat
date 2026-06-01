@@ -132,7 +132,7 @@ public class UserController {
                     )
             )
     })
-    public ResponseEntity<UserResponseDto> findOtherUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+    public ResponseEntity<UserResponseDto> findUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
         UserResponseDto userResponseDto = userService.findUser(authenticatedUser.getUserId());
 
         return ResponseEntity
