@@ -12,18 +12,18 @@ import lombok.Getter;
 @Schema(description = "타 유저 조회 응답 DTO")
 public class OtherUserResponseDto {
 	
-	@Schema(description = "생성된 유저 식별 ID", example = "1", type = "string")
+	@Schema(description = "유저 식별 ID", example = "1")
 	private final Long userId;
 	
 	@Schema(description = "유저 이름", example = "user1")
 	private final String username;
 	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	@Schema(description = "유저 조회 응답 DTO", example = "2025-02-13 14:23:44", type="string")
+	@Schema(description = "가입 일시", example = "2025-02-13 14:23:44")
 	private final LocalDateTime createdAt;
 	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	@Schema(description = "유저 조회 응답 DTO", example = "2025-02-13 14:23:44", type="string")
+	@Schema(description = "마지막 수정 일시", example = "2025-02-13 14:23:44")
 	private final LocalDateTime updatedAt;
 	
 	private OtherUserResponseDto(Long userId, String username, LocalDateTime createdAt, LocalDateTime updatedAt) {
