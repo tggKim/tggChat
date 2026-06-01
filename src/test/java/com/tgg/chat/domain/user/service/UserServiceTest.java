@@ -2,9 +2,9 @@ package com.tgg.chat.domain.user.service;
 
 import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
+import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.entity.User;
-import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,9 +31,6 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
     @Mock
     UserRepository userRepository;
-
-    @Mock
-    UserMapper userMapper;
 
     @Mock
     PasswordEncoder passwordEncoder;
@@ -132,5 +130,28 @@ class UserServiceTest {
         verify(userRepository, times(1)).existsByUsername(requestDto.getUsername());
         verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("타 유저 조회 성공")
+    void find_other_user_success() {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "userId", 1L);
+        LocalDateTime now = LocalDateTime.now();
+        ReflectionTestUtils.setField(findUser, "createdAt", now);
+        ReflectionTestUtils.setField(findUser, "updatedAt", now);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when
+        OtherUserResponseDto responseDto = userService.findOtherUser(1L);
+
+        // then
+        assertThat(responseDto.getUserId()).isEqualTo(1L);
+        assertThat(responseDto.getUsername()).isEqualTo("testUsername");
+        assertThat(responseDto.getCreatedAt()).isEqualTo(now);
+        assertThat(responseDto.getUpdatedAt()).isEqualTo(now);
+
+        verify(userRepository, times(1)).findById(1L);
     }
 }
