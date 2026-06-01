@@ -1,9 +1,12 @@
 package com.tgg.chat.common.security.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.AccessTokenAuthenticator;
 import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.auth.controller.AuthController;
+import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
+import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.auth.service.AuthService;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -13,8 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Map;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,6 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SecurityConfigTest {
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     @MockitoBean
     AuthService authService;
@@ -71,5 +80,28 @@ class SecurityConfigTest {
 
         verify(accessTokenAuthenticator, times(1)).authenticateBearerToken("Bearer Token");
         verify(authService, times(1)).logout(1L);
+    }
+
+    @Test
+    @DisplayName("보안 설정 성공 - 공개 API는 JWT 필터를 거치지 않는다")
+    void public_api_does_not_use_jwt_filter() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "test@test.com"
+        );
+
+        LoginStatusResponseDto responseDto = LoginStatusResponseDto.of(true);
+        when(authService.isLoggedIn(any(LoginStatusRequestDto.class))).thenReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(post("/login-status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.isLoggedIn").value(true));
+
+        verify(accessTokenAuthenticator, never()).authenticateBearerToken(any());
+        verify(authService, times(1)).isLoggedIn(any(LoginStatusRequestDto.class));
     }
 }
