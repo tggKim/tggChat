@@ -350,4 +350,21 @@ class UserServiceTest {
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).existsByUsername("updateUsername");
     }
+
+    @Test
+    @DisplayName("유저 삭제 성공")
+    void delete_user_success() {
+        // given
+        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when
+        userService.deleteUser(1L, 1L);
+
+        // then
+        assertThat(findUser.getDeleted()).isTrue();
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(redisTokenStore, times(1)).deleteUserTokenSets(1L);
+    }
 }
