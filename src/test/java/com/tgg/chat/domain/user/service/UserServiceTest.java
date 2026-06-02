@@ -2,6 +2,7 @@ package com.tgg.chat.domain.user.service;
 
 import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
+import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
@@ -225,5 +226,45 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    @DisplayName("본인 유저 조회 실패 - 삭제된 유저")
+    void find_user_fail_deleted_user() {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "deleted", true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.findUser(1L))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    @DisplayName("유저 업데이트 성공 - 기존과 다른 유저명")
+    void update_user_success() {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+
+        UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "updateUsername");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        when(userRepository.existsByUsername("updateUsername")).thenReturn(false);
+
+        // when
+        userService.updateUser(1L, requestDto);
+
+        // then
+        assertThat(findUser.getUsername()).isEqualTo("updateUsername");
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1)).existsByUsername("updateUsername");
     }
 }
