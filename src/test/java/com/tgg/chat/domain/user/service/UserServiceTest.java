@@ -247,7 +247,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("유저 업데이트 성공 - 기존과 다른 유저명")
-    void update_user_success() {
+    void update_user_success_changed_username() {
         // given
         User findUser = User.of("test@test.com", "encoded-password", "testUsername");
 
@@ -266,5 +266,26 @@ class UserServiceTest {
 
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).existsByUsername("updateUsername");
+    }
+
+    @Test
+    @DisplayName("유저 업데이트 성공 - 기존과 같은 유저명")
+    void update_user_success_same_username() {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+
+        UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "testUsername");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when
+        userService.updateUser(1L, requestDto);
+
+        // then
+        assertThat(findUser.getUsername()).isEqualTo("testUsername");
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, never()).existsByUsername(anyString());
     }
 }
