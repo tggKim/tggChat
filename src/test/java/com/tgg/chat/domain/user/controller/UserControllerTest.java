@@ -318,4 +318,21 @@ class UserControllerTest {
 
         verify(userService, times(1)).findOtherUser(1L);
     }
+
+    @Test
+    @DisplayName("타 회원 조회 API 실패 - 존재하지 않거나 삭제된 유저")
+    void find_other_user_api_fail_not_found_or_deleted_user() throws Exception {
+        // given
+        when(userService.findOtherUser(1L)).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(get("/user/1"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("U003"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+        verify(userService, times(1)).findOtherUser(1L);
+    }
 }
