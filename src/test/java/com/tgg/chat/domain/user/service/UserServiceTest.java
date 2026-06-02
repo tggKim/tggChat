@@ -288,4 +288,23 @@ class UserServiceTest {
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, never()).existsByUsername(anyString());
     }
+
+    @Test
+    @DisplayName("유저 업데이트 실패 - 존재하지 않는 유저")
+    void update_user_fail_user_not_found() {
+        // given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "testUsername");
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateUser(1L, requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, never()).existsByUsername(anyString());
+    }
 }
