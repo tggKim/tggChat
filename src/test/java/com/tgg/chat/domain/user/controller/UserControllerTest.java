@@ -450,4 +450,26 @@ class UserControllerTest {
 
         verify(userService, never()).updateUser(anyLong(), any(UserUpdateRequestDto.class));
     }
+
+    @Test
+    @DisplayName("회원 수정 API 실패 - 사용자명 50자 초과")
+    void update_user_api_fail_too_long_username() throws Exception {
+        // given
+        String username = "a".repeat(51);
+        Map<String, Object> requestBody = Map.of(
+                "username", username
+        );
+
+        // when & then
+        mockMvc.perform(patch("/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("사용자명 길이는 50자 이하입니다."));
+
+        verify(userService, never()).updateUser(anyLong(), any(UserUpdateRequestDto.class));
+    }
 }
