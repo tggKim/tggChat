@@ -429,4 +429,25 @@ class UserControllerTest {
             SecurityContextHolder.clearContext();
         }
     }
+
+    @Test
+    @DisplayName("회원 수정 API 실패 - 빈 사용자명")
+    void update_user_api_fail_blank_username() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", ""
+        );
+
+        // when & then
+        mockMvc.perform(patch("/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("사용자명은 필수입니다."));
+
+        verify(userService, never()).updateUser(anyLong(), any(UserUpdateRequestDto.class));
+    }
 }
