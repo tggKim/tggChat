@@ -3,6 +3,7 @@ package com.tgg.chat.domain.user.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
+import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.service.UserService;
@@ -26,6 +27,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -289,5 +291,31 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("중복된 유저명 입니다."));
 
         verify(userService, times(1)).signUpUser(any(SignUpRequestDto.class));
+    }
+
+    @Test
+    @DisplayName("타 회원 조회 API 성공")
+    void find_other_user_api_success() throws Exception {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "userId", 1L);
+        LocalDateTime localDateTime = LocalDateTime.of(2026, 12, 1, 9, 0, 0);
+        ReflectionTestUtils.setField(findUser, "createdAt", localDateTime);
+        ReflectionTestUtils.setField(findUser, "updatedAt", localDateTime);
+
+        OtherUserResponseDto responseDto = OtherUserResponseDto.of(findUser);
+
+        when(userService.findOtherUser(1L)).thenReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(get("/user/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.userId").value(1L))
+                .andExpect(jsonPath("$.username").value("testUsername"))
+                .andExpect(jsonPath("$.createdAt").value("2026-12-01 09:00:00"))
+                .andExpect(jsonPath("$.updatedAt").value("2026-12-01 09:00:00"));
+
+        verify(userService, times(1)).findOtherUser(1L);
     }
 }
