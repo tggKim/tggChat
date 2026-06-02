@@ -561,4 +561,29 @@ class UserControllerTest {
             SecurityContextHolder.clearContext();
         }
     }
+
+    @Test
+    @DisplayName("회원 삭제 API 실패 - 존재하지 않거나 삭제된 유저")
+    void delete_user_api_fail_not_found_or_deleted_user() throws Exception {
+        // given
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        doThrow(new ErrorException(ErrorCode.USER_NOT_FOUND)).when(userService).deleteUser(1L);
+
+        // when & then
+        try {
+            mockMvc.perform(delete("/me"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value("U003"))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+            verify(userService, times(1)).deleteUser(1L);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 }
