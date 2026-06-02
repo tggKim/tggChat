@@ -472,4 +472,39 @@ class UserControllerTest {
 
         verify(userService, never()).updateUser(anyLong(), any(UserUpdateRequestDto.class));
     }
+
+    @Test
+    @DisplayName("회원 수정 API 실패 - 존재하지 않거나 삭제된 유저")
+    void update_user_api_fail_not_found_or_deleted_user() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", "updateUsername"
+        );
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        doThrow(new ErrorException(ErrorCode.USER_NOT_FOUND)).when(userService).updateUser(eq(1L), any(UserUpdateRequestDto.class));
+
+        // when & then
+        try {
+            mockMvc.perform(patch("/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestBody)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value("U003"))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+            ArgumentCaptor<UserUpdateRequestDto> argumentCaptor = ArgumentCaptor.forClass(UserUpdateRequestDto.class);
+            verify(userService, times(1)).updateUser(eq(1L), argumentCaptor.capture());
+            UserUpdateRequestDto userUpdateRequestDto = argumentCaptor.getValue();
+
+            assertThat(userUpdateRequestDto.getUsername()).isEqualTo("updateUsername");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 }
