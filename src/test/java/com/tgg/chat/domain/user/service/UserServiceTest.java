@@ -296,7 +296,28 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "testUsername");
+        ReflectionTestUtils.setField(requestDto, "username", "updateUsername");
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateUser(1L, requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, never()).existsByUsername(anyString());
+    }
+
+    @Test
+    @DisplayName("유저 업데이트 실패 - 삭제된 유저")
+    void update_user_fail_deleted_user() {
+        // given
+        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        ReflectionTestUtils.setField(findUser, "deleted", true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "updateUsername");
 
         // when & then
         assertThatThrownBy(() -> userService.updateUser(1L, requestDto))
