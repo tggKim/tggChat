@@ -383,4 +383,22 @@ class UserServiceTest {
         verify(userRepository, times(1)).findById(1L);
         verify(redisTokenStore, never()).deleteUserTokenSets(anyLong());
     }
+
+    @Test
+    @DisplayName("유저 삭제 실패 - 삭제된 유저")
+    void delete_user_fail_deleted_user() {
+        // given
+        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        ReflectionTestUtils.setField(findUser, "deleted", true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.deleteUser(1L))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(redisTokenStore, never()).deleteUserTokenSets(anyLong());
+    }
 }
