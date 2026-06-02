@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
+import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
@@ -32,8 +33,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
@@ -396,6 +396,35 @@ class UserControllerTest {
                     .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
 
             verify(userService, times(1)).findUser(1L);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
+    @DisplayName("회원 수정 API 성공")
+    void update_user_api_success() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", "updateUsername"
+        );
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        // when & then
+        try {
+            mockMvc.perform(patch("/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestBody)))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<UserUpdateRequestDto> argumentCaptor = ArgumentCaptor.forClass(UserUpdateRequestDto.class);
+            verify(userService, times(1)).updateUser(eq(1L), argumentCaptor.capture());
+            UserUpdateRequestDto userUpdateRequestDto = argumentCaptor.getValue();
+
+            assertThat(userUpdateRequestDto.getUsername()).isEqualTo("updateUsername");
         } finally {
             SecurityContextHolder.clearContext();
         }
