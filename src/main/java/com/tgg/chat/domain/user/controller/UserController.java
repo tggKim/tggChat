@@ -171,7 +171,7 @@ public class UserController {
 				.body(null);
 	}
 
-	@DeleteMapping("/user/{userId}")
+	@DeleteMapping("/me")
 	@SecurityRequirement(name = "JWT Auth")
 	@Operation(
 			summary = "회원 삭제",
@@ -194,8 +194,8 @@ public class UserController {
 				)
 		)
 	})
-	public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @PathVariable Long userId) {
-		userService.deleteUser(authenticatedUser.getUserId(), userId);
+	public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+		userService.deleteUser(authenticatedUser.getUserId());
 
 		return ResponseEntity
 				.status(HttpStatus.OK)

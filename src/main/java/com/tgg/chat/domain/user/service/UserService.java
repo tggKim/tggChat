@@ -74,11 +74,7 @@ public class UserService {
 	}
 
 	@Transactional
-	public void deleteUser(Long loginUserId, Long userId) {
-		if(!loginUserId.equals(userId)) {
-			throw new ErrorException(ErrorCode.FORBIDDEN_USER_ACCESS);
-		}
-		
+	public void deleteUser(Long userId) {
 		User findUser = findActiveUserById(userId);
 
 		findUser.deleteUser();
