@@ -542,4 +542,23 @@ class UserControllerTest {
             SecurityContextHolder.clearContext();
         }
     }
+
+    @Test
+    @DisplayName("회원 삭제 API 성공")
+    void delete_user_api_success() throws Exception {
+        // given
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        // when & then
+        try {
+            mockMvc.perform(delete("/me"))
+                    .andExpect(status().isOk());
+
+            verify(userService, times(1)).deleteUser(1L);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 }
