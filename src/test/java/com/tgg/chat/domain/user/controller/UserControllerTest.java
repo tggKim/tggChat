@@ -507,4 +507,39 @@ class UserControllerTest {
             SecurityContextHolder.clearContext();
         }
     }
+
+    @Test
+    @DisplayName("회원 수정 API 실패 - 중복된 유저명")
+    void update_user_api_fail_duplicate_username() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", "updateUsername"
+        );
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        doThrow(new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR)).when(userService).updateUser(eq(1L), any(UserUpdateRequestDto.class));
+
+        // when & then
+        try {
+            mockMvc.perform(patch("/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestBody)))
+                    .andExpect(status().isConflict())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value("U002"))
+                    .andExpect(jsonPath("$.status").value(409))
+                    .andExpect(jsonPath("$.message").value("중복된 유저명 입니다."));
+
+            ArgumentCaptor<UserUpdateRequestDto> argumentCaptor = ArgumentCaptor.forClass(UserUpdateRequestDto.class);
+            verify(userService, times(1)).updateUser(eq(1L), argumentCaptor.capture());
+            UserUpdateRequestDto userUpdateRequestDto = argumentCaptor.getValue();
+
+            assertThat(userUpdateRequestDto.getUsername()).isEqualTo("updateUsername");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 }
