@@ -328,4 +328,26 @@ class UserServiceTest {
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, never()).existsByUsername(anyString());
     }
+
+    @Test
+    @DisplayName("유저 업데이트 실패 - 중복된 유저명")
+    void update_user_fail_duplicated_username() {
+        // given
+        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "updateUsername");
+
+        when(userRepository.existsByUsername("updateUsername")).thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateUser(1L, requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.DUPLICATE_USERNAME_ERROR);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1)).existsByUsername("updateUsername");
+    }
 }
