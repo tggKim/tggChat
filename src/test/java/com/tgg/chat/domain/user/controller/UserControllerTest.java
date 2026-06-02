@@ -2,9 +2,11 @@ package com.tgg.chat.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
+import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
+import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.service.UserService;
 import com.tgg.chat.exception.ErrorCode;
@@ -17,11 +19,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -334,5 +339,40 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
 
         verify(userService, times(1)).findOtherUser(1L);
+    }
+
+    @Test
+    @DisplayName("본인 회원 조회 API 성공")
+    void find_user_api_success() throws Exception {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "userId", 1L);
+        LocalDateTime localDateTime = LocalDateTime.of(2026, 12, 1, 9, 0, 0);
+        ReflectionTestUtils.setField(findUser, "createdAt", localDateTime);
+        ReflectionTestUtils.setField(findUser, "updatedAt", localDateTime);
+
+        UserResponseDto responseDto = UserResponseDto.of(findUser);
+
+        when(userService.findUser(1L)).thenReturn(responseDto);
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        // when & then
+        try {
+            mockMvc.perform(get("/me"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.userId").value(1L))
+                    .andExpect(jsonPath("$.email").value("test@test.com"))
+                    .andExpect(jsonPath("$.username").value("testUsername"))
+                    .andExpect(jsonPath("$.createdAt").value("2026-12-01 09:00:00"))
+                    .andExpect(jsonPath("$.updatedAt").value("2026-12-01 09:00:00"));
+
+            verify(userService, times(1)).findUser(1L);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }
