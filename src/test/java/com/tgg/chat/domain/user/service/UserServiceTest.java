@@ -367,4 +367,20 @@ class UserServiceTest {
         verify(userRepository, times(1)).findById(1L);
         verify(redisTokenStore, times(1)).deleteUserTokenSets(1L);
     }
+
+    @Test
+    @DisplayName("유저 삭제 실패 - 존재하지 않는 유저")
+    void delete_user_fail_user_not_found() {
+        // given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.deleteUser(1L))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(redisTokenStore, never()).deleteUserTokenSets(anyLong());
+    }
 }
