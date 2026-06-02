@@ -359,7 +359,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
         // when
-        userService.deleteUser(1L, 1L);
+        userService.deleteUser(1L);
 
         // then
         assertThat(findUser.getDeleted()).isTrue();
