@@ -110,6 +110,7 @@ public class UserController {
 	}
 
     @GetMapping("/me")
+    @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "회원 조회",
             description =  "로그인한 사용자를 조회 합니다."
@@ -121,6 +122,14 @@ public class UserController {
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = UserResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "유효하지 않은 토큰",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
                     )
             ),
             @ApiResponse(
@@ -154,6 +163,22 @@ public class UserController {
 					mediaType = "application/json"
 				)
 		),
+        @ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        ),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        ),
 		@ApiResponse(
 				responseCode = "404", 
 				description = "존재하지 않는 유저",
@@ -161,7 +186,15 @@ public class UserController {
 					mediaType = "application/json",
 					schema = @Schema(implementation = ErrorResponse.class)
 				)
-		)
+		),
+        @ApiResponse(
+                responseCode = "409",
+                description = "중복된 유저명",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        )
 	})
 	public ResponseEntity<Void> updateUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
 		userService.updateUser(authenticatedUser.getUserId(), userUpdateRequestDto);
@@ -185,6 +218,14 @@ public class UserController {
 					mediaType = "application/json"
 				)
 		),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        ),
 		@ApiResponse(
 				responseCode = "404", 
 				description = "존재하지 않는 유저",
