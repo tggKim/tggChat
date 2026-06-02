@@ -4,6 +4,7 @@ import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
+import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
@@ -183,6 +184,30 @@ class UserServiceTest {
                 .isInstanceOf(ErrorException.class)
                 .extracting(ex -> ((ErrorException)ex).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    @DisplayName("본인 유저 조회 성공")
+    void find_user_success() {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "userId", 1L);
+        LocalDateTime now = LocalDateTime.now();
+        ReflectionTestUtils.setField(findUser, "createdAt", now);
+        ReflectionTestUtils.setField(findUser, "updatedAt", now);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when
+        UserResponseDto responseDto = userService.findUser(1L);
+
+        // then
+        assertThat(responseDto.getUserId()).isEqualTo(1L);
+        assertThat(responseDto.getEmail()).isEqualTo("test@test.com");
+        assertThat(responseDto.getUsername()).isEqualTo("testUsername");
+        assertThat(responseDto.getCreatedAt()).isEqualTo(now);
+        assertThat(responseDto.getUpdatedAt()).isEqualTo(now);
 
         verify(userRepository, times(1)).findById(1L);
     }
