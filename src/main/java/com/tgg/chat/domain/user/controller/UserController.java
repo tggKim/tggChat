@@ -126,7 +126,7 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "유효하지 않은 토큰",
+                    description = "JWT 인증 실패",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
@@ -158,10 +158,7 @@ public class UserController {
 	@ApiResponses({
 		@ApiResponse(
 				responseCode = "200", 
-				description = "수정 성공",
-				content = @Content(
-					mediaType = "application/json"
-				)
+				description = "수정 성공"
 		),
         @ApiResponse(
                 responseCode = "400",
@@ -173,7 +170,7 @@ public class UserController {
         ),
         @ApiResponse(
                 responseCode = "401",
-                description = "유효하지 않은 토큰",
+                description = "JWT 인증 실패",
                 content = @Content(
                         mediaType = "application/json",
                         schema = @Schema(implementation = ErrorResponse.class)
@@ -213,14 +210,11 @@ public class UserController {
 	@ApiResponses({
 		@ApiResponse(
 				responseCode = "200", 
-				description = "삭제 성공",
-				content = @Content(
-					mediaType = "application/json"
-				)
+				description = "삭제 성공"
 		),
         @ApiResponse(
                 responseCode = "401",
-                description = "유효하지 않은 토큰",
+                description = "JWT 인증 실패",
                 content = @Content(
                         mediaType = "application/json",
                         schema = @Schema(implementation = ErrorResponse.class)
