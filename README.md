@@ -89,7 +89,7 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 (프론트에서 이를 활용하여 유저의 다른 세션에서의 로그인 여부 파악)
 
 ### 3. 로그아웃(POST /logout)
-1. SecurityContext 에서 userId 획득
+1. JWT 인증 정보에서 로그인한 유저 ID 추출
 2. userId를 이용해 redis에서 사용자의 AccessToken, RefreshToken 모두 삭제
 
 ### 4. 토큰 재발급(POST /refresh)
