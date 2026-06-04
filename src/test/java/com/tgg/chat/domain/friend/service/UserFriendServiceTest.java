@@ -137,4 +137,30 @@ class UserFriendServiceTest {
         verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
         verify(userFriendRepository, never()).save(any(UserFriend.class));
     }
+
+    @Test
+    @DisplayName("친구 등록 실패 - 삭제된 친구")
+    void create_friend_fail_deleted_friend() {
+        // given
+        CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+
+        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
+        ReflectionTestUtils.setField(friend, "deleted", true);
+        when(userRepository.findByUsername(requestDto.getUsername())).thenReturn(Optional.of(friend));
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
+        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
+        verify(userFriendRepository, never()).save(any(UserFriend.class));
+    }
 }
