@@ -71,13 +71,36 @@ class UserFriendServiceTest {
     }
 
     @Test
-    @DisplayName("친구 등록 실패 - 존재하지 않는 유저")
-    void create_friend_fail_not_found_user() {
+    @DisplayName("친구 등록 실패 - 존재하지 않는 로그인 유저")
+    void create_friend_fail_not_found_owner() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
         ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
 
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, never()).findByUsername(anyString());
+        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
+        verify(userFriendRepository, never()).save(any(UserFriend.class));
+    }
+
+    @Test
+    @DisplayName("친구 등록 실패 - 삭제된 로그인 유저")
+    void create_friend_fail_deleted_owner() {
+        // given
+        CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        ReflectionTestUtils.setField(owner, "deleted", true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
         // when & then
         assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
