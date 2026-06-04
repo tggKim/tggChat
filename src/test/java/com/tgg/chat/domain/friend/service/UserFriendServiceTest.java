@@ -163,4 +163,31 @@ class UserFriendServiceTest {
         verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
         verify(userFriendRepository, never()).save(any(UserFriend.class));
     }
+
+    @Test
+    @DisplayName("친구 등록 실패 - 자기 자신을 친구로 등록")
+    void create_friend_fail_self_friend_not_allowed() {
+        // given
+        CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        ReflectionTestUtils.setField(owner, "userId", 1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+
+        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
+        ReflectionTestUtils.setField(friend, "userId", 1L);
+        when(userRepository.findByUsername(requestDto.getUsername())).thenReturn(Optional.of(friend));
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.SELF_FRIEND_NOT_ALLOWED);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
+        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
+        verify(userFriendRepository, never()).save(any(UserFriend.class));
+    }
 }
