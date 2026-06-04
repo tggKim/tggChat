@@ -11,7 +11,5 @@ import com.tgg.chat.domain.user.entity.User;
 public interface UserMapper {
 	User findById(Long userId);
 	
-	User findByUsername(String username);
-	
 	List<UserIdUsernameQueryDto> getUserNames(List<Long> userIds);
 }
