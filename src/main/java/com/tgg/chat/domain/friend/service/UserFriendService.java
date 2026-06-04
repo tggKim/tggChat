@@ -13,7 +13,6 @@ import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,27 +23,35 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserFriendService {
 
+    private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final UserFriendRepository userFriendRepository;
     private final UserFriendMapper userFriendMapper;
 
     @Transactional
-    public void createFriend(Long ownerId, CreateFriendRequestDto createFriendRequestDto) {
-
+    public void createFriend(Long loginUserId, CreateFriendRequestDto createFriendRequestDto) {
         // 현재 로그인한 유저와, 친구로 추가하고자 하는 유저 엔티티 조회
-    	User owner = userMapper.findById(ownerId);
-    	User friend = userMapper.findByUsername(createFriendRequestDto.getUsername());
-        if(friend == null || friend.getDeleted()) {
+        User owner = userRepository.findById(loginUserId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(owner.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        User friend = userRepository.findByUsername(createFriendRequestDto.getUsername())
+                .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(friend.getDeleted()) {
         	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
         
         // 자기 자신은 친구로 추가할 수 없으므로 검증
-        if(owner.getUserId() == friend.getUserId()) {
+        Long ownerId = owner.getUserId();
+        Long friendId = friend.getUserId();
+        if(ownerId.equals(friendId)) {
         	throw new ErrorException(ErrorCode.SELF_FRIEND_NOT_ALLOWED);
         }
         
         // 이미 친구로 등록이 되었는지 확인
-        boolean isAlreadyFriend = userFriendMapper.existsByOwnerIdAndFriendId(owner.getUserId(), friend.getUserId());
+        boolean isAlreadyFriend = userFriendRepository.existsByOwner_UserIdAndFriend_UserId(ownerId, friendId);
         if(isAlreadyFriend) {
         	throw new ErrorException(ErrorCode.ALREADY_FRIEND);
         }
@@ -53,7 +60,6 @@ public class UserFriendService {
         UserFriend userFriend = UserFriend.of(owner, friend);
 
         userFriendRepository.save(userFriend);
-
     }
     
     @Transactional(readOnly = true)
