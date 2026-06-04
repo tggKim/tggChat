@@ -2,7 +2,6 @@ package com.tgg.chat.domain.friend.entity;
 
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.GeneratorType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
