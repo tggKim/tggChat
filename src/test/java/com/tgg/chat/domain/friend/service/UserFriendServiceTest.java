@@ -6,6 +6,8 @@ import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,5 +68,26 @@ class UserFriendServiceTest {
 
         assertThat(userFriend.getOwner().getUserId()).isEqualTo(owner.getUserId());
         assertThat(userFriend.getFriend().getUserId()).isEqualTo(friend.getUserId());
+    }
+
+    @Test
+    @DisplayName("친구 등록 실패 - 존재하지 않는 유저")
+    void create_friend_fail_not_found_user() {
+        // given
+        CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
+        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, never()).findByUsername(anyString());
+        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
+        verify(userFriendRepository, never()).save(any(UserFriend.class));
     }
 }
