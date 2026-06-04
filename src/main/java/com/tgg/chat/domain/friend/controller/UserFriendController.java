@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -46,6 +47,14 @@ public class UserFriendController {
 					mediaType = "application/json"
 				)
 		),
+        @ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        ),
 		@ApiResponse(
 				responseCode = "400", 
 				description = "자기 자신을 친구로 추가할 수 없습니다.",
@@ -71,7 +80,7 @@ public class UserFriendController {
 				)
 		)
 	})
-    public ResponseEntity<Void> createUserFriend(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @RequestBody CreateFriendRequestDto createFriendRequestDto) {
+    public ResponseEntity<Void> createUserFriend(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @Valid @RequestBody CreateFriendRequestDto createFriendRequestDto) {
         userFriendService.createFriend(authenticatedUser.getUserId(), createFriendRequestDto);
 
         return ResponseEntity
