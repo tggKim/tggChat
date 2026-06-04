@@ -1,6 +1,5 @@
 package com.tgg.chat.domain.friend.dto.response;
 
-import java.time.LocalDateTime;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -13,15 +12,15 @@ public class FriendListResponseDto {
 	private final Long friendId;
 	
 	@Schema(description = "유저 이름", example = "user1")
-	private final String username;
+	private final String friendUsername;
 	
-	private FriendListResponseDto(Long friendId, String username) {
+	private FriendListResponseDto(Long friendId, String friendUsername) {
 		this.friendId = friendId;
-		this.username = username;
+		this.friendUsername = friendUsername;
 	}
 	
-	public static FriendListResponseDto of(Long friendId, String username) {
-		return new FriendListResponseDto(friendId, username);
+	public static FriendListResponseDto of(Long friendId, String friendUsername) {
+		return new FriendListResponseDto(friendId, friendUsername);
 	}
 	
 }

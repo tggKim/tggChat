@@ -3,18 +3,12 @@
 <mapper namespace="com.tgg.chat.domain.friend.repository.UserFriendMapper">
     <select id="findFriendListByOwnerId" parameterType="long" resultType="UserFriendRowDto">
         SELECT
-            T1.user_friend_id
-        ,   T1.owner_id
-        ,   T1.friend_id
-        ,   T1.created_at
-        ,   T1.updated_at
-        ,	T2.username AS owner_username
-        ,	T3.username AS friend_username
+            T1.friend_id
+        ,	T2.username AS friend_username
         FROM user_friend T1
-        INNER JOIN user T2 ON T1.owner_id = T2.user_id
-        INNER JOIN user T3 ON T1.friend_id = T3.user_id 
-        WHERE T1.owner_id = #{ownerId} AND T3.deleted = 0
-        ORDER BY T3.username ASC
+        INNER JOIN user T2 ON T1.friend_id = T2.user_id
+        WHERE T1.owner_id = #{ownerId} AND T2.deleted = 0
+        ORDER BY T2.username ASC
     </select>
 
     <select id="countActiveFriendsByIds" resultType="int">

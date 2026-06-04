@@ -7,7 +7,6 @@ import com.tgg.chat.domain.friend.entity.UserFriend;
 import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
-import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserFriendService {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
     private final UserFriendRepository userFriendRepository;
     private final UserFriendMapper userFriendMapper;
 
@@ -64,10 +62,9 @@ public class UserFriendService {
     
     @Transactional(readOnly = true)
     public List<FriendListResponseDto> findFriendListByOwnerId(Long ownerId) {
-    	
     	// 유저의 존재여부를 검증
-		User findUser = userMapper.findById(ownerId);
-		if(findUser == null || findUser.getDeleted()) {
+		User findUser = userRepository.findById(ownerId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+		if(findUser.getDeleted()) {
 			throw new ErrorException(ErrorCode.USER_NOT_FOUND);
 		}
     	
@@ -75,15 +72,12 @@ public class UserFriendService {
 		List<UserFriendRowDto> friendList = userFriendMapper.findFriendListByOwnerId(ownerId);
 		
 		// 응답 DTO로 변환
-		List<FriendListResponseDto> friendListResponse = friendList.stream().map(userFriendRowDto -> {
-			Long friendId = userFriendRowDto.getFriendId();
-			String friendUsername = userFriendRowDto.getFriendUsername();
-			return FriendListResponseDto.of(friendId, friendUsername);
-		})
-		.collect(Collectors.toList());
-		
-		return friendListResponse;
-		
+		return friendList.stream().map(userFriendRowDto -> {
+                    Long friendId = userFriendRowDto.getFriendId();
+                    String friendUsername = userFriendRowDto.getFriendUsername();
+                    return FriendListResponseDto.of(friendId, friendUsername);
+                })
+                .collect(Collectors.toList());
     }
 
 }
