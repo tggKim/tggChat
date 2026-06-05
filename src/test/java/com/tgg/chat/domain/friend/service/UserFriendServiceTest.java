@@ -1,6 +1,8 @@
 package com.tgg.chat.domain.friend.service;
 
+import com.tgg.chat.domain.friend.dto.query.UserFriendRowDto;
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
+import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
 import com.tgg.chat.domain.friend.entity.UserFriend;
 import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
@@ -17,10 +19,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -218,5 +220,35 @@ class UserFriendServiceTest {
         verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
         verify(userFriendRepository, times(1)).existsByOwner_UserIdAndFriend_UserId(owner.getUserId(), friend.getUserId());
         verify(userFriendRepository, never()).save(any(UserFriend.class));
+    }
+
+    @Test
+    @DisplayName("친구 목록조회 성공")
+    void find_friend_list_success() {
+        // given
+        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        UserFriendRowDto friend1 = new UserFriendRowDto();
+        ReflectionTestUtils.setField(friend1, "friendId", 1L);
+        ReflectionTestUtils.setField(friend1, "friendUsername", "friend1");
+        UserFriendRowDto friend2 = new UserFriendRowDto();
+        ReflectionTestUtils.setField(friend2, "friendId", 2L);
+        ReflectionTestUtils.setField(friend2, "friendUsername", "friend2");
+        when(userFriendMapper.findFriendListByOwnerId(1L)).thenReturn(List.of(friend1, friend2));
+
+        // when
+        List<FriendListResponseDto> result = userFriendService.findFriendListByOwnerId(1L);
+
+        // then
+        assertThat(result).hasSize(2)
+                .extracting(FriendListResponseDto::getFriendId, FriendListResponseDto::getFriendUsername)
+                .containsExactly(
+                        tuple(1L, "friend1"),
+                        tuple(2L, "friend2")
+                );
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userFriendMapper, times(1)).findFriendListByOwnerId(1L);
     }
 }
