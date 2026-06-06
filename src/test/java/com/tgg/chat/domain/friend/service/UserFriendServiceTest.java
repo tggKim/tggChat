@@ -253,7 +253,7 @@ class UserFriendServiceTest {
     }
 
     @Test
-    @DisplayName("친구 목록조회 실재 - 존재하지 않는 로그인 유저")
+    @DisplayName("친구 목록조회 실패 - 존재하지 않는 로그인 유저")
     void find_friend_list_fail_not_found_login_user() {
         // given
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
