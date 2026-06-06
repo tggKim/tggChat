@@ -251,4 +251,20 @@ class UserFriendServiceTest {
         verify(userRepository, times(1)).findById(1L);
         verify(userFriendMapper, times(1)).findFriendListByOwnerId(1L);
     }
+
+    @Test
+    @DisplayName("친구 목록조회 실재 - 존재하지 않는 로그인 유저")
+    void find_friend_list_fail_not_found_login_user() {
+        // given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.findFriendListByOwnerId(1L))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userFriendMapper, never()).findFriendListByOwnerId(anyLong());
+    }
 }
