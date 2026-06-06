@@ -267,4 +267,22 @@ class UserFriendServiceTest {
         verify(userRepository, times(1)).findById(1L);
         verify(userFriendMapper, never()).findFriendListByOwnerId(anyLong());
     }
+
+    @Test
+    @DisplayName("친구 목록조회 실패 - 삭제된 로그인 유저")
+    void find_friend_list_fail_deleted_login_user() {
+        // given
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        ReflectionTestUtils.setField(findUser, "deleted", true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.findFriendListByOwnerId(1L))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userFriendMapper, never()).findFriendListByOwnerId(anyLong());
+    }
 }
