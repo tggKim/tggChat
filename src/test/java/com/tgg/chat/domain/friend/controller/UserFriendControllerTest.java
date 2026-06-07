@@ -214,4 +214,29 @@ class UserFriendControllerTest {
             SecurityContextHolder.clearContext();
         }
     }
+
+    @Test
+    @DisplayName("친구 목록 조회 API 실패 - 존재하지 않거나 삭제된 유저")
+    void find_friend_list_fail_not_found_or_deleted_user() throws Exception {
+        // given
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        when(userFriendService.findFriendListByOwnerId(1L)).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+        // when & then
+        try {
+            mockMvc.perform(get("/friends"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value("U003"))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+            verify(userFriendService, times(1)).findFriendListByOwnerId(1L);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 }
