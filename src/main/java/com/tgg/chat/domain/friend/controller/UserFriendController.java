@@ -42,27 +42,24 @@ public class UserFriendController {
 	@ApiResponses({
 		@ApiResponse(
 				responseCode = "200", 
-				description = "친구 추가 성공",
-				content = @Content(
-					mediaType = "application/json"
-				)
+				description = "친구 추가 성공"
 		),
         @ApiResponse(
                 responseCode = "400",
-                description = "잘못된 요청",
+                description = "요청값 검증 실패 또는 자기 자신 친구 추가",
                 content = @Content(
                         mediaType = "application/json",
                         schema = @Schema(implementation = ErrorResponse.class)
                 )
         ),
-		@ApiResponse(
-				responseCode = "400", 
-				description = "자기 자신을 친구로 추가할 수 없습니다.",
-				content = @Content(
-					mediaType = "application/json",
-					schema = @Schema(implementation = ErrorResponse.class)
-				)
-		),
+        @ApiResponse(
+                responseCode = "401",
+                description = "JWT 인증 실패",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        ),
 		@ApiResponse(
 				responseCode = "404", 
 				description = "존재하지 않는 유저",
