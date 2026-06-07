@@ -125,6 +125,37 @@ class UserFriendControllerTest {
     }
 
     @Test
+    @DisplayName("친구 추가 API 실패 - 자기 자신을 친구로 추가")
+    void create_friend_api_fail_self_friend() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", "friendUsername"
+        );
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        doThrow(new ErrorException(ErrorCode.SELF_FRIEND_NOT_ALLOWED)).when(userFriendService).createFriend(eq(1L), any(CreateFriendRequestDto.class));
+
+        // when & then
+        try {
+            mockMvc.perform(post("/friends")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestBody)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value("F002"))
+                    .andExpect(jsonPath("$.status").value(400))
+                    .andExpect(jsonPath("$.message").value("자기 자신을 친구로 추가할 수 없습니다."));
+
+            verify(userFriendService, times(1)).createFriend(eq(1L), any(CreateFriendRequestDto.class));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
     @DisplayName("친구 추가 API 실패 - 존재하지 않거나 삭제된 유저")
     void create_friend_api_fail_not_found_or_deleted_user() throws Exception {
         // given
