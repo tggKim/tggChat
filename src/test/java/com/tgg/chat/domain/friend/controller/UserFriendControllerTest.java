@@ -150,4 +150,35 @@ class UserFriendControllerTest {
             SecurityContextHolder.clearContext();
         }
     }
+
+    @Test
+    @DisplayName("친구 추가 API 실패 - 이미 친구로 등록된 유저")
+    void create_friend_api_fail_already_friend() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", "friendUsername"
+        );
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        doThrow(new ErrorException(ErrorCode.ALREADY_FRIEND)).when(userFriendService).createFriend(eq(1L), any(CreateFriendRequestDto.class));
+
+        // when & then
+        try {
+            mockMvc.perform(post("/friends")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestBody)))
+                    .andExpect(status().isConflict())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value("F001"))
+                    .andExpect(jsonPath("$.status").value(409))
+                    .andExpect(jsonPath("$.message").value("이미 친구로 등록되어 있습니다."));
+
+            verify(userFriendService, times(1)).createFriend(eq(1L), any(CreateFriendRequestDto.class));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 }
