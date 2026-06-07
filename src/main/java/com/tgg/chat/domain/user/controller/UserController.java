@@ -55,20 +55,12 @@ public class UserController {
 		),
 		@ApiResponse(
 				responseCode = "409",
-				description = "중복된 이메일",
+				description = "중복된 이메일 또는 유저명",
 				content = @Content(
 					mediaType = "application/json",
 					schema = @Schema(implementation = ErrorResponse.class)
 				)
-		),
-        @ApiResponse(
-                responseCode = "409",
-                description = "중복된 유저명",
-                content = @Content(
-                        mediaType = "application/json",
-                        schema = @Schema(implementation = ErrorResponse.class)
-                )
-        )    
+		)
 	})
 	public ResponseEntity<SignUpResponseDto> signUpUser(@RequestBody @Valid SignUpRequestDto signUpRequestDto) {
 		SignUpResponseDto signUpResponseDto = userService.signUpUser(signUpRequestDto);
