@@ -2,6 +2,7 @@ package com.tgg.chat.domain.auth.controller;
 
 import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
+import io.swagger.v3.oas.annotations.headers.Header;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -50,6 +51,14 @@ public class AuthController {
 		@ApiResponse(
 				responseCode = "200", 
 				description = "로그인 성공",
+                headers = @Header(
+                        name = "Set-Cookie",
+                        description = "새 RefreshToken 쿠키 발급. HttpOnly, SameSite=Lax, Path=/",
+                        schema = @Schema(
+                                type = "string",
+                                example = "refreshToken=eyJhbGciOiJIUzI1NiJ9...; Path=/; Max-Age=1209600; HttpOnly; SameSite=Lax"
+                        )
+                ),
 				content = @Content(
 					mediaType = "application/json",
 					schema = @Schema(implementation = LoginResponseDto.class)
@@ -143,14 +152,11 @@ public class AuthController {
 	@ApiResponses({
 		@ApiResponse(
 				responseCode = "200", 
-				description = "로그아웃 성공",
-				content = @Content(
-					mediaType = "application/json"
-				)
+				description = "로그아웃 성공"
 		),
 		@ApiResponse(
 				responseCode = "401",
-				description = "유효하지 않은 토큰",
+				description = "JWT 인증 실패",
 				content = @Content(
 						mediaType = "application/json",
 						schema = @Schema(implementation = ErrorResponse.class)
