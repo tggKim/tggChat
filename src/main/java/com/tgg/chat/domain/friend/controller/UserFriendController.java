@@ -7,6 +7,7 @@ import com.tgg.chat.domain.friend.service.UserFriendService;
 import com.tgg.chat.exception.ErrorResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -89,7 +90,7 @@ public class UserFriendController {
 	@SecurityRequirement(name = "JWT Auth")
 	@Operation(
 		summary = "친구 목록 조회",
-		description =  "유저를 친구 목록을 조회합니다."
+		description =  "로그인한 유저의 친구 목록을 조회합니다."
 	)
 	@ApiResponses({
 		@ApiResponse(
@@ -97,9 +98,19 @@ public class UserFriendController {
 				description = "친구 목록 조회 성공",
 				content = @Content(
 					mediaType = "application/json",
-					schema = @Schema(implementation = FriendListResponseDto.class)
+                    array = @ArraySchema(
+                            schema = @Schema(implementation = FriendListResponseDto.class)
+                    )
 				)
 		),
+        @ApiResponse(
+                responseCode = "401",
+                description = "JWT 인증 실패",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ErrorResponse.class)
+                )
+        ),
 		@ApiResponse(
 				responseCode = "404", 
 				description = "존재하지 않는 유저",
