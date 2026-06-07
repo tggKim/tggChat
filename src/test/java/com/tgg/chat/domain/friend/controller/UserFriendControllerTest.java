@@ -5,6 +5,8 @@ import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
 import com.tgg.chat.domain.friend.service.UserFriendService;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -116,5 +118,36 @@ class UserFriendControllerTest {
                 .andExpect(jsonPath("$.message").value("사용자명 길이는 50자 이하입니다."));
 
         verify(userFriendService, never()).createFriend(anyLong(), any(CreateFriendRequestDto.class));
+    }
+
+    @Test
+    @DisplayName("친구 추가 API 실패 - 존재하지 않거나 삭제된 유저")
+    void create_friend_api_fail_not_found_or_deleted_user() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", "friendUsername"
+        );
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        doThrow(new ErrorException(ErrorCode.USER_NOT_FOUND)).when(userFriendService).createFriend(eq(1L), any(CreateFriendRequestDto.class));
+
+        // when & then
+        try {
+            mockMvc.perform(post("/friends")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestBody)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value("U003"))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
+
+            verify(userFriendService, times(1)).createFriend(eq(1L), any(CreateFriendRequestDto.class));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }
