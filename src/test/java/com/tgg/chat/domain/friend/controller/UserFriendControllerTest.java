@@ -23,10 +23,10 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(UserFriendController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -72,5 +72,49 @@ class UserFriendControllerTest {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    @Test
+    @DisplayName("친구 추가 API 실패 - 사용자명 미입력")
+    void create_friend_api_fail_empty_username() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "username", ""
+        );
+
+        // when & then
+        mockMvc.perform(post("/friends")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("사용자명은 필수입니다."));
+
+        verify(userFriendService, never()).createFriend(anyLong(), any(CreateFriendRequestDto.class));
+    }
+
+    @Test
+    @DisplayName("친구 추가 API 실패 - 사용자명 길이 초과")
+    void create_friend_api_fail_username_too_long() throws Exception {
+        // given
+        String longUsername = "a".repeat(51);
+
+        Map<String, Object> requestBody = Map.of(
+                "username", longUsername
+        );
+
+        // when & then
+        mockMvc.perform(post("/friends")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("C001"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("사용자명 길이는 50자 이하입니다."));
+
+        verify(userFriendService, never()).createFriend(anyLong(), any(CreateFriendRequestDto.class));
     }
 }
