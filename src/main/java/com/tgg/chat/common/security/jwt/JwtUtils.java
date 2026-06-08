@@ -26,83 +26,73 @@ import io.jsonwebtoken.security.SignatureException;
 @Component
 public class JwtUtils {
 
-    private static final String CLAIM_SID = "sid";
-    private static final String CLAIM_TYPE = "type";
-    private static final String ACCESS_TOKEN_TYPE = "access";
-    private static final String REFRESH_TOKEN_TYPE = "refresh";
+	// 비밀키 생성
+	private final Key SECRET_KEY;
+	public JwtUtils(@Value("${JWT_SECRET_KEY}") String jwtSecretKey) {
+        SECRET_KEY = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
+	}
 
+	// accessToken, refreshToken 유효기간 설정
     private static final long ACCESS_TOKEN_MILLIS = Duration.ofMinutes(30).toMillis();
     private static final long REFRESH_TOKEN_MILLIS = Duration.ofDays(7).toMillis();
 
-    private final Key secretKey;
-
-    public JwtUtils(@Value("${JWT_SECRET_KEY}") String jwtSecretKey) {
-        this.secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
+    public String createAccessToken(User user) {
+        return createToken(user, ACCESS_TOKEN_MILLIS);
     }
 
-    public String createAccessToken(User user, String sid) {
-        return createToken(user, sid, ACCESS_TOKEN_TYPE, ACCESS_TOKEN_MILLIS);
+    public String createRefreshToken(User user) {
+        return createToken(user, REFRESH_TOKEN_MILLIS);
     }
 
-    public String createRefreshToken(User user, String sid) {
-        return createToken(user, sid, REFRESH_TOKEN_TYPE, REFRESH_TOKEN_MILLIS);
-    }
-
-    private String createToken(User user, String sid, String tokenType, long ttlMillis) {
+    private String createToken(User user, long ttlMillis) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + ttlMillis);
 
+        String userId = String.valueOf(user.getUserId());
+        Map<String, Object> claims = buildClaims(user);
+
         return Jwts.builder()
                 .setHeaderParam("typ", "JWT")
-                .setClaims(buildClaims(sid, tokenType))
-                .setSubject(String.valueOf(user.getUserId()))
+                .setClaims(claims)
+                .setSubject(userId)
                 .setIssuedAt(now)
                 .setExpiration(expiration)
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    private Map<String, Object> buildClaims(String sid, String tokenType) {
+    private Map<String, Object> buildClaims(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put(CLAIM_SID, sid);
-        claims.put(CLAIM_TYPE, tokenType);
+        claims.put("email", user.getEmail());
+        claims.put("username", user.getUsername());
         return claims;
     }
 
     public Claims parseClaims(String token) {
         try {
             return Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
+                    .setSigningKey(SECRET_KEY)
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
         } catch (SignatureException | MalformedJwtException e) {
+            // 유효하지 않은 JWT
             throw new ErrorException(ErrorCode.JWT_INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
+            // 만료된 JWT
             throw new ErrorException(ErrorCode.JWT_EXPIRED_TOKEN);
         } catch (UnsupportedJwtException e) {
+            // 지원되지 않는 JWT 형식
             throw new ErrorException(ErrorCode.JWT_UNSUPPORTED_TOKEN);
         } catch (IllegalArgumentException e) {
+            // 토큰이 빈값 혹은 null 값
             throw new ErrorException(ErrorCode.JWT_EMPTY_TOKEN);
         }
-    }
-
-    public boolean isAccessToken(Claims claims) {
-        return ACCESS_TOKEN_TYPE.equals(claims.get(CLAIM_TYPE, String.class));
-    }
-
-    public boolean isRefreshToken(Claims claims) {
-        return REFRESH_TOKEN_TYPE.equals(claims.get(CLAIM_TYPE, String.class));
-    }
-
-    public String getSid(Claims claims) {
-        return claims.get(CLAIM_SID, String.class);
     }
 
     public long getAccessTokenTtlMillis() {
         return ACCESS_TOKEN_MILLIS;
     }
-
     public long getRefreshTokenTtlMillis() {
         return REFRESH_TOKEN_MILLIS;
     }
