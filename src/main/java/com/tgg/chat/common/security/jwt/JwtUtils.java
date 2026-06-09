@@ -78,12 +78,16 @@ public class JwtUtils {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (SignatureException | MalformedJwtException e) {
+            // 유효하지 않은 JWT
             throw new ErrorException(ErrorCode.JWT_INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
+            // 만료된 JWT
             throw new ErrorException(ErrorCode.JWT_EXPIRED_TOKEN);
         } catch (UnsupportedJwtException e) {
+            // 지원되지 않는 JWT 형식
             throw new ErrorException(ErrorCode.JWT_UNSUPPORTED_TOKEN);
         } catch (IllegalArgumentException e) {
+            // 토큰이 빈값 혹은 null 값
             throw new ErrorException(ErrorCode.JWT_EMPTY_TOKEN);
         }
     }
