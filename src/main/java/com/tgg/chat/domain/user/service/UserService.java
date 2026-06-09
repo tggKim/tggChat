@@ -74,7 +74,6 @@ public class UserService {
 	@Transactional
 	public void deleteUser(Long userId) {
 		User findUser = findActiveUserById(userId);
-
 		findUser.deleteUser();
 	}
 
