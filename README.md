@@ -90,37 +90,49 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 
 ### 토큰 관리 전략
 
-- 유저당 하나의 AccessToken/RefreshToken 세트만을 유효하게 유지하는 방식
+- AccessToken과 RefreshToken을 사용한다.
 
-- 즉 유저는 단 하나의 세션만을 로그인상태로 유지할 수 있다
+- AccessToken은 요청 인증에 사용하고, RefreshToken은 AccessToken 재발급에 사용한다.
+
+  - AccessToken은 응답 바디로 전달하고, 클라이언트는 Authorization 헤더에 Bearer 형식으로 담아 요청한다.
+
+  - RefreshToken은 HttpOnly 쿠키로 전달한다.
+
+- 세션 식별자인 sid를 사용하여 여러 로그인 세션을 구분한다.
+
+- AccessToken은 Redis에 저장하지 않고 JWT 자체의 서명, 만료 시간, 토큰 타입을 기준으로 검증한다.
+
+- RefreshToken만 Redis에 저장하여 재발급 가능 여부를 서버에서 제어한다.
 
 ### 레디스 Key 구조
 
-- RT:{userId} = RefreshToken
-- AT:{userId} = AccessToken
+- RT:{sid} = RefreshToken
 
 ### 1. 로그인(POST /login)
 1. 요청값 검증
 2. 이메일로 사용자 조회 후 존재/탈퇴 여부 검증
 3. 비밀번호 일치 검증
-4. AccessToken/RefreshToken 발급 후 Redis에 저장(기존 유저의 토큰이 덮어씌워진다)
-5. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
+4. 기존 RefreshToken 쿠키가 존재하면 파싱을 시도하고 정상적인 RefreshToken이면 해당 sid의 Redis RefreshToken 삭제
+5. 새로운 sid 생성
+6. AccessToken/RefreshToken 발급
+7. Redis에 RT:{sid} 형식으로 RefreshToken 저장
+8. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
-### 2. 로그인 여부 확인(POST /login-status)
-1. 요청값 검증
-2. 이메일로 사용자 조회 후 존재/탈퇴 여부 검증
-3. redis에서 사용자 RefreshToken의 존재여부를 응답 바디로 리턴
-(프론트에서 이를 활용하여 유저의 다른 세션에서의 로그인 여부 파악)
+### 2. 로그아웃(POST /logout)
+1. JWT 인증 정보에서 현재 세션의 sid 추출
+2. sid를 이용해 Redis에서 RT:{sid} 삭제
+3. RefreshToken 쿠키 만료 처리
+4. 클라이언트는 보관 중인 AccessToken 폐기
 
-### 3. 로그아웃(POST /logout)
-1. JWT 인증 정보에서 로그인한 유저 ID 추출
-2. userId를 이용해 redis에서 사용자의 AccessToken, RefreshToken 모두 삭제
-
-### 4. 토큰 재발급(POST /refresh)
+### 3. 토큰 재발급(POST /refresh)
 1. 쿠키에서 RefreshToken 획득
-2. redis에 동일한 RefreshToken이 저장되어 있는지 검증
-3. 검증 후 새로운 AccessToken, RefreshToken 생성
-4. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
+2. RefreshToken 자체의 서명, 만료 시간, 토큰 타입 검증
+3. 토큰 타입이 refresh인지 검증
+4. sid를 추출하여 Redis의 RT:{sid} 값과 현재 RefreshToken 일치 여부 검증
+5. sub로 사용자 조회 후 존재/탈퇴 여부 검증
+6. 같은 sid로 새로운 AccessToken, RefreshToken 생성
+7. Redis의 RT:{sid} 값을 새로운 RefreshToken으로 갱신
+8. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
 ### 스프링 시큐리티 흐름
 
