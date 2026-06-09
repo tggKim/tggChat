@@ -20,12 +20,6 @@ public class RedisTokenStore {
 		redisTemplate.opsForValue().set(key, refreshToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
 	}
 	
-	public boolean hasRefreshToken(String sid) {
-		String key = createRefreshTokenKey(sid);
-		String redisRefreshToken = redisTemplate.opsForValue().get(key);
-		return redisRefreshToken != null ? true : false;
-	}
-	
 	public boolean matchesRefreshToken(String sid, String refreshToken) {
 		String key = createRefreshTokenKey(sid);
 		String redisRefreshToken = redisTemplate.opsForValue().get(key);
