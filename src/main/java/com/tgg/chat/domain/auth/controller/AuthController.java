@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
-import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
 import com.tgg.chat.domain.auth.dto.response.LoginResponseDto;
-import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.auth.service.AuthService;
 import com.tgg.chat.exception.ErrorResponse;
 
@@ -89,58 +87,19 @@ public class AuthController {
 				)
 		)
 	})
-	public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto loginRequestDto) {	
-        TokenPair tokenPair = authService.login(loginRequestDto);
+	public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto loginRequestDto, @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        TokenPair tokenPair = authService.login(loginRequestDto, refreshToken);
 
-        String accessToken = tokenPair.getAccessToken();
-        String refreshToken = tokenPair.getRefreshToken();
+        String newAccessToken = tokenPair.getAccessToken();
+        String newRefreshToken = tokenPair.getRefreshToken();
 
-        ResponseCookie rtCookie = buildRefreshTokenCookie(refreshToken);
+        ResponseCookie rtCookie = buildRefreshTokenCookie(newRefreshToken);
 
-        LoginResponseDto loginResponseDto = LoginResponseDto.of(accessToken);
+        LoginResponseDto loginResponseDto = LoginResponseDto.of(newAccessToken);
 		
 		return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, rtCookie.toString())
                 .body(loginResponseDto);
-	}
-	
-	@PostMapping("/login-status")
-	@Operation(
-			summary = "로그인 여부 확인", 
-			description = "이메일을 통해서 로그인 여부를 확인합니다."
-	)
-	@ApiResponses({
-		@ApiResponse(
-				responseCode = "200", 
-				description = "로그인 여부 확인 성공",
-				content = @Content(
-					mediaType = "application/json",
-					schema = @Schema(implementation = LoginStatusResponseDto.class)
-				)
-		),
-		@ApiResponse(
-				responseCode = "400", 
-				description = "잘못된 요청",
-				content = @Content(
-					mediaType = "application/json",
-					schema = @Schema(implementation = ErrorResponse.class)
-				)
-		),
-		@ApiResponse(
-				responseCode = "404", 
-				description = "존재하지 않는 유저",
-				content = @Content(
-					mediaType = "application/json",
-					schema = @Schema(implementation = ErrorResponse.class)
-				)
-		)
-	})
-	public ResponseEntity<LoginStatusResponseDto> isLoggedIn(@RequestBody @Valid LoginStatusRequestDto loginStatusRequestDto) {
-		
-		LoginStatusResponseDto loginStatusResponseDto = authService.isLoggedIn(loginStatusRequestDto);
-		
-		return ResponseEntity.status(HttpStatus.OK).body(loginStatusResponseDto);
-		
 	}
 	
 	@PostMapping("/logout")
@@ -164,8 +123,13 @@ public class AuthController {
 		)
 	})
 	public ResponseEntity<Void> logout(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {		
-		authService.logout(authenticatedUser.getUserId());
-		return ResponseEntity.status(HttpStatus.OK).body(null);
+		authService.logout(authenticatedUser.getSid());
+
+        ResponseCookie responseCookie = buildExpiredRefreshTokenCookie();
+
+		return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(null);
 	}
 
 	@PostMapping("/refresh")
@@ -223,4 +187,14 @@ public class AuthController {
 			.maxAge(Duration.ofMillis(jwtUtils.getRefreshTokenTtlMillis())) // 만료시간 설정
 			.build();
 	}
+
+    private ResponseCookie buildExpiredRefreshTokenCookie() {
+        return ResponseCookie.from("refreshToken", "")
+                .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
+                .secure(false) // http 환경에서만 쿠키 전송
+                .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
+                .path("/") // 모든 경로의 요청에 쿠키 포함
+                .maxAge(0) // 만료시간 설정
+                .build();
+    }
 }
