@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 public class AccessTokenAuthenticator {
 
     private final JwtUtils jwtUtils;
-    private final RedisTokenStore redisTokenStore;
 
     public AuthenticatedUser authenticateBearerToken(String bearerString) {
         if (bearerString == null) {
@@ -29,15 +28,16 @@ public class AccessTokenAuthenticator {
         String jwtString = bearerString.substring(7);
         Claims claims = jwtUtils.parseClaims(jwtString);
 
-        Long userId = Long.parseLong(claims.getSubject());
-        if (!redisTokenStore.matchesAccessToken(userId, jwtString)) {
-            throw new ErrorException(ErrorCode.ACCESS_TOKEN_MISMATCH);
+        if(!jwtUtils.isAccessToken(claims)) {
+            throw new ErrorException(ErrorCode.JWT_INVALID_TOKEN);
         }
+
+        Long userId = Long.parseLong(claims.getSubject());
+        String sid = jwtUtils.getSid(claims);
 
         return new AuthenticatedUser(
                 userId,
-                claims.get("email", String.class),
-                claims.get("username", String.class)
+                sid
         );
     }
 }
