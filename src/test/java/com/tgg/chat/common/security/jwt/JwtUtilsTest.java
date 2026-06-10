@@ -30,15 +30,16 @@ class JwtUtilsTest {
         // given
         User user = User.of("test@test.com", "testPassword", "testUsername");
         ReflectionTestUtils.setField(user, "userId", 1L);
+        String sid = jwtUtils.generateSid();
 
         // when
-        String accessToken = jwtUtils.createAccessToken(user);
+        String accessToken = jwtUtils.createAccessToken(user, sid);
         Claims claims = jwtUtils.parseClaims(accessToken);
 
         // then
         assertThat(claims.getSubject()).isEqualTo("1");
-        assertThat(claims.get("email", String.class)).isEqualTo("test@test.com");
-        assertThat(claims.get("username", String.class)).isEqualTo("testUsername");
+        assertThat(jwtUtils.getSid(claims)).isEqualTo(sid);
+        assertThat(jwtUtils.isAccessToken(claims)).isTrue();
         assertThat(claims.getIssuedAt()).isNotNull();
         assertThat(claims.getExpiration()).isAfter(claims.getIssuedAt());
     }
@@ -49,15 +50,16 @@ class JwtUtilsTest {
         // given
         User user = User.of("test@test.com", "testPassword", "testUsername");
         ReflectionTestUtils.setField(user, "userId", 1L);
+        String sid = jwtUtils.generateSid();
 
         // when
-        String refreshToken = jwtUtils.createRefreshToken(user);
+        String refreshToken = jwtUtils.createRefreshToken(user, sid);
         Claims claims = jwtUtils.parseClaims(refreshToken);
 
         // then
         assertThat(claims.getSubject()).isEqualTo("1");
-        assertThat(claims.get("email", String.class)).isEqualTo("test@test.com");
-        assertThat(claims.get("username", String.class)).isEqualTo("testUsername");
+        assertThat(jwtUtils.getSid(claims)).isEqualTo(sid);
+        assertThat(jwtUtils.isRefreshToken(claims)).isTrue();
         assertThat(claims.getIssuedAt()).isNotNull();
         assertThat(claims.getExpiration()).isAfter(claims.getIssuedAt());
     }
@@ -66,7 +68,7 @@ class JwtUtilsTest {
     @DisplayName("토큰 만료 시간 조회 성공")
     void get_token_ttl_millis_success() {
         // when & then
-        assertThat(jwtUtils.getAccessTokenTtlMillis()).isEqualTo(Duration.ofMinutes(30).toMillis());
+        assertThat(jwtUtils.getAccessTokenTtlMillis()).isEqualTo(Duration.ofMinutes(10).toMillis());
         assertThat(jwtUtils.getRefreshTokenTtlMillis()).isEqualTo(Duration.ofDays(7).toMillis());
     }
 
@@ -91,8 +93,9 @@ class JwtUtilsTest {
 
         User user = User.of("test@test.com", "testPassword", "testUsername");
         ReflectionTestUtils.setField(user, "userId", 1L);
+        String sid = anotherJwtUtils.generateSid();
 
-        String invalidToken = anotherJwtUtils.createAccessToken(user);
+        String invalidToken = anotherJwtUtils.createAccessToken(user, sid);
 
         // when & then
         assertThatThrownBy(() -> jwtUtils.parseClaims(invalidToken))
