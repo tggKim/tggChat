@@ -1,7 +1,6 @@
 package com.tgg.chat.common.security.jwt;
 
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
-import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import io.jsonwebtoken.Claims;
@@ -14,16 +13,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AccessTokenAuthenticatorTest {
     @Mock
     JwtUtils jwtUtils;
-
-    @Mock
-    RedisTokenStore redisTokenStore;
 
     @InjectMocks
     AccessTokenAuthenticator accessTokenAuthenticator;
@@ -38,26 +33,22 @@ class AccessTokenAuthenticatorTest {
 
         when(jwtUtils.parseClaims("token")).thenReturn(claims);
 
+        when(jwtUtils.isAccessToken(claims)).thenReturn(true);
+
         when(claims.getSubject()).thenReturn("1");
-
-        when(redisTokenStore.matchesAccessToken(1L, "token")).thenReturn(true);
-
-        when(claims.get("email", String.class)).thenReturn("test@test.com");
-        when(claims.get("username", String.class)).thenReturn("testUsername");
+        when(jwtUtils.getSid(claims)).thenReturn("sid");
 
         // when
         AuthenticatedUser authenticatedUser = accessTokenAuthenticator.authenticateBearerToken(bearerString);
 
         // then
         assertThat(authenticatedUser.getUserId()).isEqualTo(1L);
-        assertThat(authenticatedUser.getEmail()).isEqualTo("test@test.com");
-        assertThat(authenticatedUser.getUsername()).isEqualTo("testUsername");
+        assertThat(authenticatedUser.getSid()).isEqualTo("sid");
 
         verify(jwtUtils, times(1)).parseClaims("token");
+        verify(jwtUtils, times(1)).isAccessToken(claims);
         verify(claims, times(1)).getSubject();
-        verify(redisTokenStore, times(1)).matchesAccessToken(1L, "token");
-        verify(claims, times(1)).get("email", String.class);
-        verify(claims, times(1)).get("username", String.class);
+        verify(jwtUtils, times(1)).getSid(claims);
     }
 
     @Test
@@ -73,7 +64,8 @@ class AccessTokenAuthenticatorTest {
                 .isEqualTo(ErrorCode.JWT_MISSING_AUTH_HEADER);
 
         verify(jwtUtils, never()).parseClaims(anyString());
-        verify(redisTokenStore, never()).matchesAccessToken(anyLong(), anyString());
+        verify(jwtUtils, never()).isAccessToken(any(Claims.class));
+        verify(jwtUtils, never()).getSid(any(Claims.class));
     }
 
     @Test
@@ -89,33 +81,31 @@ class AccessTokenAuthenticatorTest {
                 .isEqualTo(ErrorCode.JWT_INVALID_AUTH_SCHEME);
 
         verify(jwtUtils, never()).parseClaims(anyString());
-        verify(redisTokenStore, never()).matchesAccessToken(anyLong(), anyString());
+        verify(jwtUtils, never()).isAccessToken(any(Claims.class));
+        verify(jwtUtils, never()).getSid(any(Claims.class));
     }
 
     @Test
-    @DisplayName("토큰 검증 실패 - Redis 저장 AccessToken과 불일치")
-    void authenticate_token_fail_access_token_mismatch() {
+    @DisplayName("토큰 검증 실패 - 토큰이 accessToken 이 아님")
+    void authenticate_token_fail_invalid_access_token() {
         // given
-        String mismatchToken = "Bearer accessToken";
+        String bearerString = "Bearer token";
 
         Claims claims = mock(Claims.class);
 
-        when(jwtUtils.parseClaims("accessToken")).thenReturn(claims);
+        when(jwtUtils.parseClaims("token")).thenReturn(claims);
 
-        when(claims.getSubject()).thenReturn("1");
-
-        when(redisTokenStore.matchesAccessToken(1L, "accessToken")).thenReturn(false);
+        when(jwtUtils.isAccessToken(claims)).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> accessTokenAuthenticator.authenticateBearerToken(mismatchToken))
+        assertThatThrownBy(() -> accessTokenAuthenticator.authenticateBearerToken(bearerString))
                 .isInstanceOf(ErrorException.class)
                 .extracting(ex -> ((ErrorException)ex).getErrorCode())
-                .isEqualTo(ErrorCode.ACCESS_TOKEN_MISMATCH);
+                .isEqualTo(ErrorCode.JWT_INVALID_TOKEN);
 
-        verify(jwtUtils, times(1)).parseClaims("accessToken");
-        verify(claims, times(1)).getSubject();
-        verify(redisTokenStore, times(1)).matchesAccessToken(1L, "accessToken");
-        verify(claims, never()).get("email", String.class);
-        verify(claims, never()).get("username", String.class);
+        verify(jwtUtils, times(1)).parseClaims("token");
+        verify(jwtUtils, times(1)).isAccessToken(claims);
+        verify(claims, never()).getSubject();
+        verify(jwtUtils, never()).getSid(any(Claims.class));
     }
 }
