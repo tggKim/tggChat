@@ -55,7 +55,7 @@ class JwtSecurityFilterTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
 
         when(accessTokenAuthenticator.authenticateBearerToken("Bearer AccessToken")).thenReturn(authenticatedUser);
 
@@ -70,8 +70,7 @@ class JwtSecurityFilterTest {
 
         AuthenticatedUser principal = (AuthenticatedUser) authentication.getPrincipal();
         assertThat(principal.getUserId()).isEqualTo(1L);
-        assertThat(principal.getEmail()).isEqualTo("test@test.com");
-        assertThat(principal.getUsername()).isEqualTo("testUsername");
+        assertThat(principal.getSid()).isEqualTo("sid");
 
         verify(accessTokenAuthenticator, times(1)).authenticateBearerToken("Bearer AccessToken");
         verify(filterChain, times(1)).doFilter(request, response);
