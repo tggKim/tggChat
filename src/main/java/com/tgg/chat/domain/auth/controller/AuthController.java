@@ -111,7 +111,15 @@ public class AuthController {
 	@ApiResponses({
 		@ApiResponse(
 				responseCode = "200", 
-				description = "로그아웃 성공"
+				description = "로그아웃 성공",
+                headers = @Header(
+                        name = "Set-Cookie",
+                        description = "RefreshToken 쿠키 만료. HttpOnly, SameSite=Lax, Path=/",
+                        schema = @Schema(
+                                type = "string",
+                                example = "refreshToken=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
+                        )
+                )
 		),
 		@ApiResponse(
 				responseCode = "401",
@@ -141,6 +149,14 @@ public class AuthController {
 			@ApiResponse(
 					responseCode = "200",
 					description = "토큰 재발급 성공",
+                    headers = @Header(
+                            name = "Set-Cookie",
+                            description = "새 RefreshToken 쿠키 발급. HttpOnly, SameSite=Lax, Path=/",
+                            schema = @Schema(
+                                    type = "string",
+                                    example = "refreshToken=eyJhbGciOiJIUzI1NiJ9...; Path=/; Max-Age=1209600; HttpOnly; SameSite=Lax"
+                            )
+                    ),
 					content = @Content(
 							mediaType = "application/json",
 							schema = @Schema(implementation = RefreshResponseDto.class)
@@ -148,7 +164,7 @@ public class AuthController {
 			),
 			@ApiResponse(
 					responseCode = "401",
-					description = "유효하지 않은 토큰",
+					description = "RefreshToken 누락, 만료 또는 유효하지 않음",
 					content = @Content(
 							mediaType = "application/json",
 							schema = @Schema(implementation = ErrorResponse.class)
