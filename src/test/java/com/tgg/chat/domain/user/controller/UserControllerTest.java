@@ -355,7 +355,7 @@ class UserControllerTest {
 
         when(userService.findUser(1L)).thenReturn(responseDto);
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -382,7 +382,7 @@ class UserControllerTest {
         // given
         when(userService.findUser(1L)).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -409,7 +409,7 @@ class UserControllerTest {
                 "username", "updateUsername"
         );
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -481,7 +481,7 @@ class UserControllerTest {
                 "username", "updateUsername"
         );
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -516,7 +516,7 @@ class UserControllerTest {
                 "username", "updateUsername"
         );
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -547,7 +547,7 @@ class UserControllerTest {
     @DisplayName("회원 삭제 API 성공")
     void delete_user_api_success() throws Exception {
         // given
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -566,7 +566,7 @@ class UserControllerTest {
     @DisplayName("회원 삭제 API 실패 - 존재하지 않거나 삭제된 유저")
     void delete_user_api_fail_not_found_or_deleted_user() throws Exception {
         // given
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
