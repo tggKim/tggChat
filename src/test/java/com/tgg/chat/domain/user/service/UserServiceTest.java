@@ -1,6 +1,5 @@
 package com.tgg.chat.domain.user.service;
 
-import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
@@ -36,9 +35,6 @@ class UserServiceTest {
 
     @Mock
     PasswordEncoder passwordEncoder;
-
-    @Mock
-    RedisTokenStore redisTokenStore;
 
     @InjectMocks
     UserService userService;
@@ -365,7 +361,6 @@ class UserServiceTest {
         assertThat(findUser.getDeleted()).isTrue();
 
         verify(userRepository, times(1)).findById(1L);
-        verify(redisTokenStore, times(1)).deleteUserTokenSets(1L);
     }
 
     @Test
@@ -381,7 +376,6 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(redisTokenStore, never()).deleteUserTokenSets(anyLong());
     }
 
     @Test
@@ -399,6 +393,5 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(redisTokenStore, never()).deleteUserTokenSets(anyLong());
     }
 }
