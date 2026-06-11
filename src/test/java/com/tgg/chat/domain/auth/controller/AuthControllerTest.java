@@ -5,8 +5,6 @@ import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
-import com.tgg.chat.domain.auth.dto.request.LoginStatusRequestDto;
-import com.tgg.chat.domain.auth.dto.response.LoginStatusResponseDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import com.tgg.chat.domain.auth.service.AuthService;
 import com.tgg.chat.exception.ErrorCode;
@@ -64,31 +62,35 @@ class AuthControllerTest {
                 "password", "testPassword"
         );
 
-        TokenPair tokenPair = TokenPair.of("accessToken", "refreshToken");
-        when(authService.login(any(LoginRequestDto.class))).thenReturn(tokenPair);
+        TokenPair tokenPair = TokenPair.of("newAccessToken", "newRefreshToken");
+        when(authService.login(any(LoginRequestDto.class), anyString())).thenReturn(tokenPair);
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
         // when & then
         mockMvc.perform(post("/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(requestBody)))
+                    .content(objectMapper.writeValueAsString(requestBody))
+                        .cookie(new Cookie("refreshToken", "refreshToken")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.accessToken").value("accessToken"))
-                .andExpect(cookie().value("refreshToken", "refreshToken"))
+                .andExpect(jsonPath("$.accessToken").value("newAccessToken"))
+                .andExpect(cookie().value("refreshToken", "newRefreshToken"))
                 .andExpect(cookie().httpOnly("refreshToken",true))
                 .andExpect(cookie().secure("refreshToken", false))
                 .andExpect(cookie().sameSite("refreshToken", "Lax"))
                 .andExpect(cookie().path("refreshToken", "/"))
                 .andExpect(cookie().maxAge("refreshToken", 2));
 
-        ArgumentCaptor<LoginRequestDto> argumentCaptor = ArgumentCaptor.forClass(LoginRequestDto.class);
-        verify(authService, times(1)).login(argumentCaptor.capture());
-        LoginRequestDto loginRequestDto = argumentCaptor.getValue();
+        ArgumentCaptor<LoginRequestDto> loginRequestCaptor = ArgumentCaptor.forClass(LoginRequestDto.class);
+        ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
+        verify(authService, times(1)).login(loginRequestCaptor.capture(), refreshTokenCaptor.capture());
+        LoginRequestDto loginRequestDto = loginRequestCaptor.getValue();
+        String refreshToken = refreshTokenCaptor.getValue();
 
         assertThat(loginRequestDto.getEmail()).isEqualTo("test@test.com");
         assertThat(loginRequestDto.getPassword()).isEqualTo("testPassword");
+        assertThat(refreshToken).isEqualTo("refreshToken");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
     }
@@ -112,7 +114,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("올바른 이메일 형식이 아닙니다."));
 
-        verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
 
@@ -135,7 +137,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("이메일은 필수입니다."));
 
-        verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
 
@@ -164,7 +166,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("이메일 길이는 254자 이하입니다."));
 
-        verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
 
@@ -187,7 +189,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("비밀번호는 필수입니다."));
 
-        verify(authService, never()).login(any(LoginRequestDto.class));
+        verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
 
@@ -200,7 +202,7 @@ class AuthControllerTest {
                 "password", "testPassword"
         );
 
-        when(authService.login(any(LoginRequestDto.class))).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
+        when(authService.login(any(LoginRequestDto.class), isNull())).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
 
         // when & then
         mockMvc.perform(post("/login")
@@ -212,7 +214,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
 
-        verify(authService, times(1)).login(any(LoginRequestDto.class));
+        verify(authService, times(1)).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
 
@@ -225,7 +227,7 @@ class AuthControllerTest {
                 "password", "wrongPassword"
         );
 
-        when(authService.login(any(LoginRequestDto.class)))
+        when(authService.login(any(LoginRequestDto.class), isNull()))
                 .thenThrow(new ErrorException(ErrorCode.INVALID_PASSWORD));
 
         // when & then
@@ -238,138 +240,15 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다."));
 
-        verify(authService, times(1)).login(any(LoginRequestDto.class));
+        verify(authService, times(1)).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
     }
 
     @Test
-    @DisplayName("로그인 여부 API 성공")
-    void login_status_api_success() throws Exception {
-        // given
-        Map<String, Object> requestBody = Map.of(
-                "email", "test@test.com"
-        );
-
-        LoginStatusResponseDto responseDto = LoginStatusResponseDto.of(true);
-
-        when(authService.isLoggedIn(any(LoginStatusRequestDto.class))).thenReturn(responseDto);
-
-        // when & then
-        mockMvc.perform(post("/login-status")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(requestBody)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.isLoggedIn").value(true));
-
-        ArgumentCaptor<LoginStatusRequestDto> argumentCaptor = ArgumentCaptor.forClass(LoginStatusRequestDto.class);
-        verify(authService, times(1)).isLoggedIn(argumentCaptor.capture());
-        LoginStatusRequestDto loginStatusRequestDto = argumentCaptor.getValue();
-
-        assertThat(loginStatusRequestDto.getEmail()).isEqualTo("test@test.com");
-    }
-
-    @Test
-    @DisplayName("로그인 여부 API 실패 - 잘못된 이메일 형식")
-    void login_status_api_fail_invalid_email_format() throws Exception {
-        // given
-        Map<String, Object> requestBody = Map.of(
-                "email", "notEmail"
-        );
-
-        // when & then
-        mockMvc.perform(post("/login-status")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestBody)))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.code").value("C001"))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("올바른 이메일 형식이 아닙니다."));
-
-        verify(authService, never()).isLoggedIn(any(LoginStatusRequestDto.class));
-    }
-
-    @Test
-    @DisplayName("로그인 여부 API 실패 - 이메일 미입력")
-    void login_status_api_fail_blank_email() throws Exception {
-        // given
-        Map<String, Object> requestBody = Map.of(
-                "email", ""
-        );
-
-        // when & then
-        mockMvc.perform(post("/login-status")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestBody)))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.code").value("C001"))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("이메일은 필수입니다."));
-
-        verify(authService, never()).isLoggedIn(any(LoginStatusRequestDto.class));
-    }
-
-    @Test
-    @DisplayName("로그인 여부 API 실패 - 이메일 길이 초과")
-    void login_status_api_fail_email_too_long() throws Exception {
-        // given
-        String longEmail =
-                "a".repeat(64) + "@" +
-                        "b".repeat(63) + "." +
-                        "c".repeat(63) + "." +
-                        "d".repeat(63) + ".com";
-
-        Map<String, Object> requestBody = Map.of(
-                "email", longEmail
-        );
-
-        // when & then
-        mockMvc.perform(post("/login-status")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestBody)))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.code").value("C001"))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("이메일 길이는 254자 이하입니다."));
-
-        verify(authService, never()).isLoggedIn(any(LoginStatusRequestDto.class));
-    }
-
-    @Test
-    @DisplayName("로그인 여부 API 실패 - 존재하지 않는 유저, 삭제된 유저")
-    void login_status_api_fail_user_not_found_or_deleted_user() throws Exception {
-        // given
-        Map<String, Object> requestBody = Map.of(
-                "email", "test@test.com"
-        );
-
-        when(authService.isLoggedIn(any(LoginStatusRequestDto.class))).thenThrow(new ErrorException(ErrorCode.USER_NOT_FOUND));
-
-        // when & then
-        mockMvc.perform(post("/login-status")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestBody)))
-                .andExpect(status().isNotFound())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.code").value("U003"))
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
-
-        ArgumentCaptor<LoginStatusRequestDto> argumentCaptor = ArgumentCaptor.forClass(LoginStatusRequestDto.class);
-        verify(authService, times(1)).isLoggedIn(argumentCaptor.capture());
-        LoginStatusRequestDto loginStatusRequestDto = argumentCaptor.getValue();
-
-        assertThat(loginStatusRequestDto.getEmail()).isEqualTo("test@test.com");
-    }
-
-    @Test
-    @DisplayName("로그아웃 api 성공")
+    @DisplayName("로그아웃 API 성공")
     void logout_api_success() throws Exception {
         // given
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
 
@@ -379,9 +258,15 @@ class AuthControllerTest {
         try {
             mockMvc.perform(post("/logout")
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().value("refreshToken", ""))
+                    .andExpect(cookie().httpOnly("refreshToken", true))
+                    .andExpect(cookie().secure("refreshToken", false))
+                    .andExpect(cookie().sameSite("refreshToken", "Lax"))
+                    .andExpect(cookie().path("refreshToken", "/"))
+                    .andExpect(cookie().maxAge("refreshToken", 0));
 
-            verify(authService, times(1)).logout(1L);
+            verify(authService, times(1)).logout("sid");
         } finally {
             SecurityContextHolder.clearContext();
         }
@@ -414,7 +299,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("토큰 재발급 API 실패 - 유효하지 않은 리프레시 토큰")
+    @DisplayName("토큰 재발급 API 실패 - 리프레시 토큰이 아닌 경우, 레디스에 저장된 토큰과 일치하지 않는 경우")
     void token_refresh_api_fail_invalid_refresh_token() throws Exception {
         // given
         when(authService.refresh("refreshToken")).thenThrow(new ErrorException(ErrorCode.JWT_INVALID_REFRESH_TOKEN));
