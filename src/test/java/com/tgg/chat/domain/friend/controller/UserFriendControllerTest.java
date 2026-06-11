@@ -60,7 +60,7 @@ class UserFriendControllerTest {
                 "username", "friendUsername"
         );
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -132,7 +132,7 @@ class UserFriendControllerTest {
                 "username", "friendUsername"
         );
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -163,7 +163,7 @@ class UserFriendControllerTest {
                 "username", "friendUsername"
         );
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -194,7 +194,7 @@ class UserFriendControllerTest {
                 "username", "friendUsername"
         );
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -221,7 +221,7 @@ class UserFriendControllerTest {
     @DisplayName("친구 목록 조회 API 성공")
     void find_friend_list_success() throws Exception {
         // given
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -250,7 +250,7 @@ class UserFriendControllerTest {
     @DisplayName("친구 목록 조회 API 실패 - 존재하지 않거나 삭제된 유저")
     void find_friend_list_fail_not_found_or_deleted_user() throws Exception {
         // given
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "test@test.com", "testUsername");
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
