@@ -47,6 +47,21 @@ public class RedisTokenStore {
         redisTemplate.opsForZSet().remove(userSessionsKey, sid);
     }
 
+    public void deleteAllRefreshTokens(Long userId) {
+        String userSessionsKey = createUserSessionsKey(userId);
+        Set<String> sids = redisTemplate.opsForZSet().range(userSessionsKey, 0, -1);
+        if(sids != null && !sids.isEmpty()) {
+            List<String> refreshTokenKeys = sids
+                    .stream()
+                    .map(this::createRefreshTokenKey)
+                    .toList();
+
+            redisTemplate.delete(refreshTokenKeys);
+        }
+
+        redisTemplate.delete(userSessionsKey);
+    }
+
     private void removeOldSessions(String userSessionsKey) {
         Long userSessionsCount = redisTemplate.opsForZSet().zCard(userSessionsKey);
         if(userSessionsCount == null || userSessionsCount <= MAX_SESSION_PER_USER) {
