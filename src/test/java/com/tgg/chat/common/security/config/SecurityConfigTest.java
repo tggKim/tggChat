@@ -64,7 +64,7 @@ class SecurityConfigTest {
                 .andExpect(jsonPath("$.message").value(ErrorCode.JWT_MISSING_AUTH_HEADER.getMessage()));
 
         verify(accessTokenAuthenticator, times(1)).authenticateBearerToken(null);
-        verify(authService, never()).logout(anyString());
+        verify(authService, never()).logout(anyLong(), anyString());
     }
 
     @Test
@@ -80,7 +80,7 @@ class SecurityConfigTest {
                 .andExpect(status().isOk());
 
         verify(accessTokenAuthenticator, times(1)).authenticateBearerToken("Bearer Token");
-        verify(authService, times(1)).logout("sid");
+        verify(authService, times(1)).logout(1L, "sid");
     }
 
     @Test
