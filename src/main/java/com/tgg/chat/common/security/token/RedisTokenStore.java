@@ -19,9 +19,14 @@ public class RedisTokenStore {
     private static final String USER_SESSIONS_PREFIX = "USER_SESSIONS:";
     private static final int MAX_SESSION_PER_USER = 10;
 
-    public void saveRefreshToken(String sid, String refreshToken, long ttlMilliseconds) {
-        String key = createRefreshTokenKey(sid);
-        redisTemplate.opsForValue().set(key, refreshToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
+    public void saveRefreshToken(Long userId, String sid, String refreshToken, long ttlMilliseconds) {
+        String refreshTokenKey = createRefreshTokenKey(sid);
+        String userSessionsKey = createUserSessionsKey(userId);
+
+        redisTemplate.opsForValue().set(refreshTokenKey, refreshToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForZSet().add(userSessionsKey, sid, System.currentTimeMillis());
+
+        removeOldSessions(userSessionsKey);
     }
 
     public boolean matchesRefreshToken(String sid, String refreshToken) {
@@ -57,7 +62,7 @@ public class RedisTokenStore {
                 .toList();
 
         redisTemplate.delete(oldRefreshTokenKeys);
-        redisTemplate.opsForZSet().remove(userSessionsKey, oldSids);
+        redisTemplate.opsForZSet().remove(userSessionsKey, oldSids.toArray());
     }
 
     private String createRefreshTokenKey(String sid) {
