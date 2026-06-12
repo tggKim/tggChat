@@ -41,7 +41,8 @@ public class AuthService {
 
                 if(jwtUtils.isRefreshToken(claims)) {
                     String sid = jwtUtils.getSid(claims);
-                    redisTokenStore.deleteRefreshToken(sid);
+                    Long userId = Long.parseLong(claims.getSubject());
+                    redisTokenStore.deleteRefreshToken(userId, sid);
                 }
             } catch(ErrorException e) {
                 // 기존 쿠키에 있던 refreshToken 파싱 실패는 새 로그인을 막지 않는다.
@@ -53,15 +54,16 @@ public class AuthService {
 		String newRefreshToken = jwtUtils.createRefreshToken(findUser, sid);
 		
 		// RefreshToken 레디스에 저장
-        storeRefreshToken(sid, newRefreshToken);
+        Long userId = findUser.getUserId();
+        storeRefreshToken(userId, sid, newRefreshToken);
 		
 		return TokenPair.of(newAccessToken, newRefreshToken);
 		
 	}
 	
 	// 로그아웃
-	public void logout(String sid) {
-        redisTokenStore.deleteRefreshToken(sid);
+	public void logout(Long userId, String sid) {
+        redisTokenStore.deleteRefreshToken(userId, sid);
 	}
 
 	// 토큰 재발급
@@ -85,15 +87,15 @@ public class AuthService {
 		String newRefreshToken = jwtUtils.createRefreshToken(findUser, sid);
 		String newAccessToken = jwtUtils.createAccessToken(findUser, sid);
 
-        storeRefreshToken(sid, newRefreshToken);
+        storeRefreshToken(userId, sid, newRefreshToken);
 
 		return TokenPair.of(newAccessToken, newRefreshToken);
 
 	}
 	
-	private void storeRefreshToken(String sid, String refreshToken) {
+	private void storeRefreshToken(Long userId, String sid, String refreshToken) {
 		long refreshTokenTTL = jwtUtils.getRefreshTokenTtlMillis();
-		redisTokenStore.saveRefreshToken(sid, refreshToken, refreshTokenTTL);
+		redisTokenStore.saveRefreshToken(userId, sid, refreshToken, refreshTokenTTL);
 	}
 	
 	private User findActiveUserByEmail(String email) {

@@ -131,7 +131,7 @@ public class AuthController {
 		)
 	})
 	public ResponseEntity<Void> logout(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {		
-		authService.logout(authenticatedUser.getSid());
+		authService.logout(authenticatedUser.getUserId(), authenticatedUser.getSid());
 
         ResponseCookie responseCookie = buildExpiredRefreshTokenCookie();
 

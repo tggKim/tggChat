@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.user.service;
 
+import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,7 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+    private final RedisTokenStore redisTokenStore;
 	
 	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
@@ -75,6 +77,7 @@ public class UserService {
 	public void deleteUser(Long userId) {
 		User findUser = findActiveUserById(userId);
 		findUser.deleteUser();
+        redisTokenStore.deleteAllRefreshTokens(userId);
 	}
 
     private User findActiveUserById(Long userId) {
