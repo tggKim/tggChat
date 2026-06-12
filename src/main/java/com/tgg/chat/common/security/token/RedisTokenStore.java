@@ -17,7 +17,7 @@ public class RedisTokenStore {
 
     private static final String RT_PREFIX = "RT:";
     private static final String USER_SESSIONS_PREFIX = "USER_SESSIONS:";
-    private static final int MAX_SESSION_PER_USER = 10;
+    private static final int MAX_SESSIONS_PER_USER = 10;
 
     public void saveRefreshToken(Long userId, String sid, String refreshToken, long ttlMilliseconds) {
         String refreshTokenKey = createRefreshTokenKey(sid);
@@ -65,11 +65,11 @@ public class RedisTokenStore {
 
     private void removeOldSessions(String userSessionsKey) {
         Long userSessionsCount = redisTemplate.opsForZSet().zCard(userSessionsKey);
-        if(userSessionsCount == null || userSessionsCount <= MAX_SESSION_PER_USER) {
+        if(userSessionsCount == null || userSessionsCount <= MAX_SESSIONS_PER_USER) {
             return;
         }
 
-        long overflowCount = userSessionsCount - MAX_SESSION_PER_USER;
+        long overflowCount = userSessionsCount - MAX_SESSIONS_PER_USER;
         Set<String> oldSids = redisTemplate.opsForZSet().range(userSessionsKey, 0, overflowCount - 1);
         if(oldSids == null || oldSids.isEmpty()) {
             return;
