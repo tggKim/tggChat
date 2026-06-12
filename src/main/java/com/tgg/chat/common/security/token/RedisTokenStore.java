@@ -25,6 +25,7 @@ public class RedisTokenStore {
 
         redisTemplate.opsForValue().set(refreshTokenKey, refreshToken, ttlMilliseconds, TimeUnit.MILLISECONDS);
         redisTemplate.opsForZSet().add(userSessionsKey, sid, System.currentTimeMillis());
+        redisTemplate.expire(userSessionsKey, ttlMilliseconds, TimeUnit.MILLISECONDS);
 
         removeOldSessions(userSessionsKey);
     }
