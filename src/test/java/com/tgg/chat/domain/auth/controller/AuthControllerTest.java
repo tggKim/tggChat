@@ -266,7 +266,7 @@ class AuthControllerTest {
                     .andExpect(cookie().path("refreshToken", "/"))
                     .andExpect(cookie().maxAge("refreshToken", 0));
 
-            verify(authService, times(1)).logout("sid");
+            verify(authService, times(1)).logout(1L, "sid");
         } finally {
             SecurityContextHolder.clearContext();
         }
