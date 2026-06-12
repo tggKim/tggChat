@@ -39,9 +39,12 @@ public class RedisTokenStore {
         return true;
     }
 
-    public void deleteRefreshToken(String sid) {
+    public void deleteRefreshToken(Long userId, String sid) {
         String refreshTokenKey = createRefreshTokenKey(sid);
+        String userSessionsKey = createUserSessionsKey(userId);
+
         redisTemplate.delete(refreshTokenKey);
+        redisTemplate.opsForZSet().remove(userSessionsKey, sid);
     }
 
     private void removeOldSessions(String userSessionsKey) {
