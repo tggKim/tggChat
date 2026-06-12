@@ -1,5 +1,7 @@
 package com.tgg.chat.common.security.token;
 
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.RedisTemplate;
@@ -14,6 +16,8 @@ public class RedisTokenStore {
     private final RedisTemplate<String, String> redisTemplate;
 
     private static final String RT_PREFIX = "RT:";
+    private static final String USER_SESSIONS_PREFIX = "USER_SESSIONS:";
+    private static final int MAX_SESSION_PER_USER = 10;
 
     public void saveRefreshToken(String sid, String refreshToken, long ttlMilliseconds) {
         String key = createRefreshTokenKey(sid);
@@ -35,8 +39,32 @@ public class RedisTokenStore {
         redisTemplate.delete(refreshTokenKey);
     }
 
+    private void removeOldSessions(String userSessionsKey) {
+        Long userSessionsCount = redisTemplate.opsForZSet().zCard(userSessionsKey);
+        if(userSessionsCount == null || userSessionsCount <= MAX_SESSION_PER_USER) {
+            return;
+        }
+
+        long overflowCount = userSessionsCount - MAX_SESSION_PER_USER;
+        Set<String> oldSids = redisTemplate.opsForZSet().range(userSessionsKey, 0, overflowCount - 1);
+        if(oldSids == null || oldSids.isEmpty()) {
+            return;
+        }
+
+        List<String> oldRefreshTokenKeys = oldSids
+                .stream()
+                .map(this::createRefreshTokenKey)
+                .toList();
+
+        redisTemplate.delete(oldRefreshTokenKeys);
+        redisTemplate.opsForZSet().remove(userSessionsKey, oldSids);
+    }
+
     private String createRefreshTokenKey(String sid) {
         return RT_PREFIX + sid;
     }
 
+    private String createUserSessionsKey(Long userId) {
+        return USER_SESSIONS_PREFIX + userId;
+    }
 }
