@@ -61,6 +61,7 @@ class AuthServiceTest {
         when(jwtUtils.parseClaims("cookie-refreshToken")).thenReturn(claims);
         when(jwtUtils.isRefreshToken(claims)).thenReturn(true);
         when(jwtUtils.getSid(claims)).thenReturn("cookie-sid");
+        when(claims.getSubject()).thenReturn("1");
 
         when(jwtUtils.generateSid()).thenReturn("newSid");
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
@@ -81,14 +82,15 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).parseClaims("cookie-refreshToken");
         verify(jwtUtils, times(1)).isRefreshToken(claims);
         verify(jwtUtils, times(1)).getSid(claims);
-        verify(redisTokenStore, times(1)).deleteRefreshToken("cookie-sid");
+        verify(claims, times(1)).getSubject();
+        verify(redisTokenStore, times(1)).deleteRefreshToken(1L, "cookie-sid");
 
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
-        verify(redisTokenStore, times(1)).saveRefreshToken("newSid", "refreshToken", 2000L);
+        verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
     @Test
@@ -125,14 +127,14 @@ class AuthServiceTest {
         verify(jwtUtils, never()).parseClaims(anyString());
         verify(jwtUtils, never()).isRefreshToken(any(Claims.class));
         verify(jwtUtils, never()).getSid(any(Claims.class));
-        verify(redisTokenStore, never()).deleteRefreshToken(anyString());
+        verify(redisTokenStore, never()).deleteRefreshToken(anyLong(), anyString());
 
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
-        verify(redisTokenStore, times(1)).saveRefreshToken("newSid", "refreshToken", 2000L);
+        verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
     @Test
@@ -171,14 +173,14 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).parseClaims("cookie-invalidRefreshToken");
         verify(jwtUtils, never()).isRefreshToken(any(Claims.class));
         verify(jwtUtils, never()).getSid(any(Claims.class));
-        verify(redisTokenStore, never()).deleteRefreshToken(anyString());
+        verify(redisTokenStore, never()).deleteRefreshToken(anyLong(), anyString());
 
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
-        verify(redisTokenStore, times(1)).saveRefreshToken("newSid", "refreshToken", 2000L);
+        verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
     @Test
@@ -219,14 +221,15 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).parseClaims("cookie-notRefreshToken");
         verify(jwtUtils, times(1)).isRefreshToken(claims);
         verify(jwtUtils, never()).getSid(any(Claims.class));
-        verify(redisTokenStore, never()).deleteRefreshToken(anyString());
+        verify(claims, never()).getSubject();
+        verify(redisTokenStore, never()).deleteRefreshToken(anyLong(), anyString());
 
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
-        verify(redisTokenStore, times(1)).saveRefreshToken("newSid", "refreshToken", 2000L);
+        verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
     @Test
@@ -251,14 +254,14 @@ class AuthServiceTest {
         verify(jwtUtils, never()).parseClaims(anyString());
         verify(jwtUtils, never()).isRefreshToken(any(Claims.class));
         verify(jwtUtils, never()).getSid(any(Claims.class));
-        verify(redisTokenStore, never()).deleteRefreshToken(anyString());
+        verify(redisTokenStore, never()).deleteRefreshToken(anyLong(), anyString());
 
         verify(jwtUtils, never()).generateSid();
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
 
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
-        verify(redisTokenStore, never()).saveRefreshToken(anyString(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -285,14 +288,14 @@ class AuthServiceTest {
         verify(jwtUtils, never()).parseClaims(anyString());
         verify(jwtUtils, never()).isRefreshToken(any(Claims.class));
         verify(jwtUtils, never()).getSid(any(Claims.class));
-        verify(redisTokenStore, never()).deleteRefreshToken(anyString());
+        verify(redisTokenStore, never()).deleteRefreshToken(anyLong(), anyString());
 
         verify(jwtUtils, never()).generateSid();
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
 
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
-        verify(redisTokenStore, never()).saveRefreshToken(anyString(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -320,14 +323,14 @@ class AuthServiceTest {
         verify(jwtUtils, never()).parseClaims(anyString());
         verify(jwtUtils, never()).isRefreshToken(any(Claims.class));
         verify(jwtUtils, never()).getSid(any(Claims.class));
-        verify(redisTokenStore, never()).deleteRefreshToken(anyString());
+        verify(redisTokenStore, never()).deleteRefreshToken(anyLong(), anyString());
 
         verify(jwtUtils, never()).generateSid();
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
 
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
-        verify(redisTokenStore, never()).saveRefreshToken(anyString(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -335,12 +338,13 @@ class AuthServiceTest {
     void logout_success() {
         // given
         String sid = "sid";
+        Long userId = 1L;
 
         // when
-        authService.logout(sid);
+        authService.logout(userId, sid);
 
         // then
-        verify(redisTokenStore, times(1)).deleteRefreshToken(sid);
+        verify(redisTokenStore, times(1)).deleteRefreshToken(userId, sid);
     }
 
     @Test
@@ -384,7 +388,7 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).createAccessToken(user, "sid");
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
 
-        verify(redisTokenStore, times(1)).saveRefreshToken("sid", "newRefreshToken", 2000L);
+        verify(redisTokenStore, times(1)).saveRefreshToken(1L, "sid", "newRefreshToken", 2000L);
     }
 
     @Test
@@ -416,7 +420,7 @@ class AuthServiceTest {
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
-        verify(redisTokenStore, never()).saveRefreshToken(anyString(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -451,7 +455,7 @@ class AuthServiceTest {
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
-        verify(redisTokenStore, never()).saveRefreshToken(anyString(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -489,7 +493,7 @@ class AuthServiceTest {
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
-        verify(redisTokenStore, never()).saveRefreshToken(anyString(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -529,6 +533,6 @@ class AuthServiceTest {
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
-        verify(redisTokenStore, never()).saveRefreshToken(anyString(), anyString(), anyLong());
+        verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 }
