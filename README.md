@@ -89,50 +89,72 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 <summary>인증/인가</summary>
 
 ### 토큰 관리 전략
-
 - AccessToken과 RefreshToken을 사용한다.
 
 - AccessToken은 요청 인증에 사용하고, RefreshToken은 AccessToken 재발급에 사용한다.
 
-  - AccessToken은 응답 바디로 전달하고, 클라이언트는 Authorization 헤더에 Bearer 형식으로 담아 요청한다.
+    - AccessToken은 응답 바디로 전달하고, 클라이언트는 Authorization 헤더의 Bearer 형식으로 요청한다.
 
-  - RefreshToken은 HttpOnly 쿠키로 전달한다.
+    - RefreshToken은 HttpOnly 쿠키로 전달한다.
 
-- 세션 식별자인 sid를 사용하여 여러 로그인 세션을 구분한다.
+- AccessToken과 RefreshToken에는 공통으로 `sub`, `sid`, `type`, `iat`, `exp`를 포함한다.
+
+    - `sub`는 유저 ID를 의미한다.
+
+    - `sid`는 로그인 세션 식별자를 의미한다.
+
+    - `type`은 `access` 또는 `refresh`를 의미한다.
 
 - AccessToken은 Redis에 저장하지 않고 JWT 자체의 서명, 만료 시간, 토큰 타입을 기준으로 검증한다.
 
-- RefreshToken만 Redis에 저장하여 재발급 가능 여부를 서버에서 제어한다.
+- RefreshToken은 Redis에 저장하여 재발급 가능 여부를 서버에서 제어한다.
+
+- 유저 존재 여부, 삭제 여부, 기능 수행 권한은 각 서비스 계층에서 추가로 검증한다.
 
 ### 레디스 Key 구조
 
-- RT:{sid} = RefreshToken
+- `RT:{sid}` = RefreshToken
+
+- `USER_SESSIONS:{userId}` = 해당 유저의 sid 목록을 저장하는 Sorted Set
+
+- `USER_SESSIONS:{userId}`의 score는 세션 갱신 시점의 시간값이다.
+
+- RefreshToken과 유저 세션 목록은 RefreshToken 만료 시간과 동일한 TTL을 가진다.
+
+- 유저별 세션 수가 제한 개수를 초과하면 가장 오래된 sid부터 제거한다.
 
 ### 1. 로그인(POST /login)
 1. 요청값 검증
-2. 이메일로 사용자 조회 후 존재/탈퇴 여부 검증
+2. 이메일로 유저 조회 후 존재와 삭제여부 검증
 3. 비밀번호 일치 검증
-4. 기존 RefreshToken 쿠키가 존재하면 파싱을 시도하고 정상적인 RefreshToken이면 해당 sid의 Redis RefreshToken 삭제
-5. 새로운 sid 생성
-6. AccessToken/RefreshToken 발급
-7. Redis에 RT:{sid} 형식으로 RefreshToken 저장
-8. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
+4. 기존 RefreshToken 쿠키가 존재하면 검증 후 타입이 `refresh`인지 검증
+5. 기존 RefreshToken 의 `sub`, `sid`를 이용해 Redis의 기존 세션 제거
+6. 기존 쿠키 파싱 실패는 로그인 흐름을 막지 않음
+7. 새로운 sid 생성
+8. AccessToken, RefreshToken 발급
+9. Redis에 `RT:{sid}` 형식으로 RefreshToken 저장
+10. Redis의 `USER_SESSIONS:{userId}`에 sid 추가
+11. 유저별 세션 수가 제한 개수를 초과하면 오래된 세션 제거
+12. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
 ### 2. 로그아웃(POST /logout)
-1. JWT 인증 정보에서 현재 세션의 sid 추출
-2. sid를 이용해 Redis에서 RT:{sid} 삭제
-3. RefreshToken 쿠키 만료 처리
-4. 클라이언트는 보관 중인 AccessToken 폐기
+1. AccessToken 인증 정보에서 현재 유저 ID와 sid 추출
+2. Redis에서 `RT:{sid}` 삭제
+3. Redis의 `USER_SESSIONS:{userId}`에서 sid 제거
+4. RefreshToken 쿠키 만료 처리
+5. 클라이언트는 보관 중인 AccessToken 제거
 
 ### 3. 토큰 재발급(POST /refresh)
 1. 쿠키에서 RefreshToken 획득
-2. RefreshToken 자체의 서명, 만료 시간, 토큰 타입 검증
-3. 토큰 타입이 refresh인지 검증
-4. sid를 추출하여 Redis의 RT:{sid} 값과 현재 RefreshToken 일치 여부 검증
-5. sub로 사용자 조회 후 존재/탈퇴 여부 검증
-6. 같은 sid로 새로운 AccessToken, RefreshToken 생성
-7. Redis의 RT:{sid} 값을 새로운 RefreshToken으로 갱신
-8. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
+2. RefreshToken 검증
+3. 토큰 타입이 `refresh`인지 검증
+4. RefreshToken에서 `sid` 추출
+5. Redis의 `RT:{sid}` 값과 현재 RefreshToken 일치 여부 검증
+6. RefreshToken의 `sub`로 유저 조회 후 존재와 삭제여부 검증
+7. 같은 sid로 새로운 AccessToken, RefreshToken 생성
+8. Redis의 `RT:{sid}` 값을 새로운 RefreshToken으로 갱신
+9. Redis의 `USER_SESSIONS:{userId}`에서 sid score와 TTL 갱신
+10. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
 ### 스프링 시큐리티 흐름
 
@@ -150,8 +172,15 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
    2-3. 토큰 검증이 성공하면 `AuthenticatedUser`를 기반으로
   `UsernamePasswordAuthenticationToken`을 생성하고, 이를 `SecurityContextHolder`에 저장한다.
 
-   2-4. 이후 컨트롤러에서는 `@AuthenticationPrincipal`을 통해 인증 사용자 정보를 꺼내 사용하고,
-  서비스는 전달받은 `userId`를 기반으로 비즈니스 로직을 수행한다.
+   2-4. 이후 컨트롤러에서는 `@AuthenticationPrincipal`을 통해 인증 사용자 정보를 꺼내 사용한다.
+
+### 인증/인가 주의사항
+
+- AccessToken은 Redis에 저장하지 않으므로 로그아웃 직후에도 만료 전까지 JWT 자체의 서명 검증은 통과할 수 있다.
+
+- 로그아웃은 현재 sid에 해당하는 RefreshToken을 제거하여 재발급을 막는 방식이다.
+
+- 유저 삭제 시에는 해당 유저의 Redis RefreshToken 세션을 전체 삭제한다.
 
 </details>
 
