@@ -152,7 +152,7 @@ WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산
 5. Redis의 `RT:{sid}` 값과 현재 RefreshToken 일치 여부 검증
 6. RefreshToken의 `sub`로 유저 조회 후 존재와 삭제여부 검증
 7. 같은 sid로 새로운 AccessToken, RefreshToken 생성
-8. Redis의 `RT:{sid}` 값을 새로운 RefreshToken으로 갱신
+8. Redis의 `RT:{sid}` 값을 새로운 RefreshToken으로 변경 후 TTL 갱신
 9. Redis의 `USER_SESSIONS:{userId}`에서 sid score와 TTL 갱신
 10. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
 
