@@ -2,11 +2,11 @@
 
 ## 목적
 - 현재 인증 토큰 관리 전략과 요청 흐름을 정리한다.
+
+## 토큰 관리 전략
 - 이 프로젝트는 `AccessToken`과 `RefreshToken`을 사용한다.
 - `AccessToken`은 요청 인증에 사용하고, `RefreshToken`은 AccessToken 재발급에 사용한다.
 - 현재 구조는 `sid` 기반 세션 식별자를 사용하여 여러 로그인 세션을 구분한다.
-
-## 토큰 관리 전략
 - 로그인 성공 시 `accessToken`, `refreshToken`을 새로 발급한다.
 - `accessToken`은 응답 바디로 전달하고, 클라이언트는 `Authorization: Bearer {accessToken}` 형식으로 사용한다.
 - `refreshToken`은 HttpOnly 쿠키로 전달한다.
@@ -21,7 +21,7 @@
 - `USER_SESSIONS:{userId}` = 해당 유저의 sid 목록을 저장하는 Sorted Set
 - `USER_SESSIONS:{userId}`의 score는 세션 저장 또는 갱신 시점의 시간값이다.
 - `RT:{sid}`와 `USER_SESSIONS:{userId}`는 RefreshToken 만료 시간과 동일한 TTL을 가진다.
-- 유저별 세션 수가 제한 개수를 초과하면 가장 오래된 sid부터 제거한다.
+- 유저별 세션 수가 제한 개수(10개)를 초과하면 가장 오래된 sid부터 제거한다.
 - 오래된 sid가 제거되면 해당 sid의 `RT:{sid}`도 함께 삭제한다.
 
 ## 요청 흐름
