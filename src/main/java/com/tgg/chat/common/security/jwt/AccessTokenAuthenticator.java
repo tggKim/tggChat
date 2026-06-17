@@ -3,7 +3,6 @@ package com.tgg.chat.common.security.jwt;
 import org.springframework.stereotype.Component;
 
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
-import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 
