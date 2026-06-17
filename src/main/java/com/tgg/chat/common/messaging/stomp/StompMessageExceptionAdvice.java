@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class StompMessageExceptionAdvice {
 
     @MessageExceptionHandler(ErrorException.class)
-    @SendToUser("/queue/errors")
+    @SendToUser(value = "/queue/errors", broadcast = false)
     protected ErrorResponse handleErrorException(ErrorException e, Message<?> message) {
     	
         ErrorCode errorCode = e.getErrorCode();
@@ -32,7 +32,7 @@ public class StompMessageExceptionAdvice {
     }
 
     @MessageExceptionHandler(Exception.class)
-    @SendToUser("/queue/errors")
+    @SendToUser(value = "/queue/errors", broadcast = false)
     protected ErrorResponse handleException(Exception e) {
 
         log.error("[Unhandled Exception]", e);
