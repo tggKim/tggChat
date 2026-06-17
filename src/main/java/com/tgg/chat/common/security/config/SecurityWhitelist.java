@@ -14,7 +14,6 @@ public class SecurityWhitelist {
 				new PermitRule(HttpMethod.GET, "/user/**"),
 				new PermitRule(HttpMethod.POST, "/user"),
 				new PermitRule(HttpMethod.POST, "/login"),
-				new PermitRule(HttpMethod.POST, "/login-status"),
 				new PermitRule(HttpMethod.POST, "/refresh"),
 				new PermitRule(HttpMethod.GET, "/ws/**")
 			);
