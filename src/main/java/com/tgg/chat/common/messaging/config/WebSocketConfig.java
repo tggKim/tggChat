@@ -1,5 +1,6 @@
 package com.tgg.chat.common.messaging.config;
 
+import com.tgg.chat.common.messaging.stomp.ChatRoomSubscriptionInterceptor;
 import com.tgg.chat.common.messaging.stomp.JwtChannelInterceptor;
 import com.tgg.chat.common.messaging.stomp.StompErrorHandler;
 
@@ -17,6 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer{
 
 	private final JwtChannelInterceptor jwtChannelInterceptor;
+    private final ChatRoomSubscriptionInterceptor chatRoomSubscriptionInterceptor;
 	private final StompErrorHandler stompErrorHandler;
 
 	@Override
@@ -36,9 +38,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer{
 
 	@Override
 	public void configureClientInboundChannel(ChannelRegistration registration) {
-
-		registration.interceptors(jwtChannelInterceptor);
-
+		registration.interceptors(jwtChannelInterceptor, chatRoomSubscriptionInterceptor);
 	}
 
 }

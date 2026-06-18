@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
-
     private final AccessTokenAuthenticator accessTokenAuthenticator;
 	
     @Override
