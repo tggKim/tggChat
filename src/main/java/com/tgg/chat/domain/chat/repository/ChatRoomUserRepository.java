@@ -13,6 +13,16 @@ import java.util.Optional;
 public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long> {
 
     @Query("""
+        select count(cru) > 0
+        from ChatRoomUser cru
+        where cru.chatRoom.chatRoomId = :chatRoomId
+        and cru.user.userId = :userId
+        and cru.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
+        and cru.user.deleted = false
+    """)
+    boolean existsActiveMember(Long chatRoomId, Long userId);
+
+    @Query("""
         select cru
         from ChatRoomUser cru
         join fetch cru.user u
