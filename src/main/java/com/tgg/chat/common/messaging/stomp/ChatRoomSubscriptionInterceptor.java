@@ -3,9 +3,12 @@ package com.tgg.chat.common.messaging.stomp;
 import com.tgg.chat.domain.chat.service.ChatRoomSubscriptionService;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
+import com.tgg.chat.exception.ErrorResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -19,6 +22,7 @@ import java.util.regex.Pattern;
 @Component
 @RequiredArgsConstructor
 public class ChatRoomSubscriptionInterceptor implements ChannelInterceptor {
+    private final ObjectProvider<SimpMessagingTemplate> messagingTemplateProvider;
     private final ChatRoomSubscriptionService chatRoomSubscriptionService;
     private static final Pattern CHAT_ROOM_TOPIC_PATTERN = Pattern.compile("^/topic/chatRooms/(\\d+)$");
 
@@ -47,7 +51,10 @@ public class ChatRoomSubscriptionInterceptor implements ChannelInterceptor {
         Long userId = Long.parseLong(principal.getName());
         Long chatRoomId = Long.parseLong(matcher.group(1));
 
-        chatRoomSubscriptionService.validateCanSubscribe(userId, chatRoomId);
+        if(!chatRoomSubscriptionService.validateCanSubscribe(userId, chatRoomId)) {
+            messagingTemplateProvider.getObject().convertAndSendToUser(principal.getName(), "/queue/errors", ErrorResponse.of(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+            return null;
+        }
 
         return message;
     }

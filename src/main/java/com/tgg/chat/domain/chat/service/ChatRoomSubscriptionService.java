@@ -11,9 +11,7 @@ import org.springframework.stereotype.Service;
 public class ChatRoomSubscriptionService {
     private final ChatRoomUserRepository chatRoomUserRepository;
 
-    public void validateCanSubscribe(Long userId, Long chatRoomId) {
-        if(!chatRoomUserRepository.existsActiveMember(chatRoomId, userId)) {
-            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
-        }
+    public boolean validateCanSubscribe(Long userId, Long chatRoomId) {
+        return chatRoomUserRepository.existsActiveMember(chatRoomId, userId);
     }
 }
