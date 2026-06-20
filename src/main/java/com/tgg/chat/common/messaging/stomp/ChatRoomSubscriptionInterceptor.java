@@ -51,7 +51,7 @@ public class ChatRoomSubscriptionInterceptor implements ChannelInterceptor {
         Long userId = Long.parseLong(principal.getName());
         Long chatRoomId = Long.parseLong(matcher.group(1));
 
-        if(!chatRoomSubscriptionService.validateCanSubscribe(userId, chatRoomId)) {
+        if(!chatRoomSubscriptionService.canSubscribe(userId, chatRoomId)) {
             messagingTemplateProvider.getObject().convertAndSendToUser(principal.getName(), "/queue/errors", ErrorResponse.of(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
             return null;
         }
