@@ -31,6 +31,26 @@
 - Principal이 없으면 인증되지 않은 WebSocket 요청으로 처리한다.
 - Principal이 있으면 `ChatRoomSubscriptionService`에 구독 가능 여부 검증을 위임한다.
 
+## WebSocket/STOMP 에러 처리
+
+- WebSocket/STOMP 에러는 발생 위치에 따라 처리 방식이 다르다.
+
+- `CONNECT` 단계에서 발생하는 인증 실패는 `JwtChannelInterceptor`에서 발생하고, `StompErrorHandler`가 이를 STOMP `ERROR` 프레임으로 변환한다.
+이 단계에서는 아직 연결이 완료되지 않았고 `/user/queue/errors` 구독도 불가능하므로, 인증 실패 시 연결을 종료하는 방식으로 처리한다.
+
+- `SUBSCRIBE` 단계에서 Principal이 없는 경우도 인증되지 않은 WebSocket 요청으로 보고 예외를 던진다. 이 예외 역시 `StompErrorHandler`에서
+`ERROR` 프레임으로 처리되며 연결은 종료된다.
+
+- 반면 채팅방 구독 권한이 없는 경우는 연결 자체를 종료할 필요가 없다. 이 경우 `ChatRoomSubscriptionInterceptor`에서 `/user/queue/errors`로 에러
+메시지를 전송하고 `preSend()`에서 `null`을 반환하여 해당 구독 요청만 차단한다.
+
+- `@MessageMapping` 내부에서 발생한 예외는 `StompMessageExceptionAdvice`에서 처리한다. `ErrorException`은 해당 `ErrorCode`에 맞는 응답으로 변환
+하고, 예상하지 못한 예외는 서버 내부 오류 응답으로 변환한다. 두 경우 모두 `/user/queue/errors`로 전달되며 WebSocket 연결은 유지된다.
+
+- 정리하면, 연결 자체가 성립하면 안 되는 오류는 `StompErrorHandler`가 `ERROR` 프레임으로 처리하고, 연결 이후 특정 요청만 실패시키면 되는 오류는
+`/user/queue/errors`로 처리한다. `ERROR` 프레임은 연결 종료로 이어지므로 구독 실패나 메시지 처리 실패처럼 연결을 유지해야 하는 상황에
+서는 사용하지 않는다.
+
 ## 주의사항
 - 이 문서는 현재까지 확정된 WebSocket 인증과 구독 권한 검증 범위만 다룬다.
 - 채팅방 나가기, 재입장, 메시지 조회 범위, 읽음 처리 정책은 아직 리팩터링 중이므로 이 문서에 확정 정책으로 적지 않는다.
