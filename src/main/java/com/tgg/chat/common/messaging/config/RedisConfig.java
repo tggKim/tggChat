@@ -15,7 +15,6 @@ public class RedisConfig {
     // 레디스에서 key, value의 타입을 String으로 설정
     @Bean
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
 
         redisTemplate.setConnectionFactory(redisConnectionFactory);
@@ -25,7 +24,6 @@ public class RedisConfig {
         redisTemplate.setValueSerializer(new StringRedisSerializer());
 
         return redisTemplate;
-
     }
 
     @Bean
@@ -33,7 +31,6 @@ public class RedisConfig {
         RedisConnectionFactory redisConnectionFactory,
         RedisSubscriber redisSubscriber
     ) {
-
         // 레디스에서 구독을 유지하는 컨테이너
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory);
