@@ -31,5 +31,4 @@ public class ChatEvent {
     public static ChatEvent of(Long roomId, Long senderId, String content, Long messageSeq, ChatMessageType chatMessageType, LocalDateTime createdAt, Long unreadCount, List<Long> eventUserIds) {
         return new ChatEvent(roomId, senderId, content, messageSeq, chatMessageType, createdAt, unreadCount, eventUserIds);
     }
-
 }

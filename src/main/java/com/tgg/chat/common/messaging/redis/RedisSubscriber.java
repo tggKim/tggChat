@@ -2,6 +2,8 @@ package com.tgg.chat.common.messaging.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.exception.ErrorCode;
+import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
@@ -36,7 +38,7 @@ public class RedisSubscriber implements MessageListener {
             });
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ErrorException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
