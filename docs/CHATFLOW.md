@@ -35,8 +35,7 @@
 
 - WebSocket/STOMP 에러는 발생 위치에 따라 처리 방식이 다르다.
 
-- `CONNECT` 단계에서 발생하는 인증 실패는 `JwtChannelInterceptor`에서 발생하고, `StompErrorHandler`가 이를 STOMP `ERROR` 프레임으로 변환한다.
-이 단계에서는 아직 연결이 완료되지 않았고 `/user/queue/errors` 구독도 불가능하므로, 인증 실패 시 연결을 종료하는 방식으로 처리한다.
+- `CONNECT` 단계에서 발생하는 인증 실패는 `JwtChannelInterceptor`에서 발생하고, `StompErrorHandler`가 이를 STOMP `ERROR` 프레임으로 처리하며 연결이 종료된다.
 
 - `SUBSCRIBE` 단계에서 Principal이 없는 경우도 인증되지 않은 WebSocket 요청으로 보고 예외를 던진다. 이 예외 역시 `StompErrorHandler`에서
 `ERROR` 프레임으로 처리되며 연결은 종료된다.
