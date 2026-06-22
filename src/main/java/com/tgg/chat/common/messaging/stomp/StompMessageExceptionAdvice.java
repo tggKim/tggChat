@@ -3,42 +3,34 @@ package com.tgg.chat.common.messaging.stomp;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import com.tgg.chat.exception.ErrorResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 
-@RestControllerAdvice
-@RequiredArgsConstructor
+@ControllerAdvice
 @Slf4j
 public class StompMessageExceptionAdvice {
 
     @MessageExceptionHandler(ErrorException.class)
     @SendToUser(value = "/queue/errors", broadcast = false)
-    protected ErrorResponse handleErrorException(ErrorException e, Message<?> message) {
-    	
+    protected ErrorResponse handleErrorException(ErrorException e) {
         ErrorCode errorCode = e.getErrorCode();
-        String errorMessage = e.getMessage();
 
         log.warn("[ErrorException] code={}, status={}, message={}",
                 errorCode.getCode(),
                 errorCode.getStatus().value(),
-                errorMessage);
+                errorCode.getMessage());
 
         return ErrorResponse.of(errorCode);
-
     }
 
     @MessageExceptionHandler(Exception.class)
     @SendToUser(value = "/queue/errors", broadcast = false)
     protected ErrorResponse handleException(Exception e) {
-
         log.error("[Unhandled Exception]", e);
 
         return ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR);
-
     }
 
 }
