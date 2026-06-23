@@ -3,7 +3,6 @@ package com.tgg.chat.common.messaging.redis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.exception.ErrorCode;
-import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
@@ -19,16 +18,15 @@ import java.util.List;
 @Slf4j
 public class RedisSubscriber implements MessageListener {
 
-    private final ObjectMapper om;
+    private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-
             // Message 에서 body를 추출한 뒤 ChatEvent로 역직렬화
             String eventString = new String(message.getBody(), StandardCharsets.UTF_8);
-            ChatEvent event = om.readValue(eventString, ChatEvent.class);
+            ChatEvent event = objectMapper.readValue(eventString, ChatEvent.class);
 
             // STOMP 의 /topic/chatRooms/* 경로로 발행한다.
             messagingTemplate.convertAndSend("/topic/chatRooms/" + event.getRoomId(), event);
@@ -38,7 +36,6 @@ public class RedisSubscriber implements MessageListener {
             eventUserIds.forEach(userId -> {
                 messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/chatRooms/list", event);
             });
-
         } catch (Exception e) {
             ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
 
