@@ -14,7 +14,6 @@ public class GlobalExceptionHandler {
 	
 	@ExceptionHandler(ErrorException.class)
 	protected ResponseEntity<ErrorResponse> handleErrorException(ErrorException e) {
-		
 		ErrorCode errorCode = e.getErrorCode();
 		String errorMessage = e.getMessage();
 		
@@ -26,23 +25,25 @@ public class GlobalExceptionHandler {
 		return ResponseEntity
 				.status(errorCode.getStatus())
 				.body(ErrorResponse.of(errorCode));
-		
 	}
 	
 	@ExceptionHandler(Exception.class)
 	protected ResponseEntity<ErrorResponse> handleException(Exception e) {
-		
-		log.error("[Unhandled Exception]", e);
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+
+        log.error("[Unhandled Exception] code={}, status={}, message={}",
+                errorCode.getCode(),
+                errorCode.getStatus().value(),
+                errorCode.getMessage(),
+                e);
 		
 		return ResponseEntity
-				.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus())
-				.body(ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR));
-		
+				.status(errorCode.getStatus())
+				.body(ErrorResponse.of(errorCode));
 	}
 	
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	protected ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-		
 		String errorMessage = e.getBindingResult()
 			    .getFieldErrors()
 			    .stream()
@@ -60,7 +61,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity
         		.status(errorCode.getStatus())
         		.body(ErrorResponse.of(errorCode, errorMessage));
-		
 	}
 
 }

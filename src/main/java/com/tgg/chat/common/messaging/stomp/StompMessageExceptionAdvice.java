@@ -28,9 +28,15 @@ public class StompMessageExceptionAdvice {
     @MessageExceptionHandler(Exception.class)
     @SendToUser(value = "/queue/errors", broadcast = false)
     protected ErrorResponse handleException(Exception e) {
-        log.error("[Unhandled Exception]", e);
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
 
-        return ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR);
+        log.error("[Unhandled Exception] code={}, status={}, message={}",
+                errorCode.getCode(),
+                errorCode.getStatus().value(),
+                errorCode.getMessage(),
+                e);
+
+        return ErrorResponse.of(errorCode);
     }
 
 }
