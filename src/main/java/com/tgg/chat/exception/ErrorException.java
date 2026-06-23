@@ -10,9 +10,4 @@ public class ErrorException extends RuntimeException {
 		super(errorCode.getMessage());
 		this.errorCode = errorCode;
 	}
-
-	public ErrorException(ErrorCode errorCode, Throwable throwable) {
-        super(errorCode.getMessage(), throwable);
-        this.errorCode = errorCode;
-    }
 }
