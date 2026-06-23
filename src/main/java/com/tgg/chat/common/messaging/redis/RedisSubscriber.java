@@ -5,6 +5,7 @@ import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class RedisSubscriber implements MessageListener {
 
     private final ObjectMapper om;
@@ -38,7 +40,13 @@ public class RedisSubscriber implements MessageListener {
             });
 
         } catch (Exception e) {
-            throw new ErrorException(ErrorCode.INTERNAL_SERVER_ERROR);
+            ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+
+            log.error("[UnhandledException] code={}, status={}, message={}",
+                    errorCode.getCode(),
+                    errorCode.getStatus().value(),
+                    errorCode.getMessage(),
+                    e);
         }
     }
 

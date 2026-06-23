@@ -25,7 +25,7 @@ public class RedisPublisher {
             String payload = objectMapper.writeValueAsString(event);
             redisTemplate.convertAndSend(channel, payload);
         } catch (JsonProcessingException e) {
-            throw new ErrorException(ErrorCode.INTERNAL_SERVER_ERROR);
+            throw new IllegalStateException(e);
         }
     }
 
