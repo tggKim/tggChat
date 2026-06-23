@@ -3,8 +3,6 @@ package com.tgg.chat.common.messaging.redis;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.messaging.event.ChatEvent;
-import com.tgg.chat.exception.ErrorCode;
-import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
