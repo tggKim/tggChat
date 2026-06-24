@@ -48,7 +48,6 @@ public class ChatMessageService {
     		Long chatRoomId, 
     		ChatMessageRequest message
     ) {
-
         // 채팅방의 존재여부와, 유저가 채팅방에 속한 유저인지 검증
         ChatRoomUser chatRoomUser = chatRoomUserRepository.findWithAllDetails(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
@@ -133,7 +132,6 @@ public class ChatMessageService {
         }
 
         return chatEvents;
-
     }
     
     public void sendMessage(
