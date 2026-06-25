@@ -25,13 +25,11 @@ public class ChatController {
             ChatMessageRequest message,
             Principal principal
     ) {
-
 		Long userId = Long.parseLong(principal.getName());
 		
         List<ChatEvent> chatEvents = chatMessageService.saveMessage(userId, chatRoomId, message);
         
         chatMessageService.sendMessage(chatEvents);
-
 	}
 	
 }
