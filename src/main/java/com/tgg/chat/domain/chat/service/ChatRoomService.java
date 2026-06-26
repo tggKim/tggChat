@@ -53,7 +53,6 @@ public class ChatRoomService {
     // 1대1 채팅방 생성
     @Transactional
     public Map<String, Object> createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
-
         Long friendUserId = requestDto.getFriendId();
 
         // 자신과 1대1 채팅방을 만들 수 없음
@@ -138,13 +137,11 @@ public class ChatRoomService {
         payload.put("responseDto", responseDto);
 
         return payload;
-
     }
 
     // 단체 채팅방 생성
     @Transactional
     public Map<String, Object> createGroupChatRoom(Long userId, CreateGroupChatRoomRequestDto requestDto) {
-    	
     	// 필드 추출, 리스트에서 중복 id들 제거
     	List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
         friendIds = new ArrayList<>(new HashSet<>(friendIds));
@@ -206,7 +203,6 @@ public class ChatRoomService {
         payload.put("responseDto", responseDto);
 
     	return payload;
-    	
     }
 
     // 채팅방 목록 조회
@@ -225,7 +221,6 @@ public class ChatRoomService {
     // 채팅방 초대
     @Transactional
     public List<ChatEvent> inviteUserToChatRoom(Long userId, InviteUserRequestDto requestDto) {
-
         // 필드 값 추출, 리스트에서 중복 id들 제거
         List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
         friendIds = new ArrayList<>(new HashSet<>(friendIds));
@@ -313,7 +308,6 @@ public class ChatRoomService {
     // 채팅방 나가기
     @Transactional
     public List<ChatEvent> leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
-    	
     	Long chatRoomId = requestDto.getChatRoomId();
     	Long nextOwnerId = requestDto.getNextOwnerId();
     	
