@@ -9,7 +9,5 @@ import com.tgg.chat.domain.chat.entity.ChatMessage;
 
 @Mapper
 public interface ChatMessageMapper {
-	
 	public List<ChatMessageListRowDto> findChatMessages(Long userId, Long chatRoomId, Long offsetSeq);
-	
 }
