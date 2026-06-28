@@ -11,7 +11,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
-
     // 레디스에서 key, value의 타입을 String으로 설정
     @Bean
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
@@ -41,5 +40,4 @@ public class RedisConfig {
 
         return container;
     }
-
 }
