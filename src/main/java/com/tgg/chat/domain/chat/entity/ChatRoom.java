@@ -124,4 +124,13 @@ public class ChatRoom {
         return new ChatRoom(chatRoomType, chatRoomType.name(), directUser1, directUser2);
     }
 
+    public void updateLastMessage(
+            Long lastMessageSeq,
+            String lastMessagePreview,
+            LocalDateTime lastMessageAt
+    ) {
+        this.lastMessageSeq = lastMessageSeq;
+        this.lastMessagePreview = lastMessagePreview;
+        this.lastMessageAt = lastMessageAt;
+    }
 }

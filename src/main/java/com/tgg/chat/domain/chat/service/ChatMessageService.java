@@ -32,14 +32,11 @@ public class ChatMessageService {
     private final RedisPublisher redisPublisher;
     
     private final ChatRoomUserRepository chatRoomUserRepository;
-    private final ChatRoomUserMapper chatRoomUserMapper;
     
     private final ChatMessageRepository chatMessageRepository;
     private final ChatMessageMapper chatMessageMapper;
-    
-    private final ChatRoomMapper chatRoomMapper;
-    
-    private final ChatRoomJoinLeaveService chatRoomJoinLeaveService;
+
+    private final ChatRoomRepository chatRoomRepository;
     
     @Transactional
     public List<ChatEvent> saveMessage(
@@ -48,7 +45,7 @@ public class ChatMessageService {
     		ChatMessageRequest message
     ) {
         // 채팅방의 존재여부와, 유저가 채팅방에 속한 유저인지 검증
-        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findWithChatRoomAndUser(chatRoomId, userId)
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
         
         // 요청한 유저가 채팅방에서 나간 상태면 예외
@@ -56,21 +53,20 @@ public class ChatMessageService {
             throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
         
-        // ChatRoom, User 추출
-        ChatRoom chatRoom = findChatRoomUser.getChatRoom();
+        // User 추출 후 삭제된 유저인지 검증
         User user = findChatRoomUser.getUser();
-        
-        // 삭제된 유저인지 검증
         if(user.getDeleted()) {
         	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
         // 채팅방별 ChatMessage의 최대 seq 조회
-        Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
+        ChatRoom lockedChatRoom = chatRoomRepository.findByIdForUpdate(chatRoomId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+        Long seq = lockedChatRoom.getLastMessageSeq();
 
         List<ChatEvent> chatEvents = new ArrayList<>();
         List<Long> eventUserIds;
-        if(chatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
+        if(lockedChatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
             // 1대1 채팅방은 상대방이 LEFT 상태이면 ACTIVE 로 복귀
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
             for (ChatRoomUser chatRoomUser : chatRoomUsers) {
@@ -85,7 +81,7 @@ public class ChatMessageService {
         }
 
         // 메시지 db에 저장
-        ChatMessage chatMessage = ChatMessage.of(chatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
+        ChatMessage chatMessage = ChatMessage.of(lockedChatRoom, user, seq + 1, message.getContent(), ChatMessageType.TEXT);
         ChatMessage savedChatMessage = chatMessageRepository.save(chatMessage);
 
         ChatEvent chatEvent = ChatEvent.of(
@@ -102,7 +98,7 @@ public class ChatMessageService {
         chatEvents.add(chatEvent);
 
         // chatRoom 의 lastSeq 증가
-        chatRoomMapper.updateLastSeq(seq + 1, message.getContent(), savedChatMessage.getCreatedAt(), chatRoomId);
+        lockedChatRoom.updateLastMessage(seq + 1, message.getContent(), savedChatMessage.getCreatedAt());
 
         return chatEvents;
     }
