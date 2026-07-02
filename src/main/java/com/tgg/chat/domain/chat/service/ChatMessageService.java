@@ -67,7 +67,7 @@ public class ChatMessageService {
         List<ChatEvent> chatEvents = new ArrayList<>();
         List<Long> eventUserIds;
         if(lockedChatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
-            // 1대1 채팅방은 상대방이 LEFT 상태이면 ACTIVE 로 복귀
+            // 1대1 채팅방은 상대방이 LEFT 상태이면 ACTIVE 로 복귀, 삭제된 유저이면 제외
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
             for (ChatRoomUser chatRoomUser : chatRoomUsers) {
                 if (chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
