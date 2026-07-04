@@ -87,6 +87,9 @@ public class ChatMessageService {
         ChatEvent chatEvent = ChatEvent.of(
                 chatRoomId,
                 userId,
+                user.getUsername(),
+                null,
+                null,
                 message.getContent(),
                 seq + 1,
                 ChatMessageType.TEXT,

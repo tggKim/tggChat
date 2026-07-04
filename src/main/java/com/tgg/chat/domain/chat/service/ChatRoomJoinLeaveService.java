@@ -152,6 +152,9 @@ public class ChatRoomJoinLeaveService {
         ChatEvent chatEvent = ChatEvent.of(
                 chatRoom.getChatRoomId(),
                 user.getUserId(),
+                username,
+                null,
+                null,
                 content,
                 seq,
                 chatMessageType,
