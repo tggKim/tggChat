@@ -31,6 +31,25 @@
 - Principal이 없으면 인증되지 않은 WebSocket 요청으로 처리한다.
 - Principal이 있으면 `ChatRoomSubscriptionService`에 구독 가능 여부 검증을 위임한다.
 
+## 메시지 송수신 흐름
+- 클라이언트는 STOMP `CONNECT` 요청으로 WebSocket 연결을 생성한다.
+- 연결 성공 후 채팅방 메시지를 실시간으로 받기 위해 `/topic/chatRooms/{chatRoomId}` 경로를 구독한다.
+- 채팅방 목록 갱신 이벤트를 받기 위해 `/user/queue/chatRooms/list` 경로를 구독한다.
+- 클라이언트가 메시지를 보낼 때는 `/app/chatRooms/{chatRoomId}/message` 경로로 `SEND` 요청을 보낸다.
+- `ChatController`는 STOMP 세션의 `Principal`에서 로그인 유저 ID를 추출한다.
+- `ChatMessageService.saveMessage()`는 요청 유저가 채팅방에 속한 유저인지 확인한다.
+- 요청 유저가 채팅방에서 나간 상태이거나 삭제된 유저이면 메시지 저장을 차단한다.
+- 메시지 순서 보장을 위해 `ChatRoom`을 비관적 락으로 조회하고 현재 `lastMessageSeq`를 기준으로 다음 메시지 seq를 계산한다.
+- 현재 구현에서는 1대1 채팅방의 경우 상대 유저가 `LEFT` 상태이면 다시 `ACTIVE` 상태로 복귀시키는 흐름이 포함되어 있다.
+- 단체 채팅방의 경우 현재 `ACTIVE` 상태이고 삭제되지 않은 유저만 이벤트 수신 대상에 포함한다.
+- 메시지를 `chat_message` 테이블에 저장한 뒤 `ChatEvent`를 생성한다.
+- `ChatRoom`의 마지막 메시지 seq, 마지막 메시지 내용, 마지막 메시지 시각을 갱신한다.
+- `ChatMessageService.sendMessage()`는 생성된 `ChatEvent`를 Redis Pub/Sub로 발행한다.
+- `RedisPublisher`는 `chat:room:{roomId}` 채널로 `ChatEvent` JSON을 발행한다.
+- `RedisSubscriber`는 `chat:room:*` 패턴으로 이벤트를 수신하고 `ChatEvent`로 역직렬화한다.
+- 수신된 이벤트는 `/topic/chatRooms/{roomId}`로 브로드캐스트되어 해당 채팅방을 구독 중인 클라이언트에게 전달된다.
+- 동일한 이벤트는 `eventUserIds`에 포함된 유저들의 `/user/queue/chatRooms/list` 경로로도 전달되어 채팅방 목록 갱신에 사용된다.
+
 ## WebSocket/STOMP 에러 처리
 
 - WebSocket/STOMP 에러는 발생 위치에 따라 처리 방식이 다르다.
@@ -53,5 +72,6 @@
 ## 주의사항
 - 이 문서는 현재까지 확정된 WebSocket 인증과 구독 권한 검증 범위만 다룬다.
 - 채팅방 나가기, 재입장, 메시지 조회 범위, 읽음 처리 정책은 아직 리팩터링 중이므로 이 문서에 확정 정책으로 적지 않는다.
+- 현재 메시지 전송 흐름에는 `ChatRoomUserStatus.ACTIVE/LEFT` 기반 재입장 처리가 남아 있으므로, 채팅방 나가기와 재입장 정책이 확정되면 이 문서도 함께 갱신해야 한다.
 - `ChatRoomUserStatus` 제거는 마지막 단계에서 진행한다.
 - 중간 단계에서는 `ACTIVE/LEFT` 기반 로직과 row 존재 기반 검증이 함께 존재할 수 있으므로 배포 단위와 테스트 범위를 주의해야 한다.
