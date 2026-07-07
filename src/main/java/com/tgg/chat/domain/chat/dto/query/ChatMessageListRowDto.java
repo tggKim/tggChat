@@ -17,5 +17,11 @@ public class ChatMessageListRowDto {
 
     private String content;
 
+    private Long userId;
+
+    private String username;
+
+    private String profileImageKey;
+
     private LocalDateTime createdAt;
 }

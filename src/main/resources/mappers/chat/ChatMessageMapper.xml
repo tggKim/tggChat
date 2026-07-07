@@ -8,8 +8,13 @@
 		,	T1.seq AS seq
 		,	ANY_VALUE(T1.chat_message_type) AS chatMessageType
 		,	ANY_VALUE(T1.content) AS content
+        ,   ANY_VALUE(U.user_id) AS userId
+        ,   ANY_VALUE(U.username) AS username
+        ,   ANY_VALUE(U.profile_image_key) AS profileImageKey
 		,	ANY_VALUE(T1.created_at) AS createdAt
 		FROM chat_message T1
+        INNER JOIN user U
+            ON T1.sender_id = U.user_id
 		INNER JOIN chat_room_user ME
             ON T1.chat_room_id = ME.chat_room_id
             AND ME.user_id = #{userId}

@@ -31,6 +31,9 @@ public class User {
     @Column(nullable = false)
     private Boolean deleted;
 
+    @Column(length = 255)
+    private String profileImageKey;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -38,7 +41,6 @@ public class User {
     @LastModifiedDate
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-
 
     private User(String email, String password, String username, Boolean deleted) {
         this.email = email;
