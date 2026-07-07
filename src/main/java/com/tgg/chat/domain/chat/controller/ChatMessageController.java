@@ -40,22 +40,6 @@ public class ChatMessageController {
                             schema = @Schema(implementation = ChatMessageListResponseDto.class)
                     )
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "chatRoomId 은 필수입니다.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "offsetSeq 은 필수입니다.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
     })
 	public List<ChatMessageListResponseDto> findChatMessages(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @PathVariable Long chatRoomId, @RequestParam(required = false) Long offsetSeq) {
 		return chatMessageService.findChatMessages(authenticatedUser.getUserId(), chatRoomId, offsetSeq);
