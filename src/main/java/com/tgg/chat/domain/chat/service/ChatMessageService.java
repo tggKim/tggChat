@@ -115,9 +115,14 @@ public class ChatMessageService {
     
     @Transactional(readOnly = true)
     public List<ChatMessageListResponseDto> findChatMessages(Long userId, Long chatRoomId, Long offsetSeq) {
-    	if(offsetSeq == null) {
+    	if(!chatRoomUserRepository.existsActiveMember(chatRoomId, userId)) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        if(offsetSeq == null) {
             offsetSeq = 0L;
         }
+
         List<ChatMessageListRowDto> chatMessages = chatMessageMapper.findChatMessages(userId, chatRoomId, offsetSeq);
     	return chatMessages.stream().map(ChatMessageListResponseDto::from).toList();
     }
