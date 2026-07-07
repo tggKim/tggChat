@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.redis.RedisPublisher;
-import com.tgg.chat.domain.chat.dto.request.ChatMessageListRequestDto;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageRequest;
 import com.tgg.chat.domain.chat.dto.response.ChatMessageListResponseDto;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
@@ -115,12 +114,11 @@ public class ChatMessageService {
     }
     
     @Transactional(readOnly = true)
-    public List<ChatMessageListResponseDto> findChatMessages(Long userId, ChatMessageListRequestDto requestDto) {
-    	Long chatRoomId = requestDto.getChatRoomId();
-    	Long offsetSeq = requestDto.getOffsetSeq();
-    	
-    	List<ChatMessageListRowDto> chatMessages = chatMessageMapper.findChatMessages(userId, chatRoomId, offsetSeq);
-    	
+    public List<ChatMessageListResponseDto> findChatMessages(Long userId, Long chatRoomId, Long offsetSeq) {
+    	if(offsetSeq == null) {
+            offsetSeq = 0L;
+        }
+        List<ChatMessageListRowDto> chatMessages = chatMessageMapper.findChatMessages(userId, chatRoomId, offsetSeq);
     	return chatMessages.stream().map(ChatMessageListResponseDto::from).toList();
     }
 

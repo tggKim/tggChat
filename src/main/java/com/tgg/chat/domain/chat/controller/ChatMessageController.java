@@ -3,12 +3,9 @@ package com.tgg.chat.domain.chat.controller;
 import java.util.List;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
-import com.tgg.chat.domain.chat.dto.request.ChatMessageListRequestDto;
 import com.tgg.chat.domain.chat.dto.response.ChatMessageListResponseDto;
 import com.tgg.chat.domain.chat.service.ChatMessageService;
 import com.tgg.chat.exception.ErrorResponse;
@@ -20,7 +17,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "ChatMessage API", description = "채팅메시지 API")
@@ -29,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class ChatMessageController {
 	private final ChatMessageService chatMessageService;
 	
-	@GetMapping("/chatMessages")
+	@GetMapping("/chatRooms/{chatRoomId}/messages")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "채팅방 메시지 리스트 반환",
@@ -61,7 +57,7 @@ public class ChatMessageController {
                     )
             )
     })
-	public List<ChatMessageListResponseDto> findChatMessages(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @Valid @RequestBody ChatMessageListRequestDto chatMessageListRequestDto) {
-		return chatMessageService.findChatMessages(authenticatedUser.getUserId(), chatMessageListRequestDto);
+	public List<ChatMessageListResponseDto> findChatMessages(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @PathVariable Long chatRoomId, @RequestParam(required = false) Long offsetSeq) {
+		return chatMessageService.findChatMessages(authenticatedUser.getUserId(), chatRoomId, offsetSeq);
 	}
 }
