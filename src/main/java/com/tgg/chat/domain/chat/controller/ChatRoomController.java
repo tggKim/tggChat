@@ -84,12 +84,7 @@ public class ChatRoomController {
     		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody CreateDirectChatRoomRequestDto requestDto
     ) {
-        Map<String, Object> payload = chatRoomService.createDirectChatRoom(authenticatedUser.getUserId(), requestDto);
-
-        CreateDirectChatRoomResponseDto responseDto = (CreateDirectChatRoomResponseDto)payload.get("responseDto");
-        List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
-
-        chatMessageService.sendMessage(chatEvents);
+        CreateDirectChatRoomResponseDto responseDto = chatRoomService.createDirectChatRoom(authenticatedUser.getUserId(), requestDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

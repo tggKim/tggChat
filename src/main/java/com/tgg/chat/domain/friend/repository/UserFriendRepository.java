@@ -2,9 +2,19 @@ package com.tgg.chat.domain.friend.repository;
 
 import com.tgg.chat.domain.friend.entity.UserFriend;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserFriendRepository extends JpaRepository<UserFriend, Long> {
     public boolean existsByOwner_UserIdAndFriend_UserId(Long ownerId, Long friendId);
+
+    @Query("""
+            select count(uf) > 0 
+            from UserFriend uf
+            where uf.owner.userId = :ownerId
+                and uf.friend.userId = :friendId
+                and uf.friend.deleted = false
+            """)
+    boolean existsActiveFriend(Long ownerId, Long friendId);
 }
