@@ -16,7 +16,6 @@
 		INNER JOIN chat_room_user ME
             ON T1.chat_room_id = ME.chat_room_id
             AND ME.user_id = #{userId}
-            AND ME.chat_room_user_status = 'ACTIVE'
 		LEFT JOIN chat_room_user T3 
             ON T1.chat_room_id = T3.chat_room_id
             AND T3.chat_room_user_status = 'ACTIVE'
