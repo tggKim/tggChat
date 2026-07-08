@@ -4,17 +4,15 @@
 
 	<select id="findChatMessages">
 		SELECT 
-			COUNT(T3.chat_room_user_id) AS unreadCount
+			COUNT(READER.user_id) AS unreadCount
 		,	T1.seq AS seq
 		,	ANY_VALUE(T1.chat_message_type) AS chatMessageType
 		,	ANY_VALUE(T1.content) AS content
-        ,   ANY_VALUE(U.user_id) AS userId
-        ,   ANY_VALUE(U.username) AS username
-        ,   ANY_VALUE(U.profile_image_key) AS profileImageKey
+        ,   ANY_VALUE(SENDER.user_id) AS userId
+        ,   ANY_VALUE(SENDER.username) AS username
+        ,   ANY_VALUE(SENDER.profile_image_key) AS profileImageKey
 		,	ANY_VALUE(T1.created_at) AS createdAt
 		FROM chat_message T1
-        INNER JOIN user U
-            ON T1.sender_id = U.user_id
 		INNER JOIN chat_room_user ME
             ON T1.chat_room_id = ME.chat_room_id
             AND ME.user_id = #{userId}
@@ -24,6 +22,12 @@
             AND T3.chat_room_user_status = 'ACTIVE'
             AND T3.last_read_seq &lt; T1.seq
             AND T3.history_start_seq &lt; T1.seq
+        LEFT JOIN user SENDER
+            ON T1.sender_id = SENDER.user_id
+            AND SENDER.deleted = false
+        LEFT JOIN user READER
+            ON T3.user_id = READER.user_id
+            AND READER.deleted = false
 		WHERE T1.chat_room_id = #{chatRoomId}
             AND ME.history_start_seq &lt; T1.seq
             <if test="offsetSeq != 0">
