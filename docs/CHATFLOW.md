@@ -36,7 +36,7 @@
 - 연결 성공 후 채팅방 메시지를 실시간으로 받기 위해 `/topic/chatRooms/{chatRoomId}` 경로를 구독한다.
 - 채팅방 목록 갱신 이벤트를 받기 위해 `/user/queue/chatRooms/list` 경로를 구독한다.
 - 클라이언트가 메시지를 보낼 때는 `/app/chatRooms/{chatRoomId}/message` 경로로 `SEND` 요청을 보낸다.
-- `ChatController`는 STOMP 세션의 `Principal`에서 로그인 유저 ID를 추출한다.
+- `ChatMessageStompController`는 STOMP 세션의 `Principal`에서 로그인 유저 ID를 추출한다.
 - `ChatMessageService.saveMessage()`는 요청 유저가 채팅방에 속한 유저인지 확인한다.
 - 요청 유저가 채팅방에서 나간 상태이거나 삭제된 유저이면 메시지 저장을 차단한다.
 - 메시지 순서 보장을 위해 `ChatRoom`을 비관적 락으로 조회하고 현재 `lastMessageSeq`를 기준으로 다음 메시지 seq를 계산한다.

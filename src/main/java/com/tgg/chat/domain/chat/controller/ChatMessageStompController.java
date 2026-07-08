@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
-public class ChatController {
+public class ChatMessageStompController {
 
     private final ChatMessageService chatMessageService;
 	
