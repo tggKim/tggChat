@@ -48,8 +48,6 @@ public class ChatRoomService {
     private final UserFriendRepository userFriendRepository;
     private final UserFriendMapper userFriendMapper;
 
-    private final ChatMessageRepository chatMessageRepository;
-
     private final ChatRoomJoinLeaveService chatRoomJoinLeaveService;
 
     // 1대1 채팅방 생성
