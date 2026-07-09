@@ -3,9 +3,12 @@ package com.tgg.chat.common.messaging.redis;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -27,4 +30,16 @@ public class RedisPublisher {
         }
     }
 
+    public void publishChatRoomListEvents(List<ChatRoomListEvent> chatRoomListEventList) {
+        try {
+            // 메시지 발행할 채널 생성
+            String channel = "chat:room-list";
+
+            // redisTemplate 에 value를 String으로 설정했으므로 변경하는 과정 필요
+            String payload = objectMapper.writeValueAsString(chatRoomListEventList);
+            redisTemplate.convertAndSend(channel, payload);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }
