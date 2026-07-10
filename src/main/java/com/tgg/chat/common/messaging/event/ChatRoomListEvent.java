@@ -1,5 +1,6 @@
 package com.tgg.chat.common.messaging.event;
 
+import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.util.List;
 public class ChatRoomListEvent {
     private ChatRoomListEventType eventType;
     private Long roomId;
+    private ChatRoomType roomType;
     private Long receiverUserId;
     private String roomName;
     private Long memberCount;
@@ -20,6 +22,7 @@ public class ChatRoomListEvent {
     private ChatRoomListEvent(
             ChatRoomListEventType eventType,
             Long roomId,
+            ChatRoomType roomType,
             Long receiverUserId,
             String roomName,
             Long memberCount,
@@ -30,6 +33,7 @@ public class ChatRoomListEvent {
     ) {
         this.eventType = eventType;
         this.roomId = roomId;
+        this.roomType = roomType;
         this.receiverUserId = receiverUserId;
         this.roomName = roomName;
         this.memberCount = memberCount;
@@ -41,6 +45,7 @@ public class ChatRoomListEvent {
 
     public static ChatRoomListEvent roomAdded(
             Long roomId,
+            ChatRoomType roomType,
             Long receiverUserId,
             String roomName,
             Long memberCount,
@@ -49,6 +54,7 @@ public class ChatRoomListEvent {
         return new ChatRoomListEvent(
                 ChatRoomListEventType.ROOM_ADDED,
                 roomId,
+                roomType,
                 receiverUserId,
                 roomName,
                 memberCount,
@@ -66,6 +72,7 @@ public class ChatRoomListEvent {
         return new ChatRoomListEvent(
                 ChatRoomListEventType.ROOM_REMOVED,
                 roomId,
+                null,
                 receiverUserId,
                 null,
                 null,
@@ -78,6 +85,7 @@ public class ChatRoomListEvent {
 
     public static ChatRoomListEvent roomChanged(
             Long roomId,
+            ChatRoomType roomType,
             Long receiverUserId,
             String roomName,
             Long memberCount,
@@ -86,6 +94,7 @@ public class ChatRoomListEvent {
         return new ChatRoomListEvent(
                 ChatRoomListEventType.ROOM_CHANGED,
                 roomId,
+                roomType,
                 receiverUserId,
                 roomName,
                 memberCount,
@@ -105,6 +114,7 @@ public class ChatRoomListEvent {
         return new ChatRoomListEvent(
                 ChatRoomListEventType.MESSAGE_SENT,
                 roomId,
+                null,
                 null,
                 null,
                 null,
