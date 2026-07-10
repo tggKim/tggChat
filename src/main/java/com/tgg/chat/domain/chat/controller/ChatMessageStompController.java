@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.List;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.domain.chat.service.ChatMessageService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class ChatMessageStompController {
 
     private final ChatMessageService chatMessageService;
+    private final RedisPublisher redisPublisher;
 	
 	@MessageMapping("/chatRooms/{chatRoomId}/message")
 	public void sendMessage(
@@ -28,8 +30,8 @@ public class ChatMessageStompController {
 		Long userId = Long.parseLong(principal.getName());
 		
         List<ChatEvent> chatEvents = chatMessageService.saveMessage(userId, chatRoomId, message);
-        
-        chatMessageService.sendMessage(chatEvents);
+
+        chatEvents.forEach(redisPublisher::publishChatEvent);
 	}
 	
 }

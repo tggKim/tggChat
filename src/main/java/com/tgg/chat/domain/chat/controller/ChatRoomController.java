@@ -1,7 +1,10 @@
 package com.tgg.chat.domain.chat.controller;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
+import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
+import com.tgg.chat.domain.chat.dto.internal.CreateDirectChatRoomResult;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -10,7 +13,6 @@ import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.service.ChatRoomService;
-import com.tgg.chat.domain.chat.service.ChatMessageService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,7 +40,7 @@ import java.util.Map;
 public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
-    private final ChatMessageService chatMessageService;
+    private final RedisPublisher redisPublisher;
 
     @PostMapping("/directChatRooms")
     @SecurityRequirement(name = "JWT Auth")
@@ -84,7 +86,12 @@ public class ChatRoomController {
     		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody CreateDirectChatRoomRequestDto requestDto
     ) {
-        CreateDirectChatRoomResponseDto responseDto = chatRoomService.createDirectChatRoom(authenticatedUser.getUserId(), requestDto);
+        CreateDirectChatRoomResult createDirectChatRoomResult = chatRoomService.createDirectChatRoom(authenticatedUser.getUserId(), requestDto);
+
+        CreateDirectChatRoomResponseDto responseDto = createDirectChatRoomResult.getResponseDto();
+        List<ChatRoomListEvent> chatRoomListEvents = createDirectChatRoomResult.getChatRoomListEvents();
+
+        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -164,7 +171,7 @@ public class ChatRoomController {
         CreateGroupChatRoomResponseDto responseDto = (CreateGroupChatRoomResponseDto)payload.get("responseDto");
         List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
 
-        chatMessageService.sendMessage(chatEvents);
+        chatEvents.forEach(redisPublisher::publishChatEvent);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -274,7 +281,7 @@ public class ChatRoomController {
     ) {
         List<ChatEvent> chatEvents = chatRoomService.inviteUserToChatRoom(authenticatedUser.getUserId(), requestDto);
 
-        chatMessageService.sendMessage(chatEvents);
+        chatEvents.forEach(redisPublisher::publishChatEvent);
         
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -334,7 +341,7 @@ public class ChatRoomController {
     ) {
         List<ChatEvent> chatEvents = chatRoomService.leaveChatRoom(authenticatedUser.getUserId(), requestDto);
 
-        chatMessageService.sendMessage(chatEvents);
+        chatEvents.forEach(redisPublisher::publishChatEvent);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

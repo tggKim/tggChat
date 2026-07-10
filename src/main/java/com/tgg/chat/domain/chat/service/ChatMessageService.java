@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
-import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.domain.chat.dto.request.ChatMessageRequest;
 import com.tgg.chat.domain.chat.dto.response.ChatMessageListResponseDto;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
@@ -27,9 +26,6 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ChatMessageService {
-	
-    private final RedisPublisher redisPublisher;
-    
     private final ChatRoomUserRepository chatRoomUserRepository;
     
     private final ChatMessageRepository chatMessageRepository;
@@ -103,14 +99,6 @@ public class ChatMessageService {
         lockedChatRoom.updateLastMessage(seq + 1, message.getContent(), savedChatMessage.getCreatedAt());
 
         return chatEvents;
-    }
-    
-    public void sendMessage(
-    		List<ChatEvent> chatEvents
-    ) {
-    	chatEvents.forEach(chatEvent -> {
-    		redisPublisher.publishChatEvent(chatEvent);
-    	});
     }
     
     @Transactional(readOnly = true)
