@@ -34,9 +34,10 @@ public class RedisConfig {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory);
 
-        // 컨테이너가 Redis 에서 chat:room:* 패턴 전부 구독
+        // 컨테이너가 Redis 에서 chat:room:*, chat:room-list 패턴 전부 구독
         // 해당 채널들로 메시지 오면 messageListener로 전달
         container.addMessageListener(redisSubscriber, new PatternTopic("chat:room:*"));
+        container.addMessageListener(redisSubscriber, new PatternTopic("chat:room-list"));
 
         return container;
     }

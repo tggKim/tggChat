@@ -10,7 +10,6 @@ public class ChatRoomListEvent {
     private ChatRoomListEventType eventType;
     private Long roomId;
     private Long receiverUserId;
-    private List<Long> receiverUserIds;
     private String roomName;
     private Long memberCount;
     private String lastMessagePreview;
@@ -22,7 +21,6 @@ public class ChatRoomListEvent {
             ChatRoomListEventType eventType,
             Long roomId,
             Long receiverUserId,
-            List<Long> receiverUserIds,
             String roomName,
             Long memberCount,
             String lastMessagePreview,
@@ -33,7 +31,6 @@ public class ChatRoomListEvent {
         this.eventType = eventType;
         this.roomId = roomId;
         this.receiverUserId = receiverUserId;
-        this.receiverUserIds = receiverUserIds;
         this.roomName = roomName;
         this.memberCount = memberCount;
         this.lastMessagePreview = lastMessagePreview;
@@ -53,7 +50,6 @@ public class ChatRoomListEvent {
                 ChatRoomListEventType.ROOM_ADDED,
                 roomId,
                 receiverUserId,
-                null,
                 roomName,
                 memberCount,
                 null,
@@ -76,7 +72,6 @@ public class ChatRoomListEvent {
                 null,
                 null,
                 null,
-                null,
                 null
         );
     }
@@ -92,7 +87,6 @@ public class ChatRoomListEvent {
                 ChatRoomListEventType.ROOM_CHANGED,
                 roomId,
                 receiverUserId,
-                null,
                 roomName,
                 memberCount,
                 null,
@@ -104,7 +98,6 @@ public class ChatRoomListEvent {
 
     public static ChatRoomListEvent messageSent(
             Long roomId,
-            List<Long> receiverUserIds,
             String lastMessagePreview,
             Long lastMessageSeq,
             LocalDateTime lastMessageAt
@@ -113,7 +106,6 @@ public class ChatRoomListEvent {
                 ChatRoomListEventType.MESSAGE_SENT,
                 roomId,
                 null,
-                receiverUserIds,
                 null,
                 null,
                 lastMessagePreview,
