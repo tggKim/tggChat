@@ -1,7 +1,9 @@
 package com.tgg.chat.domain.chat.service;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.domain.chat.dto.internal.ChatEventResult;
+import com.tgg.chat.domain.chat.dto.internal.CreateDirectChatRoomResult;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -52,7 +54,7 @@ public class ChatRoomService {
 
     // 1대1 채팅방 생성
     @Transactional
-    public CreateDirectChatRoomResponseDto createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
+    public CreateDirectChatRoomResult createDirectChatRoom(Long userId, CreateDirectChatRoomRequestDto requestDto) {
         User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
         if(findUser.getDeleted()) {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
@@ -76,15 +78,14 @@ public class ChatRoomService {
 
         // 1대1 채팅방을 조회
         Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findDirectChatRoom(maxUseId, minUserId);
-        CreateDirectChatRoomResponseDto responseDto = null;
-        ChatRoom savedChatRoom = null;
         if(chatRoomOptional.isEmpty()) { // 1대1 채팅방이 존재하지 않는다면 ChatRoom 생성하고 ChatRoomUser 생성하면 된다.
-            User user1 = userRepository.getReferenceById(maxUseId);
-            User user2 = userRepository.getReferenceById(minUserId);
+            User friendUser = userRepository.findById(friendUserId).orElseThrow(() -> new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER));
+            User user1 = userId > friendUserId ? findUser : friendUser;
+            User user2 = userId > friendUserId ? friendUser : findUser;
 
             // 채팅방 생성
             ChatRoom chatRoom = ChatRoom.of(ChatRoomType.DIRECT, user1, user2);
-            savedChatRoom = chatRoomRepository.save(chatRoom);
+            ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
 
             // ChatRoom이 방금 생성되었으므로 ChatRoomUser의 중복 검사는 필요없다.
             // ChatRoomUser 생성한다. 1대1 채팅방은 두 유저의 권한이 모두 MEMBER 이다.
@@ -94,24 +95,80 @@ public class ChatRoomService {
             chatRoomUserRepository.save(chatRoomUser2);
 
             // 응답 DTO 생성
-            responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
+            CreateDirectChatRoomResponseDto responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
+
+            // ChatRoomListEvent 리스트 생성
+            List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
+
+            chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
+                    savedChatRoom.getChatRoomId(),
+                    ChatRoomType.DIRECT,
+                    user1.getUserId(),
+                    user2.getUsername(),
+                    2L,
+                    user2.getProfileImageKey() == null ? List.of() : List.of(user2.getProfileImageKey())
+            ));
+
+            chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
+                    savedChatRoom.getChatRoomId(),
+                    ChatRoomType.DIRECT,
+                    user2.getUserId(),
+                    user1.getUsername(),
+                    2L,
+                    user1.getProfileImageKey() == null ? List.of() : List.of(user1.getProfileImageKey())
+            ));
+
+            return CreateDirectChatRoomResult.of(responseDto, chatRoomListEvents);
         } else { // 1대1 채팅방이 존재한다면, 해당 ChatRoom에 대한 ChatRoomUser 들의 상태를 ACTIVE로 바꾼다.
-            savedChatRoom = chatRoomOptional.get();
+            ChatRoom savedChatRoom = chatRoomOptional.get();
 
             // 채팅방별 ChatMessage의 최대 seq 조회
             ChatRoom lockedChatRoom = chatRoomRepository.findByIdForUpdate(savedChatRoom.getChatRoomId())
                     .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
             Long seq = lockedChatRoom.getLastMessageSeq();
 
-            List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomId(savedChatRoom.getChatRoomId());
-            chatRoomUsers.stream().filter(chatRoomUser -> chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT)
-                    .forEach(chatRoomUser -> chatRoomUser.joinChatRoom(seq));
+            // 채팅방에 대한 ChatRoomUser 들 조회
+            List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(savedChatRoom.getChatRoomId());
 
             // 응답 DTO 생성
-            responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
-        }
+            CreateDirectChatRoomResponseDto responseDto = CreateDirectChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
 
-        return responseDto;
+            // ChatRoomListEvent 리스트 생성
+            List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
+
+            ChatRoomUser firstChatRoomUser = chatRoomUsers.get(0);
+            ChatRoomUser secondChatRoomUser = chatRoomUsers.get(1);
+            User firstUser = firstChatRoomUser.getUser();
+            User secondUser = secondChatRoomUser.getUser();
+
+            if (firstChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+                firstChatRoomUser.joinChatRoom(seq);
+
+                chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
+                        savedChatRoom.getChatRoomId(),
+                        ChatRoomType.DIRECT,
+                        firstUser.getUserId(),
+                        secondUser.getUsername(),
+                        2L,
+                        secondUser.getProfileImageKey() == null ? List.of() : List.of(secondUser.getProfileImageKey())
+                ));
+            }
+
+            if (secondChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+                secondChatRoomUser.joinChatRoom(seq);
+
+                chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
+                        savedChatRoom.getChatRoomId(),
+                        ChatRoomType.DIRECT,
+                        secondUser.getUserId(),
+                        firstUser.getUsername(),
+                        2L,
+                        firstUser.getProfileImageKey() == null ? List.of() : List.of(firstUser.getProfileImageKey())
+                ));
+            }
+
+            return CreateDirectChatRoomResult.of(responseDto, chatRoomListEvents);
+        }
     }
 
     // 단체 채팅방 생성

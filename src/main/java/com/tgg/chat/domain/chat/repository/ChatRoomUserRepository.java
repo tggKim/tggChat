@@ -55,14 +55,6 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
     @Query("""
             select cru
             from ChatRoomUser cru
-            where cru.chatRoom.chatRoomId = :chatRoomId
-            and cru.user.deleted = false
-    """)
-    List<ChatRoomUser> findByChatRoomId(Long chatRoomId);
-
-    @Query("""
-            select cru
-            from ChatRoomUser cru
             join fetch cru.user u
             where cru.chatRoom.chatRoomId = :chatRoomId
             and cru.user.deleted = false
