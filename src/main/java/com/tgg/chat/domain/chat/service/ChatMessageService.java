@@ -2,7 +2,10 @@ package com.tgg.chat.domain.chat.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
+import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
 import com.tgg.chat.domain.chat.dto.query.ChatMessageListRowDto;
 import com.tgg.chat.domain.chat.repository.*;
 import org.springframework.stereotype.Service;
@@ -34,7 +37,7 @@ public class ChatMessageService {
     private final ChatRoomRepository chatRoomRepository;
     
     @Transactional
-    public List<ChatEvent> saveMessage(
+    public SaveChatMessageResult saveMessage(
     		Long userId,
     		Long chatRoomId,
     		ChatMessageRequest message
@@ -61,12 +64,29 @@ public class ChatMessageService {
 
         List<ChatEvent> chatEvents = new ArrayList<>();
         List<Long> eventUserIds;
+        List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
         if(lockedChatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
             // 1대1 채팅방은 상대방이 LEFT 상태이면 ACTIVE 로 복귀, 삭제된 유저이면 제외
             List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
-            for (ChatRoomUser chatRoomUser : chatRoomUsers) {
-                if (chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
-                    chatRoomUser.joinChatRoom(seq);
+            Optional<ChatRoomUser> opponentOptional = chatRoomUsers.stream()
+                    .filter(chatRoomUser -> !userId.equals(chatRoomUser.getUser().getUserId()))
+                    .findFirst();
+
+            // 상대 유저가 delete 된 상태라면 거치치 않는다
+            if (opponentOptional.isPresent()) {
+                ChatRoomUser opponent = opponentOptional.get();
+
+                if (opponent.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+                    opponent.joinChatRoom(seq);
+
+                    chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
+                            chatRoomId,
+                            ChatRoomType.DIRECT,
+                            opponent.getUser().getUserId(),
+                            user.getUsername(),
+                            2L,
+                            user.getProfileImageKey() == null ? List.of() : List.of(user.getProfileImageKey())
+                    ));
                 }
             }
 
@@ -98,7 +118,7 @@ public class ChatMessageService {
         // chatRoom 의 lastSeq 증가
         lockedChatRoom.updateLastMessage(seq + 1, message.getContent(), savedChatMessage.getCreatedAt());
 
-        return chatEvents;
+        return SaveChatMessageResult.of(chatEvents, chatRoomListEvents);
     }
     
     @Transactional(readOnly = true)

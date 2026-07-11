@@ -4,7 +4,9 @@ import java.security.Principal;
 import java.util.List;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
+import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.redis.RedisPublisher;
+import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
 import com.tgg.chat.domain.chat.service.ChatMessageService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -29,8 +31,12 @@ public class ChatMessageStompController {
     ) {
 		Long userId = Long.parseLong(principal.getName());
 		
-        List<ChatEvent> chatEvents = chatMessageService.saveMessage(userId, chatRoomId, message);
+        SaveChatMessageResult saveChatMessageResult = chatMessageService.saveMessage(userId, chatRoomId, message);
 
+        List<ChatEvent> chatEvents = saveChatMessageResult.getChatEvents();
+        List<ChatRoomListEvent> chatRoomListEvents = saveChatMessageResult.getChatRoomListEvents();
+
+        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
         chatEvents.forEach(redisPublisher::publishChatEvent);
 	}
 	
