@@ -87,6 +87,14 @@
 - 컨트롤러는 서비스 결과에 포함된 `ChatRoomListEvent`를 Redis Pub/Sub로 발행한다.
 - 클라이언트는 `/user/queue/chatRooms/list` 구독을 통해 1대1 채팅방 추가 또는 복귀 이벤트를 수신한다.
 
+## 채팅방 목록 이벤트
+- 채팅방 목록 이벤트는 클라이언트의 채팅방 목록 화면을 갱신하기 위한 WebSocket 이벤트다.
+- 클라이언트는 `/user/queue/chatRooms/list` 경로를 구독해 자신에게 필요한 채팅방 목록 변경 사항을 수신한다.
+- 서버는 `ChatRoomListEvent`를 Redis Pub/Sub의 `chat:room-list` 채널로 발행한다.
+- `RedisSubscriber`는 `chat:room-list` 채널의 이벤트를 수신한 뒤 `receiverUserId` 기준으로 각 유저의 `/user/queue/chatRooms/list` 경로에 전달한다.
+- 일반 채팅 메시지 이벤트(`ChatEvent`)도 수신 후 `MESSAGE_SENT` 목록 이벤트로 변환되어 같은 `/user/queue/chatRooms/list` 경로에 전달된다.
+- 채팅방 목록 이벤트는 목록 재조회 없이 화면을 갱신하기 위한 힌트이며, 클라이언트는 `roomId` 기준으로 기존 목록과 병합한다.
+
 ## WebSocket/STOMP 에러 처리
 
 - WebSocket/STOMP 에러는 발생 위치에 따라 처리 방식이 다르다.
