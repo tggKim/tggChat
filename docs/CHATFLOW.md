@@ -107,6 +107,12 @@
 - 클라이언트는 채팅방 화면에 입장했을 때 `/topic/chatRooms/{roomId}`를 구독해 실시간 메시지를 수신한다.
 - 동일한 `ChatEvent`는 채팅방 목록 갱신을 위한 `MESSAGE_SENT` 이벤트 생성에도 사용된다.
 
+### 채팅 이벤트 처리 주의사항
+- `eventUserIds`는 채팅방 목록 갱신 대상 유저를 계산하기 위해 사용된다.
+- 삭제된 유저는 `eventUserIds`에 포함하지 않는다.
+- 1대1 채팅방에서 상대가 `LEFT` 상태였다가 메시지 전송으로 복귀하면, `ChatEvent`와 별도로 `ROOM_ADDED` 목록 이벤트가 생성될 수 있다.
+- `ChatEvent`와 `ChatRoomListEvent`는 서로 다른 채널로 전달되므로 클라이언트 수신 순서가 항상 보장되지는 않는다.
+
 ## WebSocket/STOMP 에러 처리
 
 - WebSocket/STOMP 에러는 발생 위치에 따라 처리 방식이 다르다.
