@@ -42,6 +42,11 @@ public class ChatMessageService {
     		Long chatRoomId,
     		ChatMessageRequest message
     ) {
+        // 채팅방별 ChatMessage의 최대 seq 조회
+        ChatRoom lockedChatRoom = chatRoomRepository.findByIdForUpdate(chatRoomId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+        Long seq = lockedChatRoom.getLastMessageSeq();
+
         // 유저가 채팅방에 속한 유저인지 검증
         ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
@@ -56,11 +61,6 @@ public class ChatMessageService {
         if(user.getDeleted()) {
         	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
-
-        // 채팅방별 ChatMessage의 최대 seq 조회
-        ChatRoom lockedChatRoom = chatRoomRepository.findByIdForUpdate(chatRoomId)
-                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
-        Long seq = lockedChatRoom.getLastMessageSeq();
 
         List<ChatEvent> chatEvents = new ArrayList<>();
         List<Long> eventUserIds;
