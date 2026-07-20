@@ -16,11 +16,6 @@ import java.time.LocalDateTime;
 @Getter
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_chat_message_room_seq", columnNames = {"chat_room_id", "seq"})
-        }
-)
 public class ChatMessage {
 
     // pk 값
@@ -36,10 +31,6 @@ public class ChatMessage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
-
-    // 메시지 순번
-    @Column(nullable = false)
-    private Long seq;
 
     // 메시지 내용
     @Column(nullable = false, length = 2000)
@@ -61,13 +52,11 @@ public class ChatMessage {
     private ChatMessage(
             ChatRoom chatRoom,
             User sender,
-            Long seq,
             String content,
             ChatMessageType chatMessageType
     ) {
         this.chatRoom = chatRoom;
         this.sender = sender;
-        this.seq = seq;
         this.content = content;
         this.chatMessageType = chatMessageType;
     }
@@ -75,11 +64,10 @@ public class ChatMessage {
     public static ChatMessage of(
             ChatRoom chatRoom,
             User sender,
-            Long seq,
             String content,
             ChatMessageType chatMessageType
     ) {
-        return new ChatMessage(chatRoom, sender, seq, content, chatMessageType);
+        return new ChatMessage(chatRoom, sender, content, chatMessageType);
     }
 
 }

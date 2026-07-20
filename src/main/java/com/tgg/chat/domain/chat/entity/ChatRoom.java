@@ -37,9 +37,6 @@ import lombok.NoArgsConstructor;
             name = "uk_chat_room_direct_pair",
             columnNames = {"chat_room_type", "direct_user1_id", "direct_user2_id"}
         )
-    },
-    indexes = {
-    	@Index(name = "idx_chat_room_last_message_at", columnList = "last_message_at")
     }
 )
 public class ChatRoom {

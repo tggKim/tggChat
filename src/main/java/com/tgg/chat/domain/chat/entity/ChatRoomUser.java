@@ -64,14 +64,14 @@ public class ChatRoomUser {
     @Column(nullable = false)
 	private ChatRoomUserStatus chatRoomUserStatus;
 	
-	// 채팅에 참여한 시점 -> 메시지 불러오는 기준
+	// 채팅에 참여한 시점
 	private LocalDateTime joinedAt;
 	
-	// 해당 messageId 읽지 않은 메시지
+	// 해당 messageId 부터의 메시지들이 읽지 않은 메시지
     @Column(nullable = false)
 	private Long unreadStartMessageId;
 
-    // 이 messageId 부터의 메시지들이 유저에게 노출된다
+    // 해당 messageId 부터의 메시지들이 유저에게 노출된다
     @Column(nullable = false)
     private Long visibleStartMessageId;
 	
