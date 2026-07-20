@@ -67,13 +67,13 @@ public class ChatRoomUser {
 	// 채팅에 참여한 시점 -> 메시지 불러오는 기준
 	private LocalDateTime joinedAt;
 	
-	// 읽은 마지막 메시지 시퀸스 번호
+	// 해당 messageId 읽지 않은 메시지
     @Column(nullable = false)
-	private Long lastReadSeq;
+	private Long unreadStartMessageId;
 
-    // 이 seq 초과하는 메시지들이 유저에게 노출된다
+    // 이 messageId 부터의 메시지들이 유저에게 노출된다
     @Column(nullable = false)
-    private Long historyStartSeq;
+    private Long visibleStartMessageId;
 	
 	@CreatedDate
 	@Column(nullable = false, updatable = false)
@@ -94,8 +94,8 @@ public class ChatRoomUser {
         this.chatRoomUserRole = chatRoomUserRole;
         this.chatRoomUserStatus = chatRoomUserStatus;
         this.joinedAt = LocalDateTime.now();
-        this.lastReadSeq = 0L;
-        this.historyStartSeq = 0L;
+        this.unreadStartMessageId = 0L;
+        this.visibleStartMessageId = 0L;
     }
 
     public static ChatRoomUser of(
@@ -107,33 +107,29 @@ public class ChatRoomUser {
         return new ChatRoomUser(user, chatRoom, chatRoomUserRole, chatRoomUserStatus);
     }
 
-    public void setJoinedAt() {
-        joinedAt = LocalDateTime.now();
-    }
-
     public void setChatRoomUserStatus(ChatRoomUserStatus chatRoomUserStatus) {
         this.chatRoomUserStatus = chatRoomUserStatus;
     }
 
-    public void setLastReadSeq(Long lastReadSeq) {
-        this.lastReadSeq = lastReadSeq;
+    public void setLastReadSeq(Long chatMessageId) {
+        this.unreadStartMessageId = chatMessageId;
     }
     
     public void setChatRoomUserRole(ChatRoomUserRole chatRoomUserRole) {
         this.chatRoomUserRole = chatRoomUserRole;
     }
 
-    public void setHistoryStartSeq(Long historyStartSeq) {
-        this.historyStartSeq = historyStartSeq;
+    public void setHistoryStartSeq(Long chatMessageId) {
+        this.visibleStartMessageId = chatMessageId;
     }
 
     public void joinChatRoom(
-            Long seq
+            Long chatMessageId
     ) {
         this.joinedAt = LocalDateTime.now();
         this.chatRoomUserStatus = ChatRoomUserStatus.ACTIVE;
-        this.lastReadSeq = seq;
-        this.historyStartSeq = seq;
+        this.unreadStartMessageId = chatMessageId;
+        this.visibleStartMessageId = chatMessageId;
     }
 
 }

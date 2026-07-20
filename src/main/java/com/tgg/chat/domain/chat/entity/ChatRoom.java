@@ -66,17 +66,6 @@ public class ChatRoom {
     @JoinColumn(name = "direct_user2_id")
 	private User directUser2;
 	
-	// 채팅방 마지막 메시지 필드
-	@Column(length = 2000)
-	private String lastMessagePreview;
-	
-	// 채팅방 마지막 메시지 생성 시각
-	private LocalDateTime lastMessageAt;
-
-    // 채팅방 마지막 메시지 seq
-    @Column(nullable = false)
-    private Long lastMessageSeq;
-	
 	@CreatedDate
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
@@ -92,7 +81,6 @@ public class ChatRoom {
     ) {
         this.chatRoomType = chatRoomType;
         this.roomName = roomName;
-        this.lastMessageSeq = 0L;
     }
 
     // 1대1 채팅방 생성자
@@ -106,7 +94,6 @@ public class ChatRoom {
         this.roomName = roomName;
         this.directUser1 = directUser1;
         this.directUser2 = directUser2;
-        this.lastMessageSeq = 0L;
     }
 
     public static ChatRoom of(
@@ -122,15 +109,5 @@ public class ChatRoom {
             User directUser2
     ) {
         return new ChatRoom(chatRoomType, chatRoomType.name(), directUser1, directUser2);
-    }
-
-    public void updateLastMessage(
-            Long lastMessageSeq,
-            String lastMessagePreview,
-            LocalDateTime lastMessageAt
-    ) {
-        this.lastMessageSeq = lastMessageSeq;
-        this.lastMessagePreview = lastMessagePreview;
-        this.lastMessageAt = lastMessageAt;
     }
 }
