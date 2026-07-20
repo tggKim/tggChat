@@ -15,7 +15,7 @@ public class ChatRoomListEvent {
     private String roomName;
     private Long memberCount;
     private String lastMessagePreview;
-    private Long lastMessageSeq;
+    private Long messageId;
     private LocalDateTime lastMessageAt;
     private List<String> profileImageKeys;
 
@@ -27,7 +27,7 @@ public class ChatRoomListEvent {
             String roomName,
             Long memberCount,
             String lastMessagePreview,
-            Long lastMessageSeq,
+            Long messageId,
             LocalDateTime lastMessageAt,
             List<String> profileImageKeys
     ) {
@@ -38,7 +38,7 @@ public class ChatRoomListEvent {
         this.roomName = roomName;
         this.memberCount = memberCount;
         this.lastMessagePreview = lastMessagePreview;
-        this.lastMessageSeq = lastMessageSeq;
+        this.messageId = messageId;
         this.lastMessageAt = lastMessageAt;
         this.profileImageKeys = profileImageKeys;
     }
@@ -108,7 +108,7 @@ public class ChatRoomListEvent {
     public static ChatRoomListEvent messageSent(
             Long roomId,
             String lastMessagePreview,
-            Long lastMessageSeq,
+            Long messageId,
             LocalDateTime lastMessageAt
     ) {
         return new ChatRoomListEvent(
@@ -119,7 +119,7 @@ public class ChatRoomListEvent {
                 null,
                 null,
                 lastMessagePreview,
-                lastMessageSeq,
+                messageId,
                 lastMessageAt,
                 null
         );

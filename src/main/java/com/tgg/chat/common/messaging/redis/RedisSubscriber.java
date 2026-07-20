@@ -57,7 +57,7 @@ public class RedisSubscriber implements MessageListener {
         ChatRoomListEvent chatRoomListEvent = ChatRoomListEvent.messageSent(
                 chatEvent.getRoomId(),
                 chatEvent.getContent(),
-                chatEvent.getMessageSeq(),
+                chatEvent.getMessageId(),
                 chatEvent.getCreatedAt()
         );
         chatEvent.getEventUserIds().forEach(userId -> {
