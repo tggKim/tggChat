@@ -37,23 +37,21 @@
 - 채팅방 목록 갱신 이벤트를 받기 위해 `/user/queue/chatRooms/list` 경로를 구독한다.
 - 클라이언트가 메시지를 보낼 때는 `/app/chatRooms/{chatRoomId}/message` 경로로 `SEND` 요청을 보낸다.
 - `ChatMessageStompController`는 STOMP 세션의 `Principal`에서 로그인 유저 ID를 추출한다.
-- `ChatMessageService.saveMessage()`는 요청 유저가 해당 채팅방에 속한 유저인지 확인한다.
+- `ChatMessageService.saveMessage()`는 요청 유저의 `ChatRoomUser`, `ChatRoom`, `User`를 함께 조회한다.
 - 요청 유저가 채팅방에서 나간 상태이거나 삭제된 유저이면 메시지 저장을 차단한다.
-- 메시지 순서 보장을 위해 `ChatRoom`을 비관적 락으로 조회하고 현재 `lastMessageSeq`를 기준으로 다음 메시지 seq를 계산한다.
+- 메시지를 `chat_message` 테이블에 먼저 저장하고, 데이터베이스가 생성한 `chatMessageId`를 메시지 식별자와 정렬 기준으로 사용한다.
 - 1대1 채팅방의 경우 삭제되지 않은 상대 유저가 `LEFT` 상태이면 다시 `ACTIVE` 상태로 복귀시킨다.
-- 이때 복귀한 상대 유저에게 보낼 `ROOM_ADDED` 채팅방 목록 이벤트를 생성한다.
+- 복귀한 상대 유저의 `visibleStartMessageId`와 `unreadStartMessageId`는 방금 저장된 메시지의 `chatMessageId`로 설정한다.
+- 따라서 복귀한 상대 유저는 복귀를 발생시킨 메시지부터 조회하고 읽지 않은 메시지로 판단한다.
+- 복귀한 상대 유저에게 보낼 `ROOM_ADDED` 타입의 `ChatRoomListEvent` 생성한다.
 - 1대1 상대 유저가 삭제된 상태이면 상대 복귀와 목록 이벤트 생성 없이 메시지만 저장한다.
-- 단체 채팅방의 경우 현재 `ACTIVE` 상태이고 삭제되지 않은 유저만 이벤트 수신 대상에 포함한다.
-- 메시지를 `chat_message` 테이블에 저장한 뒤 `ChatEvent`를 생성한다.
-- `ChatRoom`의 마지막 메시지 seq, 마지막 메시지 내용, 마지막 메시지 시각을 갱신한다.
+- 단체 채팅방의 경우 현재 `ACTIVE` 상태이고 삭제되지 않은 유저만 `ChatEvent` 수신 대상에 포함한다.
 - `ChatMessageService.saveMessage()`는 `ChatEvent`와 `ChatRoomListEvent`를 함께 담은 결과를 반환한다.
 - `ChatMessageStompController`는 채팅방 목록 이벤트를 먼저 Redis Pub/Sub로 발행하고, 이후 채팅 메시지 이벤트를 발행한다.
-- 단, 채팅방 목록 이벤트와 채팅 메시지 이벤트는 서로 다른 Redis 채널을 사용하므로 클라이언트 수신 순서가 항상 보장되는 것은 아니다.
-- 프론트엔드는 `roomId`, `lastMessageSeq`, `lastMessageAt` 기준으로 이벤트를 병합하여 순서가 뒤집혀도 최종 상태가 맞도록 처리해야 한다.
-- `RedisPublisher`는 채팅 메시지를 `chat:room:{roomId}` 채널로 발행한다.
-- `RedisPublisher`는 채팅방 목록 이벤트를 `chat:room-list` 채널로 발행한다.
+- `RedisPublisher`는 `ChatEvent`를 `chat:room:{roomId}` 채널로 발행한다.
+- `RedisPublisher`는 `ChatRoomListEvent`를 `chat:room-list` 채널로 발행한다.
 - `RedisSubscriber`는 `chat:room:*` 채널의 `ChatEvent`를 수신해 `/topic/chatRooms/{roomId}`로 브로드캐스트한다.
-- `RedisSubscriber`는 동일한 `ChatEvent`를 기반으로 `MESSAGE_SENT` 목록 이벤트를 만들어 `eventUserIds`의 `/user/queue/chatRooms/list` 경로로 전달한다.
+- `RedisSubscriber`는 동일한 `ChatEvent`를 기반으로 `MESSAGE_SENT` 타입의 `ChatRoomListEvent`를 만들어 `eventUserIds`의 `/user/queue/chatRooms/list` 경로로 전달한다.
 - `RedisSubscriber`는 `chat:room-list` 채널의 `ChatRoomListEvent` 목록을 수신해 각 `receiverUserId`의 `/user/queue/chatRooms/list` 경로로 전달한다.
 
 ## 메시지 목록 조회 흐름
