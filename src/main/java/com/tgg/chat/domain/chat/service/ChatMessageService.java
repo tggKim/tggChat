@@ -6,8 +6,8 @@ import java.util.Optional;
 
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
-import com.tgg.chat.domain.chat.dto.query.ChatMessageListRowDto;
 import com.tgg.chat.domain.chat.repository.*;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +32,6 @@ public class ChatMessageService {
     private final ChatRoomUserRepository chatRoomUserRepository;
     
     private final ChatMessageRepository chatMessageRepository;
-    private final ChatMessageMapper chatMessageMapper;
     
     @Transactional
     public SaveChatMessageResult saveMessage(
@@ -115,16 +114,12 @@ public class ChatMessageService {
     }
     
     @Transactional(readOnly = true)
-    public List<ChatMessageListResponseDto> findChatMessages(Long userId, Long chatRoomId, Long offsetSeq) {
+    public List<ChatMessageListResponseDto> findChatMessages(Long userId, Long chatRoomId, Long offsetMessageId) {
     	if(!chatRoomUserRepository.existsActiveMember(chatRoomId, userId)) {
             throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
 
-        if(offsetSeq == null) {
-            offsetSeq = 0L;
-        }
-
-        List<ChatMessageListRowDto> chatMessages = chatMessageMapper.findChatMessages(userId, chatRoomId, offsetSeq);
+        List<ChatMessage> chatMessages = chatMessageRepository.findVisibleMessages(userId, chatRoomId, offsetMessageId, Limit.of(100));
     	return chatMessages.stream().map(ChatMessageListResponseDto::from).toList();
     }
 

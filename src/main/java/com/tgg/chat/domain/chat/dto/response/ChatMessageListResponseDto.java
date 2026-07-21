@@ -2,7 +2,7 @@ package com.tgg.chat.domain.chat.dto.response;
 
 import java.time.LocalDateTime;
 
-import com.tgg.chat.domain.chat.dto.query.ChatMessageListRowDto;
+import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.enums.ChatMessageType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,11 +11,8 @@ import lombok.Getter;
 @Getter
 @Schema(description = "채팅방 메시지 리스트 응답 DTO")
 public class ChatMessageListResponseDto {
-    @Schema(description = "메시지 seq", example = "1")
-    private final Long seq;
-    
-    @Schema(description = "읽지 않은 사람 수", example = "1")
-    private final Long unreadCount;
+    @Schema(description = "메시지 id", example = "1")
+    private final Long messageId;
 	
     @Schema(description = "채팅 메시지 타입", example = "DIRECT")
     private final ChatMessageType chatMessageType;
@@ -36,8 +33,7 @@ public class ChatMessageListResponseDto {
     private final LocalDateTime createdAt;
 
     private ChatMessageListResponseDto(
-            Long seq,
-            Long unreadCount,
+            Long messageId,
             ChatMessageType chatMessageType,
             String content,
             Long senderId,
@@ -45,8 +41,7 @@ public class ChatMessageListResponseDto {
             String senderProfileImageKey,
             LocalDateTime createdAt
     ) {
-        this.seq = seq;
-        this.unreadCount = unreadCount;
+        this.messageId = messageId;
         this.chatMessageType = chatMessageType;
         this.content = content;
         this.senderId = senderId;
@@ -55,16 +50,15 @@ public class ChatMessageListResponseDto {
         this.createdAt = createdAt;
     }
 
-    public static ChatMessageListResponseDto from(ChatMessageListRowDto dto) {
+    public static ChatMessageListResponseDto from(ChatMessage chatMessage) {
         return new ChatMessageListResponseDto(
-                dto.getSeq(),
-                dto.getUnreadCount(),
-                dto.getChatMessageType(),
-                dto.getContent(),
-                dto.getUserId(),
-                dto.getUsername(),
-                dto.getProfileImageKey(),
-                dto.getCreatedAt()
+                chatMessage.getChatMessageId(),
+                chatMessage.getChatMessageType(),
+                chatMessage.getContent(),
+                chatMessage.getSender().getDeleted() ? null : chatMessage.getSender().getUserId(),
+                chatMessage.getSender().getDeleted() ? null : chatMessage.getSender().getUsername(),
+                chatMessage.getSender().getDeleted() ? null : chatMessage.getSender().getProfileImageKey(),
+                chatMessage.getCreatedAt()
         );
     }
 }

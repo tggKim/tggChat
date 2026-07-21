@@ -41,7 +41,7 @@ public class ChatMessageController {
                     )
             ),
     })
-	public List<ChatMessageListResponseDto> findChatMessages(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @PathVariable Long chatRoomId, @RequestParam(required = false) Long offsetSeq) {
-		return chatMessageService.findChatMessages(authenticatedUser.getUserId(), chatRoomId, offsetSeq);
+	public List<ChatMessageListResponseDto> findChatMessages(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @PathVariable Long chatRoomId, @RequestParam(required = false) Long offsetMessageId) {
+		return chatMessageService.findChatMessages(authenticatedUser.getUserId(), chatRoomId, offsetMessageId);
 	}
 }

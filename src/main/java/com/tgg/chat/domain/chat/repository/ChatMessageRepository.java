@@ -13,8 +13,11 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             select cm
             from ChatMessage cm
             join fetch cm.sender
+            inner join ChatRoomUser cru
+            on cru.chatRoom = cm.chatRoom
+            and cru.user.userId = :userId
             where cm.chatRoom.chatRoomId = :chatRoomId
-            and cm.chatMessageId >= :visibleStartMessageId
+            and cm.chatMessageId >= cru.visibleStartMessageId
             and (
                 :offsetMessageId is null
                 or
@@ -23,8 +26,9 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             order by cm.chatMessageId desc
             """)
     List<ChatMessage> findVisibleMessages(
+            Long userId,
             Long chatRoomId,
-            Long visibleStartMessageId,
             Long offsetMessageId,
-            Limit limit);
+            Limit limit
+    );
 }
