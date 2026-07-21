@@ -8,10 +8,7 @@ import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
 import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
-import com.tgg.chat.domain.chat.dto.response.ChatRoomListItemReseponseDto;
-import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
-import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
-import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
+import com.tgg.chat.domain.chat.dto.response.*;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
@@ -51,6 +48,33 @@ public class ChatRoomService {
     private final UserFriendMapper userFriendMapper;
 
     private final ChatRoomJoinLeaveService chatRoomJoinLeaveService;
+
+    // 채팅방의 유저별 메시지 읽음 범위 조회
+    @Transactional(readOnly = true)
+    public List<ChatRoomReadStatusResponseDto> findReadStatuses(Long userId, Long chatRoomId) {
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User user = findChatRoomUser.getUser();
+        if(user.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
+        return chatRoomUsers.stream().map(chatRoomUser -> {
+            return ChatRoomReadStatusResponseDto.of(
+                    chatRoomUser.getUser().getUserId(),
+                    chatRoomUser.getUnreadStartMessageId()
+            );
+        }).toList();
+    }
 
     // 1대1 채팅방 생성
     @Transactional

@@ -10,11 +10,13 @@ import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
 import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
+import com.tgg.chat.domain.chat.dto.response.ChatRoomReadStatusResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
 import com.tgg.chat.domain.chat.service.ChatRoomService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,10 +28,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,53 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
     private final RedisPublisher redisPublisher;
+
+    @GetMapping("/chatRooms/{chatRoomId}/readStatuses")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방의 유저별 메시지 읽음 범위 조회",
+            description =  "채팅방의 유저별 메시지 읽음 범위 조회"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방의 유저별 메시지 읽음 범위 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(
+                                    schema = @Schema(
+                                            implementation = ChatRoomReadStatusResponseDto.class
+                                    )
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "채팅방에 접근할 권한이 없습니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "존재하지 않는 유저입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<List<ChatRoomReadStatusResponseDto>> findReadStatuses(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long chatRoomId
+    ) {
+        List<ChatRoomReadStatusResponseDto> chatRoomReadStatusResponseDtos = chatRoomService.findReadStatuses(authenticatedUser.getUserId(), chatRoomId);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(chatRoomReadStatusResponseDtos);
+    }
 
     @PostMapping("/directChatRooms")
     @SecurityRequirement(name = "JWT Auth")
