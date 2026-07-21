@@ -56,18 +56,18 @@
 
 ## 메시지 목록 조회 흐름
 - 대상 엔드포인트는 `GET /chatRooms/{chatRoomId}/messages`다.
-- 클라이언트는 최초 조회 시 `offsetSeq` 없이 요청한다.
-- `offsetSeq`가 없으면 최신 메시지부터 최대 100개를 조회한다.
-- 이전 메시지를 추가로 조회할 때는 현재 목록에서 가장 작은 메시지 seq를 `offsetSeq`로 전달한다.
-- `ChatMessageService.findChatMessages()`는 요청 유저가 해당 채팅방의 `ACTIVE` 멤버이고 삭제되지 않은 유저인지 먼저 검증한다.
-- 검증에 실패하면 `CHAT_ROOM_ACCESS_DENIED` 예외를 던진다.
-- 메시지 조회 쿼리는 요청 유저의 `ChatRoomUser.historyStartSeq`보다 큰 seq의 메시지만 조회한다.
-- 따라서 유저가 채팅방에 새로 참여하거나 재입장하기 전의 메시지는 조회되지 않는다.
-- 조회 결과는 `seq` 내림차순으로 정렬되며 최대 100개를 반환한다.
-- 각 메시지는 발신자 ID, 발신자명, 발신자 프로필 이미지 키를 함께 반환한다.
-- 삭제된 발신자의 메시지는 유지하되 발신자 정보는 `null`로 반환한다.
-- `unreadCount`는 현재 `ACTIVE` 상태이고 삭제되지 않았으며, 해당 메시지를 아직 읽지 않은 유저 수로 계산한다.
-- 채팅방을 나간 유저와 삭제된 유저는 `unreadCount` 계산에서 제외한다.
+- `ChatMessageController.findChatMessages()`는 인증된 사용자의 ID, `chatRoomId`, `offsetMessageId`를 `ChatMessageService`에 전달한다.
+- `ChatMessageService.findChatMessages()`는 요청한 사용자가 해당 채팅방에 속해 있는지 확인한다.
+- 요청한 사용자가 `LEFT` 상태이면 `CHAT_ROOM_ACCESS_DENIED` 예외를 발생시킨다.
+- 요청한 사용자가 삭제된 사용자이면 `USER_NOT_FOUND` 예외를 발생시킨다.
+- 접근 검증에 성공하면 요청한 사용자의 `ChatRoomUser.visibleStartMessageId`를 기준으로 조회 가능한 메시지를 조회한다.
+- 메시지 ID가 `visibleStartMessageId`보다 크거나 같은 메시지만 조회하므로, 경계값에 해당하는 메시지부터 사용자에게 노출된다.
+- 최초 조회에서는 `offsetMessageId`를 전달하지 않으며 최신 메시지부터 최대 100개를 조회한다.
+- 이전 메시지를 추가로 조회할 때는 현재 목록에서 가장 작은 `messageId`를 `offsetMessageId`로 전달한다.
+- 추가 조회에서는 `messageId < offsetMessageId` 조건을 적용하여 이미 조회한 메시지를 제외한다.
+- 조회 결과는 `messageId` 내림차순으로 정렬한다.
+- 메시지와 발신자를 `fetch join`하여 한 번의 쿼리로 조회한다.
+- 메시지별 읽음 여부와 안 읽은 사용자 수는 별도로 조회한 유저별 `unreadStartMessageId`를 기준으로 클라이언트가 계산한다.
 
 ## 채팅방 유저별 메시지 읽음 범위 조회 흐름
 - `ChatRoomController.findReadStatuses()`는 인증된 사용자의 ID와 `chatRoomId`를 `ChatRoomService`에 전달한다.
