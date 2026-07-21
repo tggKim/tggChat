@@ -69,6 +69,16 @@
 - `unreadCount`는 현재 `ACTIVE` 상태이고 삭제되지 않았으며, 해당 메시지를 아직 읽지 않은 유저 수로 계산한다.
 - 채팅방을 나간 유저와 삭제된 유저는 `unreadCount` 계산에서 제외한다.
 
+## 채팅방 유저별 메시지 읽음 범위 조회 흐름
+- `ChatRoomController.findReadStatuses()`는 인증된 사용자의 ID와 `chatRoomId`를 `ChatRoomService`에 전달한다.
+- `ChatRoomService.findReadStatuses()`는 요청한 사용자가 해당 채팅방에 속해 있는지 확인한다.
+- 요청한 사용자가 `LEFT` 상태이면 `CHAT_ROOM_ACCESS_DENIED` 예외를 발생시킨다.
+- 요청한 사용자가 삭제된 사용자이면 `USER_NOT_FOUND` 예외를 발생시킨다.
+- 접근 검증에 성공하면 해당 채팅방의 `ACTIVE` 상태이며 삭제되지 않은 유저를 조회한다.
+- 각 유저의 `userId`와 `unreadStartMessageId`를 응답한다.
+- `unreadStartMessageId`는 해당 ID의 메시지를 포함하여 이후 메시지를 읽지 않았다는 것을 나타내는 경계값이다.
+- 따라서 메시지 ID가 `unreadStartMessageId`보다 작으면 읽은 메시지이고, 크거나 같으면 읽지 않은 메시지로 판단한다.
+
 ## 1대1 채팅방 생성 흐름
 - 대상 엔드포인트는 `POST /directChatRooms`다.
 - 요청 유저가 삭제된 유저이면 채팅방 생성을 차단한다.
