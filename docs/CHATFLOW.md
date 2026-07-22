@@ -81,19 +81,23 @@
 
 ## 1대1 채팅방 생성 흐름
 - 대상 엔드포인트는 `POST /directChatRooms`다.
-- 요청 유저가 삭제된 유저이면 채팅방 생성을 차단한다.
-- 자기 자신과 1대1 채팅방을 생성하는 요청은 차단한다.
-- 요청한 friendId가 로그인 유저의 활성 친구인지 검증한다.
-- 1대1 채팅방은 두 유저 ID를 정렬하여 `directUser1`, `directUser2`로 저장한다.
-- 동일한 두 유저 사이에는 하나의 1대1 채팅방만 존재한다.
-- 기존 1대1 채팅방이 없으면 `ChatRoom`과 두 명의 `ChatRoomUser`를 새로 생성한다.
-- 새로 생성된 1대1 채팅방은 두 유저 모두 `ACTIVE` 상태로 참여한다.
-- 신규 생성 시 두 유저 각각에게 `ROOM_ADDED` 채팅방 목록 이벤트를 생성한다.
-- 기존 1대1 채팅방이 있으면 기존 `ChatRoom`을 재사용한다.
-- 기존 방의 `LEFT` 상태 유저는 현재 채팅방의 마지막 seq를 기준으로 `ACTIVE` 상태로 복귀한다.
-- 복귀한 유저에게만 `ROOM_ADDED` 채팅방 목록 이벤트를 생성한다.
-- 컨트롤러는 서비스 결과에 포함된 `ChatRoomListEvent`를 Redis Pub/Sub로 발행한다.
-- 클라이언트는 `/user/queue/chatRooms/list` 구독을 통해 1대1 채팅방 추가 또는 복귀 이벤트를 수신한다.
+- 요청 사용자가 삭제된 사용자이면 `USER_NOT_FOUND` 예외를 발생시킨다.
+- 자기 자신과 1대1 채팅방을 생성하는 요청은 `CANNOT_CREATE_CHAT_ROOM_WITH_SELF` 예외로 차단한다.
+- 요청한 `friendId`가 존재하지 않거나 활성 친구가 아니면 `CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER` 예외를 발생시킨다.
+- 1대1 채팅방은 두 사용자 ID를 정렬하여 `directUser1`, `directUser2`로 저장한다.
+- `chatRoomType`, `directUser1`, `directUser2`의 유니크 제약을 통해 동일한 두 사용자 사이에 하나의 1대1 채팅방만 존재하도록 한다.
+- 기존 1대1 채팅방이 없으면 새로운 `ChatRoom`과 두 사용자의 `ChatRoomUser`를 생성한다.
+- 새로 생성된 두 `ChatRoomUser`는 `MEMBER`, `ACTIVE` 상태이며 `visibleStartMessageId`와 `unreadStartMessageId`는 `0`으로 초기화한다.
+- 신규 채팅방 생성 시 두 사용자 각각에게 `ROOM_ADDED` 타입의 `ChatRoomListEvent`를 생성한다.
+- 기존 1대1 채팅방이 있으면 새로운 방을 생성하지 않고 기존 `ChatRoom`을 재사용한다.
+- 기존 채팅방의 가장 큰 `chatMessageId`를 조회하고, 메시지가 있으면 `chatMessageId + 1`, 메시지가 없으면 `0`을 복귀 경계값으로 사용한다.
+- 기존 방에서 `LEFT` 상태인 사용자는 `ACTIVE` 상태로 변경하고 `joinedAt`을 현재 시각으로 갱신한다.
+- 복귀 사용자의 `visibleStartMessageId`와 `unreadStartMessageId`를 계산한 복귀 경계값으로 설정한다.
+- 따라서 복귀 전에 존재했던 메시지는 노출되지 않으며 복귀 이후 생성된 메시지부터 노출되고 읽지 않은 메시지로 판단한다.
+- 이미 `ACTIVE` 상태인 사용자의 상태와 메시지 경계값은 변경하지 않는다.
+- 실제로 복귀한 사용자에게만 `ROOM_ADDED` 타입의 `ChatRoomListEvent`를 생성한다.
+- `ChatRoomController`는 서비스가 반환한 `ChatRoomListEvent` 목록을 Redis Pub/Sub로 발행한다.
+- `RedisSubscriber`는 이벤트의 `receiverUserId`를 기준으로 `/user/queue/chatRooms/list` 경로에 전달한다.
 
 ## 채팅방 목록 이벤트
 - 채팅방 목록 이벤트는 클라이언트의 채팅방 목록 화면을 갱신하기 위한 WebSocket 이벤트다.
