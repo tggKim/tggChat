@@ -49,10 +49,6 @@ public class ChatRoom {
 	@Column(nullable = false)
 	private ChatRoomType chatRoomType;
 	
-	// 채팅방 이름 필드
-	@Column(nullable = false, length = 100)
-	private String roomName;
-	
 	// 1대1 채팅방 중복 생성 방지 필드
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "direct_user1_id")
@@ -73,31 +69,26 @@ public class ChatRoom {
 
     // 단체 채팅방 생성자
     private ChatRoom(
-            ChatRoomType chatRoomType,
-            String roomName
+            ChatRoomType chatRoomType
     ) {
         this.chatRoomType = chatRoomType;
-        this.roomName = roomName;
     }
 
     // 1대1 채팅방 생성자
     private ChatRoom(
             ChatRoomType chatRoomType,
-            String roomName,
             User directUser1,
             User directUser2
     ) {
         this.chatRoomType = chatRoomType;
-        this.roomName = roomName;
         this.directUser1 = directUser1;
         this.directUser2 = directUser2;
     }
 
     public static ChatRoom of(
-            ChatRoomType chatRoomType,
-            String roomName
+            ChatRoomType chatRoomType
     ) {
-        return new ChatRoom(chatRoomType, roomName);
+        return new ChatRoom(chatRoomType);
     }
 
     public static ChatRoom of(
@@ -105,6 +96,6 @@ public class ChatRoom {
             User directUser1,
             User directUser2
     ) {
-        return new ChatRoom(chatRoomType, chatRoomType.name(), directUser1, directUser2);
+        return new ChatRoom(chatRoomType, directUser1, directUser2);
     }
 }

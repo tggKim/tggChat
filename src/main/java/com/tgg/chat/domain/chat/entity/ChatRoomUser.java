@@ -74,6 +74,10 @@ public class ChatRoomUser {
     // 해당 messageId 부터의 메시지들이 유저에게 노출된다
     @Column(nullable = false)
     private Long visibleStartMessageId;
+
+    // 유저별 채팅방 이름 필드
+    @Column(length = 100)
+    private String customRoomName;
 	
 	@CreatedDate
 	@Column(nullable = false, updatable = false)
