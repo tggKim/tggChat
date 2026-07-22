@@ -104,7 +104,6 @@ public class ChatMessageService {
                 savedChatMessage.getChatMessageId(),
                 ChatMessageType.TEXT,
                 savedChatMessage.getCreatedAt(),
-                (long) eventUserIds.size(),
                 eventUserIds
         );
 

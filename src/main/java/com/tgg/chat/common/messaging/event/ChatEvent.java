@@ -17,10 +17,9 @@ public class ChatEvent {
     private Long messageId;
     private ChatMessageType chatMessageType;
     private LocalDateTime createdAt;
-    private Long unreadCount;
     private List<Long> eventUserIds;
 
-    private ChatEvent(Long roomId, Long senderId, String senderName, String senderProfileImageKey, List<ChatEventFile> chatEventFiles, String content, Long messageId, ChatMessageType chatMessageType, LocalDateTime createdAt, Long unreadCount, List<Long> eventUserIds) {
+    private ChatEvent(Long roomId, Long senderId, String senderName, String senderProfileImageKey, List<ChatEventFile> chatEventFiles, String content, Long messageId, ChatMessageType chatMessageType, LocalDateTime createdAt, List<Long> eventUserIds) {
         this.roomId = roomId;
         this.senderId = senderId;
         this.senderName = senderName;
@@ -30,11 +29,10 @@ public class ChatEvent {
         this.messageId = messageId;
         this.chatMessageType = chatMessageType;
         this.createdAt = createdAt;
-        this.unreadCount = unreadCount;
         this.eventUserIds = eventUserIds;
     }
 
-    public static ChatEvent of(Long roomId, Long senderId, String senderName, String senderProfileImageKey, List<ChatEventFile> chatEventFiles, String content, Long messageId, ChatMessageType chatMessageType, LocalDateTime createdAt, Long unreadCount, List<Long> eventUserIds) {
-        return new ChatEvent(roomId, senderId, senderName, senderProfileImageKey, chatEventFiles, content, messageId, chatMessageType, createdAt, unreadCount, eventUserIds);
+    public static ChatEvent of(Long roomId, Long senderId, String senderName, String senderProfileImageKey, List<ChatEventFile> chatEventFiles, String content, Long messageId, ChatMessageType chatMessageType, LocalDateTime createdAt, List<Long> eventUserIds) {
+        return new ChatEvent(roomId, senderId, senderName, senderProfileImageKey, chatEventFiles, content, messageId, chatMessageType, createdAt, eventUserIds);
     }
 }
