@@ -200,68 +200,67 @@ public class ChatRoomService {
     // 단체 채팅방 생성
     @Transactional
     public Map<String, Object> createGroupChatRoom(Long userId, CreateGroupChatRoomRequestDto requestDto) {
-//    	// 필드 추출, 리스트에서 중복 id들 제거
-//    	List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
-//        friendIds = new ArrayList<>(new HashSet<>(friendIds));
-//    	String chatRoomName = requestDto.getChatRoomName();
-//
-//        // 추가할 친구가 1명 이상이어야 한다.
-//        if(friendIds.isEmpty()) {
-//            throw new ErrorException(ErrorCode.CHAT_ROOM_MEMBER_REQUIRED);
-//        }
-//
-//        // 자기 자신과 단체 채팅방을 만들 수 없다.
-//        if(friendIds.contains(userId)) {
-//            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
-//        }
-//
-//        // 존재하지 않거나 친구가 아닌 유저와는 채팅방 생성활 수 없다.
-//        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, friendIds);
-//        if(friendCount != friendIds.size()) {
-//            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER);
-//        }
-//
-//    	// 채팅방 생성
-//    	ChatRoom chatRoom = ChatRoom.of(ChatRoomType.GROUP, chatRoomName);
-//    	ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-//
-//        // 채팅방별 ChatMessage의 최대 seq 조회
-//        // chatRoom에 대한 락 시작
-//        Long seq = chatRoomMapper.getLastSeqLock(savedChatRoom.getChatRoomId());
-//
-//    	// ChatRoomUser들 생성, 로그인 유저는 방장 권한을 가진다.
-//        friendIds.add(userId);
-//        List<ChatRoomUser> newEntities = friendIds.stream()
-//                .map(id -> {
-//                    ChatRoomUserRole chatRoomUserRole = id.equals(userId) ? ChatRoomUserRole.OWNER : ChatRoomUserRole.MEMBER;
-//                    ChatRoomUser chatRoomUser = ChatRoomUser.of(
-//                            userRepository.getReferenceById(id),
-//                            savedChatRoom,
-//                            chatRoomUserRole,
-//                            ChatRoomUserStatus.ACTIVE
-//                    );
-//                    return chatRoomUser;
-//                })
-//                .toList();
-//        chatRoomUserRepository.saveAll(newEntities);
-//
-//        // friendId들 저장 수행
-//        ChatEventResult chatEventResult = chatRoomJoinLeaveService.chatRoomJoinEvent(newEntities, friendIds, savedChatRoom.getChatRoomId(), seq);
-//        ChatMessage flagChatMessage = chatEventResult.getFlagChatMessage();
-//        List<ChatEvent> chatEvents = chatEventResult.getChatEvents();
-//
-//        if(flagChatMessage != null) {
-//            // chatRoom 의 lastSeq 증가, addNumber 는 1증감이 필요
-//            chatRoomMapper.updateLastSeq(chatEventResult.getLastSeq() , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), savedChatRoom.getChatRoomId());
-//        }
-//
-//        CreateGroupChatRoomResponseDto responseDto = CreateGroupChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
-//        Map<String, Object> payload = new HashMap<>();
-//        payload.put("chatEvents", chatEvents);
-//        payload.put("responseDto", responseDto);
-//
-//    	return payload;
-        return null;
+    	// 필드 추출, 리스트에서 중복 id들 제거
+    	List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
+        friendIds = new ArrayList<>(new HashSet<>(friendIds));
+    	String chatRoomName = requestDto.getChatRoomName();
+
+        // 추가할 친구가 1명 이상이어야 한다.
+        if(friendIds.isEmpty()) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_MEMBER_REQUIRED);
+        }
+
+        // 자기 자신과 단체 채팅방을 만들 수 없다.
+        if(friendIds.contains(userId)) {
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_SELF);
+        }
+
+        // 존재하지 않거나 친구가 아닌 유저와는 채팅방 생성활 수 없다.
+        Long friendCount = userFriendRepository.countActiveFriendsByIds(userId, friendIds);
+        if(friendCount != friendIds.size()) {
+            throw new ErrorException(ErrorCode.CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER);
+        }
+
+    	// 채팅방 생성
+    	ChatRoom chatRoom = ChatRoom.of(ChatRoomType.GROUP, chatRoomName);
+    	ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+        // 채팅방별 ChatMessage의 최대 seq 조회
+        // chatRoom에 대한 락 시작
+        Long seq = chatRoomMapper.getLastSeqLock(savedChatRoom.getChatRoomId());
+
+    	// ChatRoomUser들 생성, 로그인 유저는 방장 권한을 가진다.
+        friendIds.add(userId);
+        List<ChatRoomUser> newEntities = friendIds.stream()
+                .map(id -> {
+                    ChatRoomUserRole chatRoomUserRole = id.equals(userId) ? ChatRoomUserRole.OWNER : ChatRoomUserRole.MEMBER;
+                    ChatRoomUser chatRoomUser = ChatRoomUser.of(
+                            userRepository.getReferenceById(id),
+                            savedChatRoom,
+                            chatRoomUserRole,
+                            ChatRoomUserStatus.ACTIVE
+                    );
+                    return chatRoomUser;
+                })
+                .toList();
+        chatRoomUserRepository.saveAll(newEntities);
+
+        // friendId들 저장 수행
+        ChatEventResult chatEventResult = chatRoomJoinLeaveService.chatRoomJoinEvent(newEntities, friendIds, savedChatRoom.getChatRoomId(), seq);
+        ChatMessage flagChatMessage = chatEventResult.getFlagChatMessage();
+        List<ChatEvent> chatEvents = chatEventResult.getChatEvents();
+
+        if(flagChatMessage != null) {
+            // chatRoom 의 lastSeq 증가, addNumber 는 1증감이 필요
+            chatRoomMapper.updateLastSeq(chatEventResult.getLastSeq() , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), savedChatRoom.getChatRoomId());
+        }
+
+        CreateGroupChatRoomResponseDto responseDto = CreateGroupChatRoomResponseDto.of(savedChatRoom.getChatRoomId());
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("chatEvents", chatEvents);
+        payload.put("responseDto", responseDto);
+
+    	return payload;
     }
 
     // 채팅방 목록 조회
