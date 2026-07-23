@@ -58,6 +58,10 @@ public class ChatRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "direct_user2_id")
 	private User directUser2;
+
+    // 채팅방 이름 필드
+    @Column(length = 100)
+    private String roomName;
 	
 	@CreatedDate
 	@Column(nullable = false, updatable = false)
@@ -72,6 +76,15 @@ public class ChatRoom {
             ChatRoomType chatRoomType
     ) {
         this.chatRoomType = chatRoomType;
+    }
+
+    // 단체 채팅방 생성자
+    private ChatRoom(
+            ChatRoomType chatRoomType,
+            String roomName
+    ) {
+        this.chatRoomType = chatRoomType;
+        this.roomName = roomName;
     }
 
     // 1대1 채팅방 생성자
@@ -89,6 +102,13 @@ public class ChatRoom {
             ChatRoomType chatRoomType
     ) {
         return new ChatRoom(chatRoomType);
+    }
+
+    public static ChatRoom of(
+            ChatRoomType chatRoomType,
+            String roomName
+    ) {
+        return new ChatRoom(chatRoomType, roomName);
     }
 
     public static ChatRoom of(

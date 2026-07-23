@@ -169,14 +169,6 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "chatRoomName은 필수이며 공백일 수 없습니다.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
                     description = "단체 채팅은 2명 이상이 필요합니다.",
                     content = @Content(
                             mediaType = "application/json",

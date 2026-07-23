@@ -3,8 +3,8 @@ package com.tgg.chat.domain.chat.dto.request;
 import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +18,7 @@ public class CreateGroupChatRoomRequestDto {
     private List<Long> friendIds;
     
     @Schema(description = "채팅방 이름", example = "그룹 채팅방1")
-    @NotBlank(message = "chatRoomName은 필수이며 공백일 수 없습니다.")
+    @Size(max = 100)
     private String chatRoomName;
 	
 }

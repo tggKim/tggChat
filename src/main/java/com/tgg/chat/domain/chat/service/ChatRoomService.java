@@ -203,7 +203,6 @@ public class ChatRoomService {
     	// 필드 추출, 리스트에서 중복 id들 제거
     	List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
         friendIds = new ArrayList<>(new HashSet<>(friendIds));
-    	String chatRoomName = requestDto.getChatRoomName();
 
         // 추가할 친구가 1명 이상이어야 한다.
         if(friendIds.isEmpty()) {
@@ -222,8 +221,13 @@ public class ChatRoomService {
         }
 
     	// 채팅방 생성
-    	ChatRoom chatRoom = ChatRoom.of(ChatRoomType.GROUP, chatRoomName);
-    	ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+    	ChatRoom chatRoom;
+    	if(requestDto.getChatRoomName() == null || requestDto.getChatRoomName().isBlank()) {
+            chatRoom = ChatRoom.of(ChatRoomType.GROUP);
+        } else {
+            chatRoom = ChatRoom.of(ChatRoomType.GROUP, requestDto.getChatRoomName());
+        }
+        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
 
         // 채팅방별 ChatMessage의 최대 seq 조회
         // chatRoom에 대한 락 시작
