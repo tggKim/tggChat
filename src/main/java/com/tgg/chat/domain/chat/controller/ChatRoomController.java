@@ -5,6 +5,7 @@ import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.chat.dto.internal.CreateDirectChatRoomResult;
+import com.tgg.chat.domain.chat.dto.internal.CreateGroupChatRoomResult;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -31,7 +32,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "ChatRoom API", description = "채팅방 API")
 @RestController
@@ -185,7 +185,7 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "친구가 아닌 사람과 1대1 채팅방을 생성할 수 없음",
+                    description = "존재하지 않거나 친구가 아닌 사용자와 채팅방을 생성할 수 없습니다.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
@@ -204,12 +204,12 @@ public class ChatRoomController {
     		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody CreateGroupChatRoomRequestDto requestDto
     ) {
-        Map<String, Object> payload = chatRoomService.createGroupChatRoom(authenticatedUser.getUserId(), requestDto);
+        CreateGroupChatRoomResult createGroupChatRoomResult = chatRoomService.createGroupChatRoom(authenticatedUser.getUserId(), requestDto);
 
-        CreateGroupChatRoomResponseDto responseDto = (CreateGroupChatRoomResponseDto)payload.get("responseDto");
-        List<ChatEvent> chatEvents = (List<ChatEvent>)payload.get("chatEvents");
+        CreateGroupChatRoomResponseDto responseDto = createGroupChatRoomResult.getResponseDto();
+        List<ChatRoomListEvent> chatRoomListEvents = createGroupChatRoomResult.getChatRoomListEvents();
 
-        chatEvents.forEach(redisPublisher::publishChatEvent);
+        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
