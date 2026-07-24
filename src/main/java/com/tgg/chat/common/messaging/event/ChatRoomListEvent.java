@@ -16,7 +16,7 @@ public class ChatRoomListEvent {
     private Long memberCount;
     private String lastMessagePreview;
     private Long messageId;
-    private LocalDateTime lastMessageAt;
+    private LocalDateTime lastActivityAt;
     private List<String> profileImageKeys;
 
     private ChatRoomListEvent(
@@ -28,7 +28,7 @@ public class ChatRoomListEvent {
             Long memberCount,
             String lastMessagePreview,
             Long messageId,
-            LocalDateTime lastMessageAt,
+            LocalDateTime lastActivityAt,
             List<String> profileImageKeys
     ) {
         this.eventType = eventType;
@@ -39,7 +39,7 @@ public class ChatRoomListEvent {
         this.memberCount = memberCount;
         this.lastMessagePreview = lastMessagePreview;
         this.messageId = messageId;
-        this.lastMessageAt = lastMessageAt;
+        this.lastActivityAt = lastActivityAt;
         this.profileImageKeys = profileImageKeys;
     }
 
@@ -49,6 +49,7 @@ public class ChatRoomListEvent {
             Long receiverUserId,
             String roomName,
             Long memberCount,
+            LocalDateTime lastActivityAt,
             List<String> profileImageKeys
     ) {
         return new ChatRoomListEvent(
@@ -60,7 +61,7 @@ public class ChatRoomListEvent {
                 memberCount,
                 null,
                 null,
-                null,
+                lastActivityAt,
                 profileImageKeys
         );
     }
@@ -109,7 +110,7 @@ public class ChatRoomListEvent {
             Long roomId,
             String lastMessagePreview,
             Long messageId,
-            LocalDateTime lastMessageAt
+            LocalDateTime lastActivityAt
     ) {
         return new ChatRoomListEvent(
                 ChatRoomListEventType.MESSAGE_SENT,
@@ -120,7 +121,7 @@ public class ChatRoomListEvent {
                 null,
                 lastMessagePreview,
                 messageId,
-                lastMessageAt,
+                lastActivityAt,
                 null
         );
     }

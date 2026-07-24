@@ -86,6 +86,7 @@ public class ChatMessageService {
                             opponent.getUser().getUserId(),
                             user.getUsername(),
                             2L,
+                            savedChatMessage.getCreatedAt(),
                             userProfileImageKeys
                     ));
                 }

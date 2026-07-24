@@ -137,6 +137,7 @@ public class ChatRoomService {
                     user1.getUserId(),
                     user2.getUsername(),
                     2L,
+                    chatRoomUser1.getJoinedAt(),
                     user2ProfileImageKeys
             ));
 
@@ -148,6 +149,7 @@ public class ChatRoomService {
                     user2.getUserId(),
                     user1.getUsername(),
                     2L,
+                    chatRoomUser2.getJoinedAt(),
                     user1ProfileImageKeys
             ));
 
@@ -185,6 +187,7 @@ public class ChatRoomService {
                         firstUser.getUserId(),
                         secondUser.getUsername(),
                         2L,
+                        firstChatRoomUser.getJoinedAt(),
                         secondUserProfileImageKeys
                 ));
             }
@@ -200,6 +203,7 @@ public class ChatRoomService {
                         secondUser.getUserId(),
                         firstUser.getUsername(),
                         2L,
+                        secondChatRoomUser.getJoinedAt(),
                         firstUserProfileImageKeys
                 ));
             }
@@ -262,24 +266,11 @@ public class ChatRoomService {
                 .toList();
         chatRoomUserRepository.saveAll(chatRoomUsers);
 
-        // ChatMessage 생성 후 저장
-        String joinMessage = users.stream()
-                .map(user -> user.getUsername())
-                .sorted()
-                .collect(Collectors.joining(", "));
-        joinMessage += " 입장";
-
-        ChatMessage chatMessage = ChatMessage.of(
-                savedChatRoom,
-                findUser,
-                joinMessage,
-                ChatMessageType.JOIN_TEXT
-        );
-        chatMessageRepository.save(chatMessage);
-
         // ChatRoomListEvent 리스트 생성
-        List<ChatRoomListEvent> chatRoomListEvents = users.stream()
-                .map(receiver -> {
+        List<ChatRoomListEvent> chatRoomListEvents = chatRoomUsers.stream()
+                .map(receiverChatRoomUser -> {
+                    User receiver = receiverChatRoomUser.getUser();
+
                     String roomName;
                     List<User> others = users.stream()
                             .filter(user -> !receiver.getUserId().equals(user.getUserId()))
@@ -304,6 +295,7 @@ public class ChatRoomService {
                             receiver.getUserId(),
                             roomName,
                             (long) users.size(),
+                            receiverChatRoomUser.getJoinedAt(),
                             profileImageKeys
                     );
                 })
