@@ -78,13 +78,15 @@ public class ChatMessageService {
                 if (opponent.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
                     opponent.joinChatRoom(savedChatMessage.getChatMessageId());
 
+                    List<String> userProfileImageKeys = new ArrayList<>();
+                    userProfileImageKeys.add(user.getProfileImageKey());
                     chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
                             chatRoomId,
                             ChatRoomType.DIRECT,
                             opponent.getUser().getUserId(),
                             user.getUsername(),
                             2L,
-                            user.getProfileImageKey() == null ? List.of() : List.of(user.getProfileImageKey())
+                            userProfileImageKeys
                     ));
                 }
             }
