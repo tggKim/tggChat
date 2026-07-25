@@ -343,6 +343,24 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_INVALID_USER);
         }
 
+        // 기존 채팅방의 ChatRoomUser들을 조회
+        List<ChatRoomUser> existingInviteeChatRoomUsers = chatRoomUserRepository.findByChatRoomIdAndFriendIds(chatRoomId, friendIds);
+
+        // 복귀해야될 유저판별
+        List<ChatRoomUser> rejoiningChatRoomUsers = existingInviteeChatRoomUsers .stream()
+                .filter(rejoiningChatRoomUser -> {
+                    return rejoiningChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT;
+                })
+                .toList();
+
+        // 새롭게 초대해야할 유저 판별
+        Set<Long> existingInviteeIds  = existingInviteeChatRoomUsers .stream()
+                .map(existingInviteeChatRoomUser -> existingInviteeChatRoomUser.getUser().getUserId())
+                .collect(Collectors.toSet());
+        List<User> newInviteeUsers = userFriends.stream()
+                .filter(userFriend -> !existingInviteeIds.contains(userFriend.getUserId()))
+                .toList();
+
 
 
         return null;
