@@ -118,4 +118,10 @@ public class ChatRoom {
     ) {
         return new ChatRoom(chatRoomType, directUser1, directUser2);
     }
+
+    public void convertToGroup() {
+        this.chatRoomType = ChatRoomType.GROUP;
+        this.directUser1 = null;
+        this.directUser2 = null;
+    }
 }

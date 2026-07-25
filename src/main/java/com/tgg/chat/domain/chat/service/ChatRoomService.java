@@ -361,7 +361,11 @@ public class ChatRoomService {
                 .filter(userFriend -> !existingInviteeIds.contains(userFriend.getUserId()))
                 .toList();
 
-
+        ChatRoom chatRoom = findChatRoomUser.getChatRoom();
+        if (chatRoom.getChatRoomType() == ChatRoomType.DIRECT && !newInviteeUsers.isEmpty()) {
+            chatRoom.convertToGroup();
+            findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
+        }
 
         return null;
     }
