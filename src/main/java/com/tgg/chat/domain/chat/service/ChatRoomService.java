@@ -222,8 +222,7 @@ public class ChatRoomService {
         }
 
         // 필드 추출, 리스트에서 중복 id들 제거
-    	List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
-        friendIds = new ArrayList<>(new HashSet<>(friendIds));
+        List<Long> friendIds = new ArrayList<>(new HashSet<>(requestDto.getFriendIds()));
 
         // 추가할 친구가 1명 이상이어야 한다.
         if(friendIds.isEmpty()) {
@@ -306,25 +305,11 @@ public class ChatRoomService {
         return CreateGroupChatRoomResult.of(responseDto, chatRoomListEvents);
     }
 
-    // 채팅방 목록 조회
-    @Transactional(readOnly = true)
-    public ChatRoomListResponseDto findAllChatRooms(Long userId) {
-    	User user = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-    	
-		List<ChatRoomListItemReseponseDto> chatRooms = chatRoomMapper.findAllChatRoomsByUserId(userId)
-				.stream()
-				.map(ChatRoomListItemReseponseDto::from)
-				.toList();
-		 
-      return ChatRoomListResponseDto.of(userId, user.getUsername(), chatRooms);
-    }
-
     // 채팅방 초대
     @Transactional
     public List<ChatEvent> inviteUserToChatRoom(Long userId, InviteUserRequestDto requestDto) {
         // 필드 값 추출, 리스트에서 중복 id들 제거
-        List<Long> friendIds = requestDto.getFriendIds() == null ? List.of() : requestDto.getFriendIds();
-        friendIds = new ArrayList<>(new HashSet<>(friendIds));
+        List<Long> friendIds = new ArrayList<>(new HashSet<>(requestDto.getFriendIds()));
         Long chatRoomId = requestDto.getChatRoomId();
 
         // 채팅방에 초대할 친구가 1명 이상이어야 한다.
@@ -404,7 +389,18 @@ public class ChatRoomService {
         return chatEvents1;
     }
 
-
+    // 채팅방 목록 조회
+    @Transactional(readOnly = true)
+    public ChatRoomListResponseDto findAllChatRooms(Long userId) {
+    	User user = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+    	
+		List<ChatRoomListItemReseponseDto> chatRooms = chatRoomMapper.findAllChatRoomsByUserId(userId)
+				.stream()
+				.map(ChatRoomListItemReseponseDto::from)
+				.toList();
+		 
+      return ChatRoomListResponseDto.of(userId, user.getUsername(), chatRooms);
+    }
     
     // 채팅방 나가기
     @Transactional
