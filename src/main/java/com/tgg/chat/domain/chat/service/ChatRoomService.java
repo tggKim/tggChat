@@ -322,71 +322,30 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_SELF);
         }
 
-        // 요청 유저가 단체 채팅방에 속하면서 방장인지 검사
-        // ChatRoomUser가 있다면 ChatRoom도 있는 것이므로 체크하지 않는다.
-        if(!chatRoomUserMapper.existsByChatRoomIdAndUserId(chatRoomId, userId)) {
-            throw new ErrorException(ErrorCode.CHAT_ROOM_INVITE_PERMISSION_DENIED);
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User user = findChatRoomUser.getUser();
+        if(user.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
         // 존재하지 않거나 친구가 아닌 유저는 초대할 수 없습니다.
-        int friendCount = userFriendMapper.countActiveFriendsByIds(userId, friendIds);
-        if(friendCount != friendIds.size()) {
+        List<User> userFriends = userFriendRepository.findActiveFriendsByIds(userId, friendIds);
+        if(userFriends.size() != friendIds.size()) {
             throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_INVALID_USER);
         }
 
-        // 채팅방별 ChatMessage의 최대 seq 조회
-        // chatRoom에 대한 락 시작
-        Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
 
-        // 채팅방 목록에서 메시지 전송 프레임을 받을 유저id 목록
-        List<Long> eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
-        eventUserIds.addAll(friendIds);
-        eventUserIds = eventUserIds.stream().distinct().toList();
 
-        // ChatRoomUser 가 LEFT면 ACTIVE로 수정 후 메시지 저장
-        List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdAndFriendIds(chatRoomId, friendIds);
-        ChatEventResult chatEventResult1 = chatRoomJoinLeaveService.chatRoomRejoinEvent(chatRoomUsers, eventUserIds, chatRoomId, seq);
-        ChatMessage flagChatMessage1 = chatEventResult1.getFlagChatMessage();
-        List<ChatEvent> chatEvents1 = chatEventResult1.getChatEvents();
-
-        // 저장해야하는 friendId 들 분류
-        Set<Long> existingFriendIds = new HashSet<>();
-        chatRoomUsers.forEach(chatRoomUser -> existingFriendIds.add(chatRoomUser.getUser().getUserId()));
-        List<Long> insertFriendIds = friendIds.stream()
-                .filter(id -> !existingFriendIds.contains(id))
-                .toList();
-
-        // friendId들 저장
-        ChatRoom chatRoom = chatRoomRepository.getReferenceById(chatRoomId);
-        List<ChatRoomUser> newEntities = insertFriendIds.stream()
-                .map(friendId -> {
-                    ChatRoomUser chatRoomUser = ChatRoomUser.of(
-                            userRepository.getReferenceById(friendId),
-                            chatRoom,
-                            ChatRoomUserRole.MEMBER,
-                            ChatRoomUserStatus.ACTIVE
-                    );
-                    chatRoomUser.setLastReadSeq(seq);
-                    chatRoomUser.setHistoryStartSeq(seq);
-                    return chatRoomUser;
-                })
-                .toList();
-        chatRoomUserRepository.saveAll(newEntities);
-
-        // friendId들 저장 수행
-        ChatEventResult chatEventResult2 = chatRoomJoinLeaveService.chatRoomJoinEvent(newEntities, eventUserIds, chatRoomId, chatEventResult1.getLastSeq());
-        ChatMessage flagChatMessage2 = chatEventResult2.getFlagChatMessage();
-        List<ChatEvent> chatEvents2 = chatEventResult2.getChatEvents();
-
-        ChatMessage flagChatMessage = flagChatMessage2 != null ? flagChatMessage2 : flagChatMessage1;
-        if(flagChatMessage != null) {
-            // chatRoom 의 lastSeq 증가, addNumber 는 1증감이 필요
-            chatRoomMapper.updateLastSeq(chatEventResult2.getLastSeq() , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), chatRoomId);
-        }
-
-        chatEvents1.addAll(chatEvents2);
-
-        return chatEvents1;
+        return null;
     }
 
     // 채팅방 목록 조회
