@@ -5,6 +5,7 @@ import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.domain.chat.dto.internal.ChatEventResult;
 import com.tgg.chat.domain.chat.dto.internal.CreateDirectChatRoomResult;
 import com.tgg.chat.domain.chat.dto.internal.CreateGroupChatRoomResult;
+import com.tgg.chat.domain.chat.dto.internal.InviteUserToGroupChatRoomResult;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -316,7 +317,7 @@ public class ChatRoomService {
 
     // 채팅방 초대
     @Transactional
-    public List<ChatEvent> inviteUserToChatRoom(Long userId, InviteUserRequestDto requestDto) {
+    public InviteUserToGroupChatRoomResult inviteUserToGroupChatRoom(Long userId, InviteUserRequestDto requestDto) {
         // 필드 값 추출, 리스트에서 중복 id들 제거
         List<Long> friendIds = new ArrayList<>(new HashSet<>(requestDto.getFriendIds()));
         Long chatRoomId = requestDto.getChatRoomId();
@@ -531,7 +532,7 @@ public class ChatRoomService {
                         })
                         .toList();
 
-        return null;
+        return InviteUserToGroupChatRoomResult.of(chatRoomListEvents, chatEvent);
     }
 
     // 채팅방 목록 조회
