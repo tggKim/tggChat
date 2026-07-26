@@ -2,10 +2,7 @@ package com.tgg.chat.domain.chat.service;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
-import com.tgg.chat.domain.chat.dto.internal.ChatEventResult;
-import com.tgg.chat.domain.chat.dto.internal.CreateDirectChatRoomResult;
-import com.tgg.chat.domain.chat.dto.internal.CreateGroupChatRoomResult;
-import com.tgg.chat.domain.chat.dto.internal.InviteUserToGroupChatRoomResult;
+import com.tgg.chat.domain.chat.dto.internal.*;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -315,7 +312,13 @@ public class ChatRoomService {
         return CreateGroupChatRoomResult.of(responseDto, chatRoomListEvents);
     }
 
-    // 채팅방 초대
+    // 1대1 채팅방 초대
+    @Transactional
+    public InviteUserToDirectChatRoomResult inviteUserToDirectChatRoom(Long userId, InviteUserRequestDto requestDto) {
+        return null;
+    }
+
+    // 단체 채팅방 초대
     @Transactional
     public InviteUserToGroupChatRoomResult inviteUserToGroupChatRoom(Long userId, InviteUserRequestDto requestDto) {
         // 필드 값 추출, 리스트에서 중복 id들 제거
