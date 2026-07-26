@@ -6,6 +6,7 @@ import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.chat.dto.internal.CreateDirectChatRoomResult;
 import com.tgg.chat.domain.chat.dto.internal.CreateGroupChatRoomResult;
+import com.tgg.chat.domain.chat.dto.internal.InviteUserToDirectChatRoomResult;
 import com.tgg.chat.domain.chat.dto.internal.InviteUserToGroupChatRoomResult;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
@@ -241,6 +242,75 @@ public class ChatRoomController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(responseDto);
+    }
+
+    @PostMapping("/directChatRooms/invites")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "1대1 채팅방 사용자 초대",
+            description = """
+                1대1 채팅방에 새로운 사용자를 초대하고 단체 채팅방으로 전환합니다.
+                요청에 포함된 기존 LEFT 사용자는 복귀시키며,
+                기존 1대1 참여자가 아닌 새로운 사용자가 한 명 이상 포함되어야 합니다.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "사용자 초대 및 단체 채팅방 전환 성공",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = """
+                        C001: 요청 DTO에서 friendIds 또는 chatRoomId가 누락된 경우
+                        CR005: 존재하지 않거나 친구가 아닌 사용자를 초대한 경우
+                        CR006: 초대할 사용자가 한 명도 없는 경우
+                        CR007: 자기 자신을 초대한 경우
+                        CR013: 기존 1대1 참여자가 아닌 새로운 사용자가 포함되지 않은 경우
+                        CR015: 단체 채팅방에 1대1 채팅방 초대 API를 사용한 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = """
+                        CR010: 요청자가 채팅방에 속하지 않았거나 나간 상태인 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = """
+                        U003: 요청 사용자가 삭제된 사용자인 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<Void> inviteUserToDirectChatRoom(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @Valid @RequestBody InviteUserRequestDto requestDto
+    ) {
+        InviteUserToDirectChatRoomResult inviteUserToDirectChatRoomResult = chatRoomService.inviteUserToDirectChatRoom(authenticatedUser.getUserId(), requestDto);
+
+        List<ChatRoomListEvent> chatRoomListEvents = inviteUserToDirectChatRoomResult.getChatRoomListEvents();
+        ChatEvent chatEvent = inviteUserToDirectChatRoomResult.getChatEvent();
+
+        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+        redisPublisher.publishChatEvent(chatEvent);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(null);
     }
 
     @PostMapping("/groupChatRooms/invites")

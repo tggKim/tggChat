@@ -524,7 +524,7 @@ public class ChatRoomService {
                 })
                 .toList();
 
-        return null;
+        return InviteUserToDirectChatRoomResult.of(chatRoomListEvents, chatEvent);
     }
 
     // 단체 채팅방 초대
