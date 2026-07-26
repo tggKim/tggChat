@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -332,9 +333,15 @@ public class ChatRoomService {
         }
 
         // User 추출 후 삭제된 유저인지 검증
-        User user = findChatRoomUser.getUser();
-        if(user.getDeleted()) {
+        User findUser = findChatRoomUser.getUser();
+        if(findUser.getDeleted()) {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 단체 채팅방인지 확인
+        ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+        if(findChatRoom.getChatRoomType() != ChatRoomType.GROUP) {
+            throw new ErrorException(ErrorCode.DIRECT_CHAT_ROOM_INVITE_API_REQUIRED);
         }
 
         // 존재하지 않거나 친구가 아닌 유저는 초대할 수 없습니다.
@@ -346,8 +353,8 @@ public class ChatRoomService {
         // 기존 채팅방의 ChatRoomUser들을 조회
         List<ChatRoomUser> existingInviteeChatRoomUsers = chatRoomUserRepository.findByChatRoomIdAndFriendIds(chatRoomId, friendIds);
 
-        // 복귀해야될 유저판별
-        List<ChatRoomUser> rejoiningChatRoomUsers = existingInviteeChatRoomUsers .stream()
+        // 복귀해야될 유저 판별
+        List<ChatRoomUser> rejoiningChatRoomUsers = existingInviteeChatRoomUsers.stream()
                 .filter(rejoiningChatRoomUser -> {
                     return rejoiningChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT;
                 })
@@ -361,11 +368,59 @@ public class ChatRoomService {
                 .filter(userFriend -> !existingInviteeIds.contains(userFriend.getUserId()))
                 .toList();
 
-        ChatRoom chatRoom = findChatRoomUser.getChatRoom();
-        if (chatRoom.getChatRoomType() == ChatRoomType.DIRECT && !newInviteeUsers.isEmpty()) {
-            chatRoom.convertToGroup();
-            findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
+        // 복귀하거나 새로 초대할 유저가 없으면 예외
+        if (rejoiningChatRoomUsers.isEmpty() && newInviteeUsers.isEmpty()) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_INVITEES_ALREADY_ACTIVE);
         }
+
+        // 복귀 메시지 생성 후 저장
+        List<User> sortedUsers = Stream.concat(
+                        rejoiningChatRoomUsers.stream()
+                                .map(rejoiningChatRoomUser -> rejoiningChatRoomUser.getUser())
+                                .toList()
+                                .stream(),
+                        newInviteeUsers.stream()
+                ).sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
+                .toList();
+
+        int displayCount = Math.min(sortedUsers.size(), 10);
+
+        String displayedNames = sortedUsers.stream()
+                .limit(displayCount)
+                .map(user -> user.getUsername() + "님")
+                .collect(Collectors.joining(", "));
+
+        int remainingCount = sortedUsers.size() - displayCount;
+
+        String joinMessage;
+        if (remainingCount > 0) {
+            joinMessage = displayedNames + " 외 " + remainingCount + "명이 채팅방에 참여했습니다.";
+        } else {
+            joinMessage = displayedNames + "이 채팅방에 참여했습니다.";
+        }
+
+        ChatMessage savedChatMessage = chatMessageRepository.save(
+                ChatMessage.of(findChatRoom, findUser, joinMessage, ChatMessageType.JOIN_TEXT)
+        );
+
+        // 복귀해야 할 유저 복귀 처리
+        rejoiningChatRoomUsers.forEach(rejoiningChatRoomUser -> {
+            rejoiningChatRoomUser.joinChatRoom(savedChatMessage.getChatMessageId());
+        });
+
+        // 새롭게 초대해야 할 유저 초대
+        List<ChatRoomUser> newChatRoomUsers = newInviteeUsers.stream()
+                .map(newInviteeUser -> {
+                    ChatRoomUser chatRoomUser = ChatRoomUser.of(
+                            newInviteeUser, findChatRoom, ChatRoomUserRole.MEMBER, ChatRoomUserStatus.ACTIVE
+                    );
+
+                    chatRoomUser.joinChatRoom(savedChatMessage.getChatMessageId());
+
+                    return chatRoomUser;
+                })
+                .toList();
+        chatRoomUserRepository.saveAll(newChatRoomUsers);
 
         return null;
     }
