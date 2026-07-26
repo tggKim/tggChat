@@ -479,9 +479,6 @@ public class ChatRoomService {
                     String roomName;
                     if(activeChatRoomUser.getCustomRoomName() != null) {
                         roomName = activeChatRoomUser.getCustomRoomName();
-                    }
-                    else if(findChatRoom.getRoomName() != null) {
-                        roomName = findChatRoom.getRoomName();
                     } else {
                         int count = Math.min(otherUsers.size(), 10);
 
