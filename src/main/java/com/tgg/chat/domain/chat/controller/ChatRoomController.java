@@ -263,7 +263,7 @@ public class ChatRoomController {
                         CR006: 초대할 사용자가 한 명도 없는 경우
                         CR007: 자기 자신을 초대한 경우
                         CR014: 1대1 채팅방에 단체 채팅방 초대 API를 사용한 경우
-                        CR015: 요청한 사용자가 모두 이미 채팅방에 참여 중인 경우
+                        CR016: 요청한 사용자가 모두 이미 채팅방에 참여 중인 경우
                         """,
                     content = @Content(
                             mediaType = "application/json",

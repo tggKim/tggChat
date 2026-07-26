@@ -48,7 +48,8 @@ public enum ErrorCode {
     CHAT_PARTNER_DELETED(HttpStatus.NOT_FOUND, "CR0012", "존재하지 않는 대화 상대입니다."),
     DIRECT_CHAT_ROOM_INVITE_REQUIRES_NEW_MEMBER(HttpStatus.BAD_REQUEST, "CR013", "1대1 채팅방에 사용자를 초대하려면 새로운 사용자가 포함되어야 합니다."),
     DIRECT_CHAT_ROOM_INVITE_API_REQUIRED(HttpStatus.BAD_REQUEST, "CR014", "1대1 채팅방 초대는 전용 API를 사용해야 합니다."),
-    CHAT_ROOM_INVITEES_ALREADY_ACTIVE(HttpStatus.BAD_REQUEST, "CR015", "초대할 사용자가 모두 이미 채팅방에 참여 중입니다."),
+    GROUP_CHAT_ROOM_INVITE_API_REQUIRED(HttpStatus.BAD_REQUEST, "CR015", "단체 채팅방 초대는 전용 API를 사용해야 합니다."),
+    CHAT_ROOM_INVITEES_ALREADY_ACTIVE(HttpStatus.BAD_REQUEST, "CR016", "초대할 사용자가 모두 이미 채팅방에 참여 중입니다."),
 
     // 웹소켓
     WEBSOCKET_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "W001", "인증되지 않은 WebSocket 요청입니다.");

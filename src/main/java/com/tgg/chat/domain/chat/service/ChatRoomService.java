@@ -315,6 +315,47 @@ public class ChatRoomService {
     // 1대1 채팅방 초대
     @Transactional
     public InviteUserToDirectChatRoomResult inviteUserToDirectChatRoom(Long userId, InviteUserRequestDto requestDto) {
+        // 필드 값 추출, 리스트에서 중복 id들 제거
+        List<Long> friendIds = new ArrayList<>(new HashSet<>(requestDto.getFriendIds()));
+        Long chatRoomId = requestDto.getChatRoomId();
+
+        // 채팅방에 초대할 친구가 1명 이상이어야 한다.
+        if(friendIds.isEmpty()) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_INVITE_MEMBER_REQUIRED);
+        }
+
+        // 자기자신을 채팅방에 초대할 수 없습니다.
+        if(friendIds.contains(userId)) {
+            throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_SELF);
+        }
+
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User findUser = findChatRoomUser.getUser();
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 1대1 채팅방인지 확인
+        ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+        if(findChatRoom.getChatRoomType() != ChatRoomType.DIRECT) {
+            throw new ErrorException(ErrorCode.GROUP_CHAT_ROOM_INVITE_API_REQUIRED);
+        }
+
+        // 존재하지 않거나 친구가 아닌 유저는 초대할 수 없습니다.
+        List<User> userFriends = userFriendRepository.findActiveFriendsByIds(userId, friendIds);
+        if(userFriends.size() != friendIds.size()) {
+            throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_INVALID_USER);
+        }
+
         return null;
     }
 
