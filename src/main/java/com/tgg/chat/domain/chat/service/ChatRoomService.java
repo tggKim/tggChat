@@ -282,9 +282,17 @@ public class ChatRoomService {
                             .toList();
 
                     if(savedChatRoom.getRoomName() == null) {
+                        int count = Math.min(others.size(), 10);
+
                         roomName = others.stream()
+                                .limit(count)
                                 .map(user -> user.getUsername())
                                 .collect(Collectors.joining(", "));
+
+                        int leftCount = others.size() - count;
+                        if (leftCount > 0) {
+                            roomName = roomName + " 외 " + leftCount + "명";
+                        }
                     } else {
                         roomName = savedChatRoom.getRoomName();
                     }
@@ -421,6 +429,107 @@ public class ChatRoomService {
                 })
                 .toList();
         chatRoomUserRepository.saveAll(newChatRoomUsers);
+
+        // 방이 추가될 유저 구분
+        Set<Long> roomAddedUserIds = Stream.concat(
+                        rejoiningChatRoomUsers.stream(),
+                        newChatRoomUsers.stream()
+                )
+                .map(chatRoomUser -> chatRoomUser.getUser().getUserId())
+                .collect(Collectors.toSet());
+
+        // 현재 채팅방의 유저들 조회
+        List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
+
+        // MESSAGE_SENT 채팅방 목록 이벤트를 받을 유저 ID 추출
+        List<Long> eventUserIds = activeChatRoomUsers.stream()
+                .map(activeChatRoomUser ->
+                        activeChatRoomUser.getUser().getUserId()
+                )
+                .toList();
+
+        // ChatEvent 생성
+        ChatEvent chatEvent = ChatEvent.of(
+                findChatRoom.getChatRoomId(),
+                userId,
+                findUser.getUsername(),
+                findUser.getProfileImageKey(),
+                null,
+                savedChatMessage.getContent(),
+                savedChatMessage.getChatMessageId(),
+                savedChatMessage.getChatMessageType(),
+                savedChatMessage.getCreatedAt(),
+                eventUserIds
+        );
+
+        // 전체 ACTIVE 사용자를 이름순으로 한 번만 정렬
+        List<User> sortedActiveUsers = activeChatRoomUsers.stream()
+                .map(ChatRoomUser::getUser)
+                .sorted((user1, user2) ->
+                        user1.getUsername().compareTo(user2.getUsername())
+                )
+                .toList();
+
+        // ChatRoomListEvent 리스트 생성
+        List<ChatRoomListEvent> chatRoomListEvents = activeChatRoomUsers.stream()
+                        .map(activeChatRoomUser -> {
+                            Long receiverUserId = activeChatRoomUser.getUser().getUserId();
+                            List<User> otherUsers = sortedActiveUsers.stream()
+                                    .filter(otherUser ->
+                                            !otherUser.getUserId().equals(receiverUserId)
+                                    )
+                                    .toList();
+
+                            String roomName;
+                            if(activeChatRoomUser.getCustomRoomName() != null) {
+                                roomName = activeChatRoomUser.getCustomRoomName();
+                            }
+                            else if(findChatRoom.getRoomName() != null) {
+                                roomName = findChatRoom.getRoomName();
+                            } else {
+                                int count = Math.min(otherUsers.size(), 10);
+
+                                String names = otherUsers.stream()
+                                        .limit(count)
+                                        .map(user -> user.getUsername())
+                                        .collect(Collectors.joining(", "));
+
+                                int leftCount = otherUsers.size() - count;
+                                if (leftCount > 0) {
+                                    roomName = names + " 외 " + leftCount + "명";
+                                } else {
+                                    roomName = names;
+                                }
+                            }
+
+                            List<String> profileImageKeys = otherUsers.stream()
+                                            .map(otherUser -> {
+                                                return otherUser.getProfileImageKey();
+                                            })
+                                            .toList();
+
+                            if(roomAddedUserIds.contains(receiverUserId)) {
+                                return ChatRoomListEvent.roomAdded(
+                                        findChatRoom.getChatRoomId(),
+                                        findChatRoom.getChatRoomType(),
+                                        activeChatRoomUser.getUser().getUserId(),
+                                        roomName,
+                                        (long)activeChatRoomUsers.size(),
+                                        savedChatMessage.getCreatedAt(),
+                                        profileImageKeys
+                                );
+                            } else {
+                                return ChatRoomListEvent.roomChanged(
+                                        findChatRoom.getChatRoomId(),
+                                        findChatRoom.getChatRoomType(),
+                                        receiverUserId,
+                                        roomName,
+                                        (long)activeChatRoomUsers.size(),
+                                        profileImageKeys
+                                );
+                            }
+                        })
+                        .toList();
 
         return null;
     }

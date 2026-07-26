@@ -73,6 +73,7 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
     @Query("""
         select cru
         from ChatRoomUser cru
+        join fetch cru.user u
         where cru.chatRoom.chatRoomId = :chatRoomId
           and cru.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
           and cru.user.deleted = false
