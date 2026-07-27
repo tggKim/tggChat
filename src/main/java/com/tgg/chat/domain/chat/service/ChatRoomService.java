@@ -381,7 +381,7 @@ public class ChatRoomService {
             );
         }
 
-        // 실제 신규 사용자만 친구 관계와 삭제 여부 검증
+        // 신규 초대 사용자만 친구 관계와 삭제 여부 검증
         List<User> newInviteeUsers = userFriendRepository.findActiveFriendsByIds(userId, newInviteeIds);
 
         if (newInviteeUsers.size() != newInviteeIds.size()) {
@@ -596,7 +596,7 @@ public class ChatRoomService {
                 .toList();
 
         // 새롭게 초대해야할 유저 판별
-        Set<Long> existingInviteeIds  = existingInviteeChatRoomUsers .stream()
+        Set<Long> existingInviteeIds  = existingInviteeChatRoomUsers.stream()
                 .map(existingInviteeChatRoomUser -> existingInviteeChatRoomUser.getUser().getUserId())
                 .collect(Collectors.toSet());
         List<User> newInviteeUsers = userFriends.stream()
@@ -739,7 +739,7 @@ public class ChatRoomService {
                                 return ChatRoomListEvent.roomAdded(
                                         findChatRoom.getChatRoomId(),
                                         findChatRoom.getChatRoomType(),
-                                        activeChatRoomUser.getUser().getUserId(),
+                                        receiverUserId,
                                         roomName,
                                         (long)activeChatRoomUsers.size(),
                                         savedChatMessage.getCreatedAt(),
