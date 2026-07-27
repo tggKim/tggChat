@@ -350,34 +350,41 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.GROUP_CHAT_ROOM_INVITE_API_REQUIRED);
         }
 
-        // 존재하지 않거나 친구가 아닌 유저는 초대할 수 없습니다.
-        List<User> userFriends = userFriendRepository.findActiveFriendsByIds(userId, friendIds);
-        if(userFriends.size() != friendIds.size()) {
+        // 기존 DIRECT 채팅방의 삭제되지 않은 사용자들을 모두 조회
+        List<ChatRoomUser> existingDirectChatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
+
+        // 기존 DIRECT 채팅방 사용자 ID 추출
+        Set<Long> existingDirectUserIds = existingDirectChatRoomUsers.stream()
+                .map(existingDirectChatRoomUser ->
+                        existingDirectChatRoomUser.getUser().getUserId()
+                )
+                .collect(Collectors.toSet());
+
+        // 요청 목록에서 기존 DIRECT 사용자를 제외한 신규 사용자 ID 분리
+        List<Long> newInviteeIds = friendIds.stream()
+                .filter(friendId ->
+                        !existingDirectUserIds.contains(friendId)
+                )
+                .toList();
+
+        // 기존 DIRECT 사용자 외의 신규 사용자가 반드시 필요
+        if (newInviteeIds.isEmpty()) {
+            throw new ErrorException(
+                    ErrorCode.DIRECT_CHAT_ROOM_INVITE_REQUIRES_NEW_MEMBER
+            );
+        }
+
+        // 실제 신규 사용자만 친구 관계와 삭제 여부 검증
+        List<User> newInviteeUsers = userFriendRepository.findActiveFriendsByIds(userId, newInviteeIds);
+
+        if (newInviteeUsers.size() != newInviteeIds.size()) {
             throw new ErrorException(ErrorCode.CANNOT_INVITE_CHAT_ROOM_WITH_INVALID_USER);
         }
 
-        // 기존 채팅방의 ChatRoomUser들을 조회
-        List<ChatRoomUser> existingInviteeChatRoomUsers = chatRoomUserRepository.findByChatRoomIdAndFriendIds(chatRoomId, friendIds);
-
-        // 복귀해야될 유저 판별
-        List<ChatRoomUser> rejoiningChatRoomUsers = existingInviteeChatRoomUsers.stream()
-                .filter(rejoiningChatRoomUser -> {
-                    return rejoiningChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT;
-                })
-                .toList();
-
-        // 새롭게 초대해야할 유저 판별
-        Set<Long> existingInviteeIds = existingInviteeChatRoomUsers.stream()
-                .map(existingInviteeChatRoomUser -> existingInviteeChatRoomUser.getUser().getUserId())
-                .collect(Collectors.toSet());
-        List<User> newInviteeUsers = userFriends.stream()
-                .filter(userFriend -> !existingInviteeIds.contains(userFriend.getUserId()))
-                .toList();
-
-        // 새로 초대할 유저가 없으면 예외
-        if (newInviteeUsers.isEmpty()) {
-            throw new ErrorException(ErrorCode.DIRECT_CHAT_ROOM_INVITE_REQUIRES_NEW_MEMBER);
-        }
+        // 요청 포함 여부와 관계없이 기존 DIRECT 사용자 중 LEFT 사용자 판별
+        List<ChatRoomUser> rejoiningChatRoomUsers = existingDirectChatRoomUsers.stream()
+                        .filter(existingDirectChatRoomUser -> existingDirectChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT)
+                        .toList();
 
         // 1대1 채팅방을 그룹채팅방으로 변경하고, 초대한 유저를 방장으로 승격
         findChatRoom.convertToGroup();
