@@ -15,7 +15,6 @@ public class LeaveChatRoomRequestDto {
     private Long chatRoomId;
     
     @Schema(description = "방장 권한 양도할 유저 id, 일반유저가 나가기 요청시 0으로 보낸다.", example = "1")
-    @NotNull(message = "nextOwnerId는 필수입니다.")
     private Long nextOwnerId;
 
 }

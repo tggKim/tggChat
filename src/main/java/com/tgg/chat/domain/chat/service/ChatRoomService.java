@@ -779,59 +779,36 @@ public class ChatRoomService {
     public LeaveChatRoomResult leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
     	Long chatRoomId = requestDto.getChatRoomId();
     	Long nextOwnerId = requestDto.getNextOwnerId();
-    	
-    	// 채팅방이 존재하지 않거나, 채팅방의 유저가 아닐 시 예외
-    	ChatRoomUser chatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
-    			.orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
-    	
-    	ChatRoom chatRoom = chatRoomUser.getChatRoom(); 
-    	
-    	// 1대1 채팅방은 생성시 모두 MEMBER
-    	// 유저가 OWNER 이라면 단체 채팅방이므로 채팅방의 타입 검사는 필요 x, 권한 양도 필요.
-    	if(chatRoomUser.getChatRoomUserRole() == ChatRoomUserRole.OWNER) {
-    		// 나 자신에게 권한을 양도할 수 없음
-    		if(userId.equals(nextOwnerId)) {
-    			throw new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID);
-    		}
-    		
-			// 권한을 양도할 유저의 ChatRoomUser 조회
-            // 채팅방이 존재하는 것은 위에서 검증 되었으므로 권한을 양도할 유저가 같은 채팅방 소속인지 검사하는 것
-    		ChatRoomUser nextOwnerChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, nextOwnerId)
-        			.orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID));
-    		
-    		// 권한을 양도할 유저의 삭제 여부 체크
-    		if(nextOwnerChatRoomUser.getUser().getDeleted()) {
-    			throw new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID);
-    		}
-    		
-    		// 권한을 양도할 유저의 상태 체크
-    		if(nextOwnerChatRoomUser.getChatRoomUserStatus() != ChatRoomUserStatus.ACTIVE) {
-    			throw new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID);
-    		}
-    		
-    		// 권한 양도
-    		nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
-    		chatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
-    	}
 
-        // 수정사항 flush
-        chatRoomUserRepository.flush();
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
 
-        /**
-         * 나가기 메시지 저장, 전송 시작
-         * ChatRoom에 대한 락 시작
-         **/
-        Long seq = chatRoomMapper.getLastSeqLock(chatRoomId);
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
 
-        List<Long> eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
+        // User 추출 후 삭제된 유저인지 검증
+        User findUser = findChatRoomUser.getUser();
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
 
-        ChatEventResult chatEventResult = chatRoomJoinLeaveService.processLeaveEvent(List.of(chatRoomUser), eventUserIds, chatRoomId, seq);
-        List<ChatEvent> chatEvents = chatEventResult.getChatEvents();
-        ChatMessage flagChatMessage = chatEventResult.getFlagChatMessage();
+        // 요청한 유저를 제외한 채팅방의 활성화된 유저들을 조회
+        List<ChatRoomUser> activeChatRoomUsersExceptMe = chatRoomUserRepository.findOtherActiveChatRoomUsers(chatRoomId, userId);
 
-        if(flagChatMessage != null) {
-            // chatRoom 의 lastSeq 증가, addNumber 는 1증감이 필요
-            chatRoomMapper.updateLastSeq(chatEventResult.getLastSeq() , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), chatRoom.getChatRoomId());
+        // 요청한 유저가 채팅방의 방장이면 권한을 양도해야된다
+        if(findChatRoomUser.getChatRoomUserRole() == ChatRoomUserRole.OWNER && !activeChatRoomUsersExceptMe.isEmpty()) {
+            ChatRoomUser nextOwnerChatRoomUser = activeChatRoomUsersExceptMe.stream()
+                    .filter(chatRoomUser -> {
+                        return chatRoomUser.getUser().getUserId().equals(nextOwnerId);
+                    })
+                    .findFirst()
+                    .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID));
+
+            findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
+            nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
         }
 
         return null;
