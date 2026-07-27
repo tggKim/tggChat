@@ -353,6 +353,13 @@ public class ChatRoomService {
         // 기존 DIRECT 채팅방의 삭제되지 않은 사용자들을 모두 조회
         List<ChatRoomUser> existingDirectChatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
 
+        // 기존 상대가 삭제된 상태이면 그룹으로 전환할 수 없다.
+        if (existingDirectChatRoomUsers.size() != 2) {
+            throw new ErrorException(
+                    ErrorCode.DIRECT_CHAT_ROOM_PARTICIPANT_DELETED
+            );
+        }
+
         // 기존 DIRECT 채팅방 사용자 ID 추출
         Set<Long> existingDirectUserIds = existingDirectChatRoomUsers.stream()
                 .map(existingDirectChatRoomUser ->

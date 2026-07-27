@@ -269,6 +269,7 @@ public class ChatRoomController {
                         CR007: 자기 자신을 초대한 경우
                         CR013: 기존 1대1 참여자가 아닌 새로운 사용자가 포함되지 않은 경우
                         CR015: 단체 채팅방에 1대1 채팅방 초대 API를 사용한 경우
+                        CR017: 기존 1대1 채팅방 참여자가 삭제되어 단체 채팅방으로 전환할 수 없는 경우
                         """,
                     content = @Content(
                             mediaType = "application/json",

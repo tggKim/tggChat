@@ -50,6 +50,7 @@ public enum ErrorCode {
     DIRECT_CHAT_ROOM_INVITE_API_REQUIRED(HttpStatus.BAD_REQUEST, "CR014", "1대1 채팅방 초대는 전용 API를 사용해야 합니다."),
     GROUP_CHAT_ROOM_INVITE_API_REQUIRED(HttpStatus.BAD_REQUEST, "CR015", "단체 채팅방 초대는 전용 API를 사용해야 합니다."),
     CHAT_ROOM_INVITEES_ALREADY_ACTIVE(HttpStatus.BAD_REQUEST, "CR016", "초대할 사용자가 모두 이미 채팅방에 참여 중입니다."),
+    DIRECT_CHAT_ROOM_PARTICIPANT_DELETED(HttpStatus.BAD_REQUEST, "CR017", "기존 1대1 채팅방 참여자가 삭제되어 단체 채팅방으로 전환할 수 없습니다."),
 
     // 웹소켓
     WEBSOCKET_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "W001", "인증되지 않은 WebSocket 요청입니다.");
