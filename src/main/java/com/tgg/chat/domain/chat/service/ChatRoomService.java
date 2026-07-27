@@ -800,6 +800,7 @@ public class ChatRoomService {
 
         // 요청한 유저가 채팅방의 방장이면 권한을 양도해야된다
         if(findChatRoomUser.getChatRoomUserRole() == ChatRoomUserRole.OWNER && !activeChatRoomUsersExceptMe.isEmpty()) {
+            // 채팅방에 요청으로 전달받은 권한을 양도할 유저가 없다면 예외
             ChatRoomUser nextOwnerChatRoomUser = activeChatRoomUsersExceptMe.stream()
                     .filter(chatRoomUser -> {
                         return chatRoomUser.getUser().getUserId().equals(nextOwnerId);
@@ -807,9 +808,41 @@ public class ChatRoomService {
                     .findFirst()
                     .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID));
 
+            // 권한을 양도
             findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
             nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
         }
+
+        // 유저가 나갔다는 메시지 저장하고 ChatEvent 생성
+        ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+
+        ChatMessage savedChatMessage = chatMessageRepository.save(
+                ChatMessage.of(
+                        findChatRoom,
+                        findUser,
+                        findUser.getUsername() + "님이 채팅방에서 나가셨습니다.",
+                        ChatMessageType.LEAVE_TEXT
+                )
+        );
+
+        List<Long> activeUserIdsExceptMe = activeChatRoomUsersExceptMe.stream()
+                .map(chatRoomUser -> {
+                    return chatRoomUser.getUser().getUserId();
+                })
+                .toList();
+
+        ChatEvent chatEvent = ChatEvent.of(
+                findChatRoom.getChatRoomId(),
+                findUser.getUserId(),
+                findUser.getUsername(),
+                findUser.getProfileImageKey(),
+                null,
+                savedChatMessage.getContent(),
+                savedChatMessage.getChatMessageId(),
+                savedChatMessage.getChatMessageType(),
+                savedChatMessage.getCreatedAt(),
+                activeUserIdsExceptMe
+        );
 
         return null;
     }
