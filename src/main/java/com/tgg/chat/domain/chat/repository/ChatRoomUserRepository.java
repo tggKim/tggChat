@@ -87,7 +87,7 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
         where cru.chatRoom.chatRoomId = :chatRoomId
           and cru.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
           and cru.user.deleted = false
-          and (:userId IS NULL OR cru.user.userId <> :userId)
+          and cru.user.userId <> :userId
     """)
     List<ChatRoomUser> findOtherActiveChatRoomUsers(Long chatRoomId, Long userId);
 
