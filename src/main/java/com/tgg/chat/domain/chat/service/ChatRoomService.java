@@ -776,8 +776,7 @@ public class ChatRoomService {
     
     // 채팅방 나가기
     @Transactional
-    public List<ChatEvent> leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
-
+    public LeaveChatRoomResult leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
     	Long chatRoomId = requestDto.getChatRoomId();
     	Long nextOwnerId = requestDto.getNextOwnerId();
     	
@@ -835,6 +834,6 @@ public class ChatRoomService {
             chatRoomMapper.updateLastSeq(chatEventResult.getLastSeq() , flagChatMessage.getContent(), flagChatMessage.getCreatedAt(), chatRoom.getChatRoomId());
         }
 
-        return chatEvents;
+        return null;
     }
 }

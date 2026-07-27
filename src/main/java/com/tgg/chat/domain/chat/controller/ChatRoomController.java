@@ -4,10 +4,7 @@ import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
-import com.tgg.chat.domain.chat.dto.internal.CreateDirectChatRoomResult;
-import com.tgg.chat.domain.chat.dto.internal.CreateGroupChatRoomResult;
-import com.tgg.chat.domain.chat.dto.internal.InviteUserToDirectChatRoomResult;
-import com.tgg.chat.domain.chat.dto.internal.InviteUserToGroupChatRoomResult;
+import com.tgg.chat.domain.chat.dto.internal.*;
 import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
 import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
@@ -430,9 +427,13 @@ public class ChatRoomController {
     		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody LeaveChatRoomRequestDto requestDto
     ) {
-        List<ChatEvent> chatEvents = chatRoomService.leaveChatRoom(authenticatedUser.getUserId(), requestDto);
+        LeaveChatRoomResult leaveChatRoomResult = chatRoomService.leaveChatRoom(authenticatedUser.getUserId(), requestDto);
 
-        chatEvents.forEach(redisPublisher::publishChatEvent);
+        List<ChatRoomListEvent> chatRoomListEvents = leaveChatRoomResult.getChatRoomListEvents();
+        ChatEvent chatEvent = leaveChatRoomResult.getChatEvent();
+
+        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+        redisPublisher.publishChatEvent(chatEvent);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
