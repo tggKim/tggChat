@@ -99,6 +99,85 @@
 - `ChatRoomController`는 서비스가 반환한 `ChatRoomListEvent` 목록을 Redis Pub/Sub로 발행한다.
 - `RedisSubscriber`는 이벤트의 `receiverUserId`를 기준으로 `/user/queue/chatRooms/list` 경로에 전달한다.
 
+## 단체 채팅방 생성 흐름
+- 대상 엔드포인트는 `POST /groupChatRooms`다.
+- 요청의 `friendIds`에서 중복된 사용자 ID를 제거한다.
+- 요청 사용자가 존재하지 않거나 삭제된 사용자이면 `USER_NOT_FOUND` 예외를 발생시킨다.
+- 초대할 사용자가 한 명도 없으면 `CHAT_ROOM_MEMBER_REQUIRED` 예외를 발생시킨다.
+- 요청 사용자가 자신의 ID를 `friendIds`에 포함하면 `CANNOT_CREATE_CHAT_ROOM_WITH_SELF` 예외를 발생시킨다.
+- `friendIds`에 포함된 모든 사용자는 요청 사용자의 친구이며 삭제되지 않은 사용자여야 한다.
+- 조건을 만족하지 않는 사용자가 포함되면 `CANNOT_CREATE_CHAT_ROOM_WITH_INVALID_USER` 예외를 발생시킨다.
+- `chatRoomName`이 `null`이거나 공백이면 공통 채팅방 이름 없이 `GROUP` 타입의 `ChatRoom`을 생성한다.
+- `chatRoomName`이 있으면 앞뒤 공백을 제거한 값을 `ChatRoom.roomName`에 저장한다.
+- 요청 사용자를 포함한 전체 사용자의 `ChatRoomUser`를 생성한다.
+- 요청 사용자는 `OWNER`, 나머지 사용자는 `MEMBER` 권한을 가진다.
+- 생성된 모든 `ChatRoomUser`는 `ACTIVE` 상태이며 `visibleStartMessageId`와 `unreadStartMessageId`는 `0`으로 초기화한다.
+- 단체 채팅방 생성 시에는 별도의 참여 안내 메시지와 `ChatEvent`를 생성하지 않는다.
+- 각 참여 사용자에게 전달할 `ROOM_ADDED` 타입의 `ChatRoomListEvent`를 생성한다.
+- `ChatRoom.roomName`이 있으면 모든 사용자의 기본 채팅방 이름으로 사용한다.
+- `ChatRoom.roomName`이 없으면 수신자를 제외한 사용자 이름을 정렬하여 채팅방 이름을 생성한다.
+- 이름은 최대 10명까지 표시하고, 초과한 인원은 `외 N명` 형식으로 표시한다.
+- 프로필 이미지 키는 수신자를 제외한 사용자 이름 정렬 순서와 동일하게 구성한다.
+- `memberCount`는 생성된 전체 `ChatRoomUser` 수로 설정한다.
+- `lastActivityAt`은 각 사용자의 `joinedAt`으로 설정한다.
+- `ChatRoomController`는 생성된 `ChatRoomListEvent` 목록을 Redis Pub/Sub로 발행한다.
+- 응답에는 생성된 `chatRoomId`를 포함한다.
+
+## 1대1 채팅방 초대 흐름
+- 대상 엔드포인트는 `POST /directChatRooms/invites`다.
+- 요청의 `friendIds`에서 중복된 사용자 ID를 제거한다.
+- 초대할 사용자가 없거나 요청 사용자가 자신의 ID를 포함하면 요청을 차단한다.
+- 요청 사용자가 해당 채팅방의 `ACTIVE` 참여자인지 확인한다.
+- 요청 사용자가 삭제된 사용자이면 `USER_NOT_FOUND` 예외를 발생시킨다.
+- 대상 채팅방이 `DIRECT` 타입이 아니면 `GROUP_CHAT_ROOM_INVITE_API_REQUIRED` 예외를 발생시킨다.
+- 기존 1대1 채팅방의 삭제되지 않은 `ChatRoomUser`를 조회한다.
+- 기존 참여자 두 명 중 삭제된 사용자가 있어 조회 결과가 두 명이 아니면 `DIRECT_CHAT_ROOM_PARTICIPANT_DELETED` 예외를 발생시킨다.
+- 기존 1대1 참여자를 제외한 새로운 사용자가 한 명 이상 포함되어야 한다.
+- 신규 초대 사용자는 요청 사용자의 친구이며 삭제되지 않은 사용자여야 한다.
+- 기존 1대1 참여자는 채팅방 생성 이후의 친구 관계와 관계없이 기존 참여자로 유지한다.
+- 기존 1대1 참여자가 `LEFT` 상태이면 요청 포함 여부와 관계없이 복귀 대상으로 처리한다.
+- `ChatRoom`을 `DIRECT`에서 `GROUP`으로 변경하고 `directUser1`, `directUser2`를 `null`로 초기화한다.
+- 요청 사용자의 권한을 `OWNER`로 변경한다.
+- 신규 초대 사용자 이름을 정렬하여 하나의 `JOIN_TEXT` 참여 안내 메시지를 생성한다.
+- 참여 안내 메시지는 최대 10명의 이름을 표시하고 초과 인원은 `외 N명`으로 표시한다.
+- 기존 `LEFT` 참여자를 `ACTIVE` 상태로 복귀시킨다.
+- 신규 사용자의 `ChatRoomUser`를 `MEMBER`, `ACTIVE` 상태로 생성한다.
+- 복귀 및 신규 사용자의 `visibleStartMessageId`와 `unreadStartMessageId`는 참여 안내 메시지의 `chatMessageId`로 설정한다.
+- 따라서 복귀 및 신규 사용자는 참여 안내 메시지부터 조회하고 읽지 않은 메시지로 판단한다.
+- 최종적으로 `ACTIVE` 상태이며 삭제되지 않은 사용자만 채팅방 목록과 메시지 이벤트 대상으로 사용한다.
+- 복귀 및 신규 사용자에게는 `ROOM_ADDED`, 기존 활성 사용자에게는 `ROOM_CHANGED` 목록 이벤트를 생성한다.
+- 사용자별 `customRoomName`이 있으면 해당 이름을 우선 사용한다.
+- `customRoomName`이 없으면 수신자를 제외한 활성 사용자 이름으로 채팅방 이름을 생성한다.
+- 참여 안내 메시지를 나타내는 하나의 `ChatEvent`를 생성하고 `eventUserIds`에는 전체 활성 사용자를 포함한다.
+- `ChatRoomController`는 목록 이벤트를 먼저 발행하고 이후 `ChatEvent`를 발행한다.
+- `RedisSubscriber`는 `ChatEvent`를 채팅방 메시지와 `MESSAGE_SENT` 목록 이벤트로 전달한다.
+
+## 단체 채팅방 초대 흐름
+- 대상 엔드포인트는 `POST /groupChatRooms/invites`다.
+- 요청의 `friendIds`에서 중복된 사용자 ID를 제거한다.
+- 초대할 사용자가 없거나 요청 사용자가 자신의 ID를 포함하면 요청을 차단한다.
+- 요청 사용자가 해당 채팅방의 `ACTIVE` 참여자인지 확인한다.
+- 요청 사용자가 삭제된 사용자이면 `USER_NOT_FOUND` 예외를 발생시킨다.
+- 대상 채팅방이 `GROUP` 타입이 아니면 `DIRECT_CHAT_ROOM_INVITE_API_REQUIRED` 예외를 발생시킨다.
+- `friendIds`에 포함된 모든 사용자는 요청 사용자의 친구이며 삭제되지 않은 사용자여야 한다.
+- 기존 채팅방 참여 이력이 있더라도 현재 친구가 아니면 다시 초대할 수 없다.
+- 요청 사용자 중 기존 `ChatRoomUser`가 `LEFT` 상태인 사용자를 복귀 대상으로 분류한다.
+- 기존 `ChatRoomUser`가 없는 사용자를 신규 초대 대상으로 분류한다.
+- 복귀하거나 새로 초대할 사용자가 없으면 `CHAT_ROOM_INVITEES_ALREADY_ACTIVE` 예외를 발생시킨다.
+- 복귀 및 신규 사용자 이름을 정렬하여 하나의 `JOIN_TEXT` 참여 안내 메시지를 생성한다.
+- 참여 안내 메시지는 최대 10명의 이름을 표시하고 초과 인원은 `외 N명`으로 표시한다.
+- 복귀 대상의 기존 `ChatRoomUser`를 `ACTIVE` 상태로 변경한다.
+- 신규 사용자의 `ChatRoomUser`를 `MEMBER`, `ACTIVE` 상태로 생성한다.
+- 복귀 및 신규 사용자의 `visibleStartMessageId`와 `unreadStartMessageId`는 참여 안내 메시지의 `chatMessageId`로 설정한다.
+- 따라서 복귀 및 신규 사용자는 참여 안내 메시지부터 조회하고 읽지 않은 메시지로 판단한다.
+- 최종적으로 `ACTIVE` 상태이며 삭제되지 않은 사용자만 채팅방 목록과 메시지 이벤트 대상으로 사용한다.
+- 복귀 및 신규 사용자에게는 `ROOM_ADDED`, 기존 활성 사용자에게는 `ROOM_CHANGED` 목록 이벤트를 생성한다.
+- 채팅방 이름은 `customRoomName`, `ChatRoom.roomName`, 활성 사용자 이름 조합 순서로 결정한다.
+- 프로필 이미지 키는 수신자를 제외한 활성 사용자의 이름 정렬 순서와 동일하게 구성한다.
+- 참여 안내 메시지를 나타내는 하나의 `ChatEvent`를 생성하고 `eventUserIds`에는 전체 활성 사용자를 포함한다.
+- `ChatRoomController`는 목록 이벤트를 먼저 발행하고 이후 `ChatEvent`를 발행한다.
+- `RedisSubscriber`는 `ChatEvent`를 채팅방 메시지와 `MESSAGE_SENT` 목록 이벤트로 전달한다.
+
 ## 채팅방 목록 이벤트
 - 채팅방 목록 이벤트는 클라이언트의 채팅방 목록 화면을 갱신하기 위한 WebSocket 이벤트다.
 - 클라이언트는 `/user/queue/chatRooms/list` 경로를 구독해 자신에게 필요한 채팅방 목록 변경 사항을 수신한다.
