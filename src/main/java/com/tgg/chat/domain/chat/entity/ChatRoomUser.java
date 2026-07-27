@@ -136,4 +136,8 @@ public class ChatRoomUser {
         this.visibleStartMessageId = chatMessageId;
     }
 
+    public void leaveChatRoom() {
+        this.chatRoomUserStatus = ChatRoomUserStatus.LEFT;
+        this.customRoomName = null;
+    }
 }

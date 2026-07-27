@@ -813,6 +813,9 @@ public class ChatRoomService {
             nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
         }
 
+        // 유저를 나가기 처리
+        findChatRoomUser.leaveChatRoom();
+
         // 유저가 나갔다는 메시지 저장하고 ChatEvent 생성
         ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
 
@@ -844,6 +847,73 @@ public class ChatRoomService {
                 activeUserIdsExceptMe
         );
 
-        return null;
+        List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
+        if(findChatRoom.getChatRoomType() == ChatRoomType.GROUP) {
+            // 요청유저를 제외한 나머지 유저들을 이름순으로 정렬
+            List<User> sortedActiveUsersExceptMe = activeChatRoomUsersExceptMe.stream()
+                    .map(chatRoomUser -> {
+                        return chatRoomUser.getUser();
+                    })
+                    .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
+                    .toList();
+
+            activeChatRoomUsersExceptMe.forEach(chatRoomUser -> {
+                Long receiverUserId = chatRoomUser.getUser().getUserId();
+
+                List<User> otherUsers = sortedActiveUsersExceptMe.stream()
+                        .filter(otherUser ->
+                                !otherUser.getUserId().equals(receiverUserId)
+                        )
+                        .toList();
+
+                String roomName;
+                if(chatRoomUser.getCustomRoomName() != null) {
+                    roomName = chatRoomUser.getCustomRoomName();
+                }
+                else if(findChatRoom.getRoomName() != null) {
+                    roomName = findChatRoom.getRoomName();
+                } else {
+                    int count = Math.min(otherUsers.size(), 10);
+
+                    String names = otherUsers.stream()
+                            .limit(count)
+                            .map(user -> user.getUsername())
+                            .collect(Collectors.joining(", "));
+
+                    int leftCount = otherUsers.size() - count;
+                    if (leftCount > 0) {
+                        roomName = names + " 외 " + leftCount + "명";
+                    } else {
+                        roomName = names;
+                    }
+                }
+
+                List<String> profileImageKeys = otherUsers.stream()
+                        .map(otherUser -> {
+                            return otherUser.getProfileImageKey();
+                        })
+                        .toList();
+
+                chatRoomListEvents.add(
+                        ChatRoomListEvent.roomChanged(
+                            findChatRoom.getChatRoomId(),
+                            findChatRoom.getChatRoomType(),
+                            receiverUserId,
+                            roomName,
+                            (long)activeChatRoomUsersExceptMe.size(),
+                            profileImageKeys
+                        )
+                );
+            });
+        }
+
+        chatRoomListEvents.add(
+                ChatRoomListEvent.roomRemoved(
+                        findChatRoom.getChatRoomId(),
+                        userId
+                )
+        );
+
+        return LeaveChatRoomResult.of(chatRoomListEvents, chatEvent);
     }
 }
