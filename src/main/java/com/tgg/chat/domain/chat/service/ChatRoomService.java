@@ -907,9 +907,69 @@ public class ChatRoomService {
     }
 
     // 채팅방 이름 변경
-    public void updateRoomName(Long userId, Long chatRoomId, UpdateRoomNameRequestDto requestDto) {
-        String roomName = requestDto.getRoomName();
+    @Transactional
+    public UpdateRoomNameResult updateRoomName(Long userId, Long chatRoomId, UpdateRoomNameRequestDto requestDto) {
+        String roomName = requestDto.getRoomName().strip();
 
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
 
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if (findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User findUser = findChatRoomUser.getUser();
+        if (findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 요청한 채팅방이 단체 채팅방인지 검증
+        ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+        if (findChatRoom.getChatRoomType() != ChatRoomType.GROUP) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_NAME_UPDATE_GROUP_ONLY);
+        }
+
+        // 요청한 채팅방의 유저가 방장인지 검증
+        if (findChatRoomUser.getChatRoomUserRole() != ChatRoomUserRole.OWNER) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_NAME_UPDATE_PERMISSION_DENIED);
+        }
+
+        // 채팅방 기본 이름 업데이트
+        findChatRoom.updateRoomName(roomName);
+
+        List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
+        List<User> sortedActiveUsers = activeChatRoomUsers.stream()
+                .map(activeChatRoomUser -> {
+                    return activeChatRoomUser.getUser();
+                })
+                .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
+                .toList();
+
+        List<ChatRoomListEvent> chatRoomListEvents = activeChatRoomUsers.stream()
+                .filter(activeChatRoomUser -> {
+                    return activeChatRoomUser.getCustomRoomName() == null;
+                })
+                .map(activeChatRoomUser -> {
+                    Long receiverId = activeChatRoomUser.getUser().getUserId();
+                    List<String> profileImageKeys = sortedActiveUsers.stream()
+                            .filter(sortedActiveUser -> !sortedActiveUser.getUserId().equals(receiverId))
+                            .map(sortedActiveUser -> sortedActiveUser.getProfileImageKey())
+                            .toList();
+
+                    return ChatRoomListEvent.roomChanged(
+                            findChatRoom.getChatRoomId(),
+                            findChatRoom.getChatRoomType(),
+                            activeChatRoomUser.getUser().getUserId(),
+                            roomName,
+                            (long) activeChatRoomUsers.size(),
+                            profileImageKeys
+                    );
+                })
+                .toList();
+
+        return UpdateRoomNameResult.of(chatRoomListEvents);
     }
 }

@@ -124,4 +124,8 @@ public class ChatRoom {
         this.directUser1 = null;
         this.directUser2 = null;
     }
+
+    public void updateRoomName(String roomName) {
+        this.roomName = roomName;
+    }
 }

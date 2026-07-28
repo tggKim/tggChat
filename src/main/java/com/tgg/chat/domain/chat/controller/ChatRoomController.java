@@ -5,10 +5,7 @@ import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
-import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
-import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
-import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
-import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.request.*;
 import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
 import com.tgg.chat.domain.chat.dto.response.ChatRoomReadStatusResponseDto;
 import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
@@ -437,4 +434,62 @@ public class ChatRoomController {
                 .body(null);
     }
 
+    @PatchMapping("/chatRooms/{chatRoomId}/name")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방 기본 이름 변경",
+            description = "단체 채팅방의 방장이 공통 채팅방 이름을 변경합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방 기본 이름 변경 성공",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = """
+                        C001: roomName이 없거나 공백이거나 100자를 초과한 경우
+                        CR018: 1대1 채팅방의 공통 이름 변경을 요청한 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = """
+                        CR010: 요청자가 채팅방에 속하지 않았거나 나간 상태인 경우
+                        CR019: 요청자가 채팅방 방장이 아닌 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "U003: 요청 사용자가 삭제된 사용자인 경우",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<Void> updateRoomName(
+            @PathVariable Long chatRoomId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @Valid @RequestBody UpdateRoomNameRequestDto requestDto
+    ) {
+        UpdateRoomNameResult updateRoomNameResult = chatRoomService.updateRoomName(authenticatedUser.getUserId(), chatRoomId,  requestDto);
+
+        List<ChatRoomListEvent> chatRoomListEvents = updateRoomNameResult.getChatRoomListEvents();
+
+        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(null);
+    }
 }
