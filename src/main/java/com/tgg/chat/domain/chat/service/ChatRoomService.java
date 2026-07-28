@@ -795,60 +795,62 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
-        // 요청한 유저를 제외한 채팅방의 활성화된 유저들을 조회
-        List<ChatRoomUser> activeChatRoomUsersExceptMe = chatRoomUserRepository.findOtherActiveChatRoomUsers(chatRoomId, userId);
-
-        // 요청한 유저가 채팅방의 방장이면 권한을 양도해야된다
-        if(findChatRoomUser.getChatRoomUserRole() == ChatRoomUserRole.OWNER && !activeChatRoomUsersExceptMe.isEmpty()) {
-            // 채팅방에 요청으로 전달받은 권한을 양도할 유저가 없다면 예외
-            ChatRoomUser nextOwnerChatRoomUser = activeChatRoomUsersExceptMe.stream()
-                    .filter(chatRoomUser -> {
-                        return chatRoomUser.getUser().getUserId().equals(nextOwnerId);
-                    })
-                    .findFirst()
-                    .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID));
-
-            // 권한을 양도
-            findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
-            nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
-        }
-
         // 유저를 나가기 처리
         findChatRoomUser.leaveChatRoom();
 
-        // 유저가 나갔다는 메시지 저장하고 ChatEvent 생성
+        // ChatRoom 추출
         ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
 
-        ChatMessage savedChatMessage = chatMessageRepository.save(
-                ChatMessage.of(
-                        findChatRoom,
-                        findUser,
-                        findUser.getUsername() + "님이 채팅방에서 나가셨습니다.",
-                        ChatMessageType.LEAVE_TEXT
-                )
-        );
-
-        List<Long> activeUserIdsExceptMe = activeChatRoomUsersExceptMe.stream()
-                .map(chatRoomUser -> {
-                    return chatRoomUser.getUser().getUserId();
-                })
-                .toList();
-
-        ChatEvent chatEvent = ChatEvent.of(
-                findChatRoom.getChatRoomId(),
-                findUser.getUserId(),
-                findUser.getUsername(),
-                findUser.getProfileImageKey(),
-                null,
-                savedChatMessage.getContent(),
-                savedChatMessage.getChatMessageId(),
-                savedChatMessage.getChatMessageType(),
-                savedChatMessage.getCreatedAt(),
-                activeUserIdsExceptMe
-        );
-
+        // 나가기 메시지와 채팅방 변경 이벤트는 단체 채팅방만 받는다
+        ChatEvent chatEvent = null;
         List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
         if(findChatRoom.getChatRoomType() == ChatRoomType.GROUP) {
+            // 요청한 유저를 제외한 채팅방의 활성화된 유저들을 조회
+            List<ChatRoomUser> activeChatRoomUsersExceptMe = chatRoomUserRepository.findOtherActiveChatRoomUsers(chatRoomId, userId);
+
+            // 요청한 유저가 채팅방의 방장이면 권한을 양도해야된다
+            if(findChatRoomUser.getChatRoomUserRole() == ChatRoomUserRole.OWNER && !activeChatRoomUsersExceptMe.isEmpty()) {
+                // 채팅방에 요청으로 전달받은 권한을 양도할 유저가 없다면 예외
+                ChatRoomUser nextOwnerChatRoomUser = activeChatRoomUsersExceptMe.stream()
+                        .filter(chatRoomUser -> {
+                            return chatRoomUser.getUser().getUserId().equals(nextOwnerId);
+                        })
+                        .findFirst()
+                        .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID));
+
+                // 권한을 양도
+                findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
+                nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
+            }
+
+            ChatMessage savedChatMessage = chatMessageRepository.save(
+                    ChatMessage.of(
+                            findChatRoom,
+                            findUser,
+                            findUser.getUsername() + "님이 채팅방에서 나가셨습니다.",
+                            ChatMessageType.LEAVE_TEXT
+                    )
+            );
+
+            List<Long> activeUserIdsExceptMe = activeChatRoomUsersExceptMe.stream()
+                    .map(chatRoomUser -> {
+                        return chatRoomUser.getUser().getUserId();
+                    })
+                    .toList();
+
+            chatEvent = ChatEvent.of(
+                    findChatRoom.getChatRoomId(),
+                    findUser.getUserId(),
+                    findUser.getUsername(),
+                    findUser.getProfileImageKey(),
+                    null,
+                    savedChatMessage.getContent(),
+                    savedChatMessage.getChatMessageId(),
+                    savedChatMessage.getChatMessageType(),
+                    savedChatMessage.getCreatedAt(),
+                    activeUserIdsExceptMe
+            );
+
             // 요청유저를 제외한 나머지 유저들을 이름순으로 정렬
             List<User> sortedActiveUsersExceptMe = activeChatRoomUsersExceptMe.stream()
                     .map(chatRoomUser -> {

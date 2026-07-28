@@ -433,7 +433,9 @@ public class ChatRoomController {
         ChatEvent chatEvent = leaveChatRoomResult.getChatEvent();
 
         redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
-        redisPublisher.publishChatEvent(chatEvent);
+        if(chatEvent != null) {
+            redisPublisher.publishChatEvent(chatEvent);
+        }
 
         return ResponseEntity
                 .status(HttpStatus.OK)
