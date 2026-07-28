@@ -101,7 +101,7 @@ public class ChatMessageService {
                 chatRoomId,
                 userId,
                 user.getUsername(),
-                null,
+                user.getProfileImageKey(),
                 null,
                 message.getContent(),
                 savedChatMessage.getChatMessageId(),
