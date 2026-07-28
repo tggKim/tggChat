@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tgg.chat.domain.chat.repository.ChatRoomMapper">
-
     <select id="findAllChatRoomsByUserId">
         SELECT
                 T2.chat_room_id
@@ -28,22 +27,4 @@
         AND T1.chat_room_user_status = 'ACTIVE'
         ORDER BY T2.last_message_at DESC
     </select>
-
-	<select id='getLastSeqLock'>
-		SELECT
-			last_message_seq
-		FROM chat_room
-		WHERE chat_room_id = #{chatRoomId}
-		FOR UPDATE
-	</select>
-	
-	<update id='updateLastSeq'>
-		UPDATE chat_room
-		SET
-			last_message_seq = #{seq}
-        ,   last_message_preview = #{lastMessagePreview}
-        ,   last_message_at = #{lastMessageAt}
-		WHERE chat_room_id = #{chatRoomId}
-	</update>
-
 </mapper>

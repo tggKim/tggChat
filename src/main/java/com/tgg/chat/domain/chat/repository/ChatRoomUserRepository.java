@@ -30,8 +30,6 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
         and cru.user.userId in :friendIds
     """)
     List<ChatRoomUser> findByChatRoomIdAndFriendIds(Long chatRoomId, List<Long> friendIds);
-
-    List<ChatRoomUser> findByChatRoom(ChatRoom chatRoom);
     
     @Query("""
             select cru
@@ -90,13 +88,4 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
           and cru.user.userId <> :userId
     """)
     List<ChatRoomUser> findOtherActiveChatRoomUsers(Long chatRoomId, Long userId);
-
-    @Query("""
-        select cru.user.userId
-        from ChatRoomUser cru
-        where cru.chatRoom.chatRoomId = :chatRoomId
-          and cru.user.deleted = false
-    """)
-    List<Long> findAllUserIds(Long chatRoomId);
-
 }

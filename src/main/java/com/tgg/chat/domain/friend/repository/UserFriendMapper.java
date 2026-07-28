@@ -8,6 +8,4 @@ import java.util.List;
 @Mapper
 public interface UserFriendMapper {
     public List<UserFriendRowDto> findFriendListByOwnerId(Long ownerId);
-
-    public int countActiveFriendsByIds(Long ownerId, List<Long> friendIds);
 }

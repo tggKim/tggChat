@@ -10,16 +10,4 @@
         WHERE T1.owner_id = #{ownerId} AND T2.deleted = 0
         ORDER BY T2.username ASC
     </select>
-
-    <select id="countActiveFriendsByIds" resultType="int">
-        SELECT
-            COUNT(*)
-        FROM user_friend T1 INNER JOIN user T2 ON T1.friend_id = T2.user_id
-        WHERE T1.owner_id = #{ownerId}
-        AND T1.friend_id IN
-        <foreach collection="friendIds" item="id" open="(" separator="," close=")">
-            #{id}
-        </foreach>
-        AND T2.deleted = 0;
-    </select>
 </mapper>

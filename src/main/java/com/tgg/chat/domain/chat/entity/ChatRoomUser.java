@@ -110,21 +110,9 @@ public class ChatRoomUser {
     ) {
         return new ChatRoomUser(user, chatRoom, chatRoomUserRole, chatRoomUserStatus);
     }
-
-    public void setChatRoomUserStatus(ChatRoomUserStatus chatRoomUserStatus) {
-        this.chatRoomUserStatus = chatRoomUserStatus;
-    }
-
-    public void setLastReadSeq(Long chatMessageId) {
-        this.unreadStartMessageId = chatMessageId;
-    }
     
     public void setChatRoomUserRole(ChatRoomUserRole chatRoomUserRole) {
         this.chatRoomUserRole = chatRoomUserRole;
-    }
-
-    public void setHistoryStartSeq(Long chatMessageId) {
-        this.visibleStartMessageId = chatMessageId;
     }
 
     public void joinChatRoom(

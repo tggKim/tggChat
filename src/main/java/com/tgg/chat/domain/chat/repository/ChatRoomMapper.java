@@ -8,11 +8,5 @@ import java.util.List;
 
 @Mapper
 public interface ChatRoomMapper {
-
     public List<ChatRoomListRowDto> findAllChatRoomsByUserId(Long userId);
-    
-    public Long getLastSeqLock(Long chatRoomId);
-    
-    public int updateLastSeq(Long seq, String lastMessagePreview, LocalDateTime lastMessageAt, Long chatRoomId);
-
 }
