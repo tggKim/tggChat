@@ -16,10 +16,8 @@ import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserRole;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
 import com.tgg.chat.domain.chat.repository.*;
-import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
-import com.tgg.chat.domain.user.repository.UserMapper;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -38,20 +36,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatRoomService {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomMapper chatRoomMapper;
 
     private final ChatRoomUserRepository chatRoomUserRepository;
-    private final ChatRoomUserMapper chatRoomUserMapper;
 
     private final UserFriendRepository userFriendRepository;
-    private final UserFriendMapper userFriendMapper;
 
     private final ChatMessageRepository chatMessageRepository;
-
-    private final ChatRoomJoinLeaveService chatRoomJoinLeaveService;
 
     // 채팅방의 유저별 메시지 읽음 범위 조회
     @Transactional(readOnly = true)
