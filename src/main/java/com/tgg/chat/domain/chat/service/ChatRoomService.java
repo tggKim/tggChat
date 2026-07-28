@@ -972,4 +972,56 @@ public class ChatRoomService {
 
         return UpdateRoomNameResult.of(chatRoomListEvents);
     }
+
+    // 사용자별 커스텀 채팅방 이름 변경
+    @Transactional
+    public UpdateCustomRoomNameResult updateCustomRoomName(Long userId, Long chatRoomId, UpdateCustomRoomNameRequestDto requestDto) {
+        String customRoomName = requestDto.getCustomRoomName().strip();
+
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if (findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User findUser = findChatRoomUser.getUser();
+        if (findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 사용자별 커스텀 채팅방 이름 변경
+        findChatRoomUser.setCustomRoomName(customRoomName);
+
+        List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
+        List<User> sortedActiveUsers = activeChatRoomUsers.stream()
+                .map(activeChatRoomUser -> {
+                    return activeChatRoomUser.getUser();
+                })
+                .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
+                .toList();
+
+        List<String> profileImageKeys = sortedActiveUsers.stream()
+                .filter(sortedActiveUser -> !sortedActiveUser.getUserId().equals(userId))
+                .map(sortedActiveUser -> sortedActiveUser.getProfileImageKey())
+                .toList();
+
+        ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+        List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
+        chatRoomListEvents.add(
+                ChatRoomListEvent.roomChanged(
+                        findChatRoom.getChatRoomId(),
+                        findChatRoom.getChatRoomType(),
+                        userId,
+                        customRoomName,
+                        (long) activeChatRoomUsers.size(),
+                        profileImageKeys
+                )
+        );
+
+        return UpdateCustomRoomNameResult.of(chatRoomListEvents);
+    }
 }

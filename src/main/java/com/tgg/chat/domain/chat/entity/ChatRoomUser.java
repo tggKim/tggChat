@@ -128,4 +128,8 @@ public class ChatRoomUser {
         this.chatRoomUserStatus = ChatRoomUserStatus.LEFT;
         this.customRoomName = null;
     }
+
+    public void setCustomRoomName(String customRoomName) {
+        this.customRoomName = customRoomName;
+    }
 }
