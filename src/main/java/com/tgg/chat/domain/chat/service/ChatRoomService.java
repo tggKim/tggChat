@@ -3,10 +3,7 @@ package com.tgg.chat.domain.chat.service;
 import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.domain.chat.dto.internal.*;
-import com.tgg.chat.domain.chat.dto.request.CreateDirectChatRoomRequestDto;
-import com.tgg.chat.domain.chat.dto.request.CreateGroupChatRoomRequestDto;
-import com.tgg.chat.domain.chat.dto.request.InviteUserRequestDto;
-import com.tgg.chat.domain.chat.dto.request.LeaveChatRoomRequestDto;
+import com.tgg.chat.domain.chat.dto.request.*;
 import com.tgg.chat.domain.chat.dto.response.*;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
@@ -307,10 +304,9 @@ public class ChatRoomService {
 
     // 1대1 채팅방 초대
     @Transactional
-    public InviteUserToDirectChatRoomResult inviteUserToDirectChatRoom(Long userId, InviteUserRequestDto requestDto) {
+    public InviteUserToDirectChatRoomResult inviteUserToDirectChatRoom(Long userId, Long chatRoomId, InviteUserRequestDto requestDto) {
         // 필드 값 추출, 리스트에서 중복 id들 제거
         List<Long> friendIds = new ArrayList<>(new HashSet<>(requestDto.getFriendIds()));
-        Long chatRoomId = requestDto.getChatRoomId();
 
         // 채팅방에 초대할 친구가 1명 이상이어야 한다.
         if(friendIds.isEmpty()) {
@@ -536,10 +532,9 @@ public class ChatRoomService {
 
     // 단체 채팅방 초대
     @Transactional
-    public InviteUserToGroupChatRoomResult inviteUserToGroupChatRoom(Long userId, InviteUserRequestDto requestDto) {
+    public InviteUserToGroupChatRoomResult inviteUserToGroupChatRoom(Long userId, Long chatRoomId, InviteUserRequestDto requestDto) {
         // 필드 값 추출, 리스트에서 중복 id들 제거
         List<Long> friendIds = new ArrayList<>(new HashSet<>(requestDto.getFriendIds()));
-        Long chatRoomId = requestDto.getChatRoomId();
 
         // 채팅방에 초대할 친구가 1명 이상이어야 한다.
         if(friendIds.isEmpty()) {
@@ -769,8 +764,7 @@ public class ChatRoomService {
     
     // 채팅방 나가기
     @Transactional
-    public LeaveChatRoomResult leaveChatRoom(Long userId, LeaveChatRoomRequestDto requestDto) {
-    	Long chatRoomId = requestDto.getChatRoomId();
+    public LeaveChatRoomResult leaveChatRoom(Long userId, Long chatRoomId, LeaveChatRoomRequestDto requestDto) {
     	Long nextOwnerId = requestDto.getNextOwnerId();
 
         // 유저가 채팅방에 속한 유저인지 검증
@@ -910,5 +904,12 @@ public class ChatRoomService {
         );
 
         return LeaveChatRoomResult.of(chatRoomListEvents, chatEvent);
+    }
+
+    // 채팅방 이름 변경
+    public void updateRoomName(Long userId, Long chatRoomId, UpdateRoomNameRequestDto requestDto) {
+        String roomName = requestDto.getRoomName();
+
+
     }
 }

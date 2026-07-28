@@ -124,7 +124,7 @@
 - 응답에는 생성된 `chatRoomId`를 포함한다.
 
 ## 1대1 채팅방 초대 흐름
-- 대상 엔드포인트는 `POST /directChatRooms/invites`다.
+- 대상 엔드포인트는 `POST /directChatRooms/{chatRoomId}/invites`다.
 - 요청의 `friendIds`에서 중복된 사용자 ID를 제거한다.
 - 초대할 사용자가 없거나 요청 사용자가 자신의 ID를 포함하면 요청을 차단한다.
 - 요청 사용자가 해당 채팅방의 `ACTIVE` 참여자인지 확인한다.
@@ -153,7 +153,7 @@
 - `RedisSubscriber`는 `ChatEvent`를 채팅방 메시지와 `MESSAGE_SENT` 목록 이벤트로 전달한다.
 
 ## 단체 채팅방 초대 흐름
-- 대상 엔드포인트는 `POST /groupChatRooms/invites`다.
+- 대상 엔드포인트는 `POST /groupChatRooms/{chatRoomId}/invites`다.
 - 요청의 `friendIds`에서 중복된 사용자 ID를 제거한다.
 - 초대할 사용자가 없거나 요청 사용자가 자신의 ID를 포함하면 요청을 차단한다.
 - 요청 사용자가 해당 채팅방의 `ACTIVE` 참여자인지 확인한다.

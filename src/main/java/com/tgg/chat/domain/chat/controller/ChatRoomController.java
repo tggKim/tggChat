@@ -241,7 +241,7 @@ public class ChatRoomController {
                 .body(responseDto);
     }
 
-    @PostMapping("/directChatRooms/invites")
+    @PostMapping("/directChatRooms/{chatRoomId}/invites")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "1대1 채팅방 사용자 초대",
@@ -260,7 +260,7 @@ public class ChatRoomController {
             @ApiResponse(
                     responseCode = "400",
                     description = """
-                        C001: 요청 DTO에서 friendIds 또는 chatRoomId가 누락된 경우
+                        C001: 요청 DTO에서 friendIds 가 누락된 경우
                         CR005: 존재하지 않거나 친구가 아닌 사용자를 초대한 경우
                         CR006: 초대할 사용자가 한 명도 없는 경우
                         CR007: 자기 자신을 초대한 경우
@@ -295,10 +295,11 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<Void> inviteUserToDirectChatRoom(
+            @PathVariable Long chatRoomId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody InviteUserRequestDto requestDto
     ) {
-        InviteUserToDirectChatRoomResult inviteUserToDirectChatRoomResult = chatRoomService.inviteUserToDirectChatRoom(authenticatedUser.getUserId(), requestDto);
+        InviteUserToDirectChatRoomResult inviteUserToDirectChatRoomResult = chatRoomService.inviteUserToDirectChatRoom(authenticatedUser.getUserId(), chatRoomId, requestDto);
 
         List<ChatRoomListEvent> chatRoomListEvents = inviteUserToDirectChatRoomResult.getChatRoomListEvents();
         ChatEvent chatEvent = inviteUserToDirectChatRoomResult.getChatEvent();
@@ -311,7 +312,7 @@ public class ChatRoomController {
                 .body(null);
     }
 
-    @PostMapping("/groupChatRooms/invites")
+    @PostMapping("/groupChatRooms/{chatRoomId}/invites")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "단체 채팅방 사용자 초대",
@@ -326,7 +327,7 @@ public class ChatRoomController {
             @ApiResponse(
                     responseCode = "400",
                     description = """
-                        C001: 요청 DTO 에서 friendIds 또는 chatRoomId가 누락된 경우
+                        C001: 요청 DTO 에서 friendIds 가 누락된 경우
                         CR005: 존재하지 않거나 친구가 아닌 사용자를 초대한 경우
                         CR006: 초대할 사용자가 한 명도 없는 경우
                         CR007: 자기 자신을 초대한 경우
@@ -360,10 +361,11 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<Void> inviteUserToGroupChatRoom(
+            @PathVariable Long chatRoomId,
     		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody InviteUserRequestDto requestDto
     ) {
-        InviteUserToGroupChatRoomResult inviteUserToGroupChatRoomResult = chatRoomService.inviteUserToGroupChatRoom(authenticatedUser.getUserId(), requestDto);
+        InviteUserToGroupChatRoomResult inviteUserToGroupChatRoomResult = chatRoomService.inviteUserToGroupChatRoom(authenticatedUser.getUserId(), chatRoomId, requestDto);
 
         List<ChatRoomListEvent> chatRoomListEvents = inviteUserToGroupChatRoomResult.getChatRoomListEvents();
         ChatEvent chatEvent = inviteUserToGroupChatRoomResult.getChatEvent();
@@ -376,7 +378,7 @@ public class ChatRoomController {
                 .body(null);
     }
     
-    @PostMapping("/chatRooms/leave")
+    @PostMapping("/chatRooms/{chatRoomId}/leave")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "채팅방 나가기",
@@ -392,15 +394,7 @@ public class ChatRoomController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "chatRoomId는 필수입니다.",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "nextOwnerId는 필수입니다.",
+                    description = "방장 권한을 양도해야 하지만 유효한 nextOwnerId가 없는 경우",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)
@@ -424,10 +418,11 @@ public class ChatRoomController {
             )
     })
     public ResponseEntity<Void> leaveChatRoom(
+            @PathVariable Long chatRoomId,
     		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody LeaveChatRoomRequestDto requestDto
     ) {
-        LeaveChatRoomResult leaveChatRoomResult = chatRoomService.leaveChatRoom(authenticatedUser.getUserId(), requestDto);
+        LeaveChatRoomResult leaveChatRoomResult = chatRoomService.leaveChatRoom(authenticatedUser.getUserId(), chatRoomId,  requestDto);
 
         List<ChatRoomListEvent> chatRoomListEvents = leaveChatRoomResult.getChatRoomListEvents();
         ChatEvent chatEvent = leaveChatRoomResult.getChatEvent();
