@@ -962,7 +962,7 @@ public class ChatRoomService {
                     return ChatRoomListEvent.roomChanged(
                             findChatRoom.getChatRoomId(),
                             findChatRoom.getChatRoomType(),
-                            activeChatRoomUser.getUser().getUserId(),
+                            receiverId,
                             roomName,
                             (long) activeChatRoomUsers.size(),
                             profileImageKeys
