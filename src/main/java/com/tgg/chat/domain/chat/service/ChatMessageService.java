@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
+import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
 import com.tgg.chat.domain.chat.repository.*;
 import org.springframework.data.domain.Limit;
@@ -78,21 +79,37 @@ public class ChatMessageService {
                 if (opponent.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
                     opponent.joinChatRoom(savedChatMessage.getChatMessageId());
 
-                    List<String> userProfileImageKeys = new ArrayList<>();
-                    userProfileImageKeys.add(user.getProfileImageKey());
+                    List<ChatRoomPreviewUser> chatRoomPreviewUsers = List.of(
+                            ChatRoomPreviewUser.of(
+                                    user.getUserId(),
+                                    user.getUsername(),
+                                    user.getProfileImageKey()
+                            )
+                    );
+
                     chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
                             chatRoomId,
                             ChatRoomType.DIRECT,
                             opponent.getUser().getUserId(),
-                            user.getUsername(),
+                            findChatRoom.getRoomName(),
+                            opponent.getCustomRoomName(),
+                            opponent.getChatRoomUserRole(),
                             2L,
+                            chatRoomPreviewUsers,
+                            savedChatMessage.getContent(),
+                            savedChatMessage.getChatMessageId(),
                             savedChatMessage.getCreatedAt(),
-                            userProfileImageKeys
+                            savedChatMessage.getChatMessageId(),
+                            1L
                     ));
-                }
-            }
 
-            eventUserIds = chatRoomUsers.stream().map(chatRoomUser -> chatRoomUser.getUser().getUserId()).toList();
+                    eventUserIds = List.of(userId);
+                } else {
+                    eventUserIds = chatRoomUsers.stream().map(chatRoomUser -> chatRoomUser.getUser().getUserId()).toList();
+                }
+            } else {
+                eventUserIds = chatRoomUsers.stream().map(chatRoomUser -> chatRoomUser.getUser().getUserId()).toList();
+            }
         } else {
             eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
         }
