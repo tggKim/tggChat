@@ -2,6 +2,7 @@ package com.tgg.chat.domain.chat.service;
 
 import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
+import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
 import com.tgg.chat.domain.chat.dto.request.*;
 import com.tgg.chat.domain.chat.dto.response.*;
@@ -118,28 +119,50 @@ public class ChatRoomService {
             // ChatRoomListEvent 리스트 생성
             List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
 
-            List<String> user2ProfileImageKeys = new ArrayList<>();
-            user2ProfileImageKeys.add(user2.getProfileImageKey());
+            List<ChatRoomPreviewUser> user2Preview = List.of(
+                    ChatRoomPreviewUser.of(
+                            user2.getUserId(),
+                            user2.getUsername(),
+                            user2.getProfileImageKey()
+                    )
+            );
             chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
                     savedChatRoom.getChatRoomId(),
-                    ChatRoomType.DIRECT,
+                    savedChatRoom.getChatRoomType(),
                     user1.getUserId(),
-                    user2.getUsername(),
+                    savedChatRoom.getRoomName(),
+                    chatRoomUser1.getCustomRoomName(),
+                    chatRoomUser1.getChatRoomUserRole(),
                     2L,
+                    user2Preview,
+                    null,
+                    null,
                     chatRoomUser1.getJoinedAt(),
-                    user2ProfileImageKeys
+                    0L,
+                    0L
             ));
 
-            List<String> user1ProfileImageKeys = new ArrayList<>();
-            user1ProfileImageKeys.add(user1.getProfileImageKey());
+            List<ChatRoomPreviewUser> user1Preview = List.of(
+                    ChatRoomPreviewUser.of(
+                            user1.getUserId(),
+                            user1.getUsername(),
+                            user1.getProfileImageKey()
+                    )
+            );
             chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
                     savedChatRoom.getChatRoomId(),
-                    ChatRoomType.DIRECT,
+                    savedChatRoom.getChatRoomType(),
                     user2.getUserId(),
-                    user1.getUsername(),
+                    savedChatRoom.getRoomName(),
+                    chatRoomUser2.getCustomRoomName(),
+                    chatRoomUser2.getChatRoomUserRole(),
                     2L,
+                    user1Preview,
+                    null,
+                    null,
                     chatRoomUser2.getJoinedAt(),
-                    user1ProfileImageKeys
+                    0L,
+                    0L
             ));
 
             return CreateDirectChatRoomResult.of(responseDto, chatRoomListEvents);
@@ -168,32 +191,54 @@ public class ChatRoomService {
             if (firstChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
                 firstChatRoomUser.joinChatRoom(boundaryMessageId);
 
-                List<String> secondUserProfileImageKeys = new ArrayList<>();
-                secondUserProfileImageKeys.add(secondUser.getProfileImageKey());
+                List<ChatRoomPreviewUser> user2Preview = List.of(
+                        ChatRoomPreviewUser.of(
+                                secondUser.getUserId(),
+                                secondUser.getUsername(),
+                                secondUser.getProfileImageKey()
+                        )
+                );
                 chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
                         savedChatRoom.getChatRoomId(),
-                        ChatRoomType.DIRECT,
+                        savedChatRoom.getChatRoomType(),
                         firstUser.getUserId(),
-                        secondUser.getUsername(),
+                        savedChatRoom.getRoomName(),
+                        firstChatRoomUser.getCustomRoomName(),
+                        firstChatRoomUser.getChatRoomUserRole(),
                         2L,
+                        user2Preview,
+                        null,
+                        null,
                         firstChatRoomUser.getJoinedAt(),
-                        secondUserProfileImageKeys
+                        boundaryMessageId,
+                        0L
                 ));
             }
 
             if (secondChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
                 secondChatRoomUser.joinChatRoom(boundaryMessageId);
 
-                List<String> firstUserProfileImageKeys = new ArrayList<>();
-                firstUserProfileImageKeys.add(firstUser.getProfileImageKey());
+                List<ChatRoomPreviewUser> user1Preview = List.of(
+                        ChatRoomPreviewUser.of(
+                                firstUser.getUserId(),
+                                firstUser.getUsername(),
+                                firstUser.getProfileImageKey()
+                        )
+                );
                 chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
                         savedChatRoom.getChatRoomId(),
-                        ChatRoomType.DIRECT,
+                        savedChatRoom.getChatRoomType(),
                         secondUser.getUserId(),
-                        firstUser.getUsername(),
+                        savedChatRoom.getRoomName(),
+                        secondChatRoomUser.getCustomRoomName(),
+                        secondChatRoomUser.getChatRoomUserRole(),
                         2L,
+                        user1Preview,
+                        null,
+                        null,
                         secondChatRoomUser.getJoinedAt(),
-                        firstUserProfileImageKeys
+                        boundaryMessageId,
+                        0L
                 ));
             }
 

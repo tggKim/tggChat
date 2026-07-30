@@ -131,9 +131,11 @@ public class ChatRoomController {
         CreateDirectChatRoomResult createDirectChatRoomResult = chatRoomService.createDirectChatRoom(authenticatedUser.getUserId(), requestDto);
 
         CreateDirectChatRoomResponseDto responseDto = createDirectChatRoomResult.getResponseDto();
-        List<ChatRoomListEvent> chatRoomListEvents = createDirectChatRoomResult.getChatRoomListEvents();
 
-        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+        List<ChatRoomListEvent> chatRoomListEvents = createDirectChatRoomResult.getChatRoomListEvents();
+        if(!chatRoomListEvents.isEmpty()) {
+            redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+        }
 
         return ResponseEntity
                 .status(HttpStatus.OK)
