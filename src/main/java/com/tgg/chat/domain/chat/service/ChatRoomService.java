@@ -304,40 +304,36 @@ public class ChatRoomService {
                 .map(receiverChatRoomUser -> {
                     User receiver = receiverChatRoomUser.getUser();
 
-                    String roomName;
                     List<User> others = users.stream()
                             .filter(user -> !receiver.getUserId().equals(user.getUserId()))
                             .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
                             .toList();
 
-                    List<String> profileImageKeys = others.stream()
-                            .map(user -> user.getProfileImageKey())
+                    List<ChatRoomPreviewUser> userPreviews = others.stream()
+                            .limit(4)
+                            .map(other -> {
+                                return ChatRoomPreviewUser.of(
+                                        other.getUserId(),
+                                        other.getUsername(),
+                                        other.getProfileImageKey()
+                                );
+                            })
                             .toList();
-
-                    if(savedChatRoom.getRoomName() == null) {
-                        int count = Math.min(others.size(), 10);
-
-                        roomName = others.stream()
-                                .limit(count)
-                                .map(user -> user.getUsername())
-                                .collect(Collectors.joining(", "));
-
-                        int leftCount = others.size() - count;
-                        if (leftCount > 0) {
-                            roomName = roomName + " 외 " + leftCount + "명";
-                        }
-                    } else {
-                        roomName = savedChatRoom.getRoomName();
-                    }
 
                     return ChatRoomListEvent.roomAdded(
                             savedChatRoom.getChatRoomId(),
-                            ChatRoomType.GROUP,
+                            savedChatRoom.getChatRoomType(),
                             receiver.getUserId(),
-                            roomName,
-                            (long) users.size(),
+                            savedChatRoom.getRoomName(),
+                            receiverChatRoomUser.getCustomRoomName(),
+                            receiverChatRoomUser.getChatRoomUserRole(),
+                            (long)chatRoomUsers.size(),
+                            userPreviews,
+                            null,
+                            null,
                             receiverChatRoomUser.getJoinedAt(),
-                            profileImageKeys
+                            0L,
+                            0L
                     );
                 })
                 .toList();
