@@ -687,13 +687,6 @@ public class ChatRoomService {
         // 현재 채팅방의 유저들 조회
         List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
 
-        // MESSAGE_SENT 채팅방 목록 이벤트를 받을 유저 ID 추출
-        List<Long> eventUserIds = activeChatRoomUsers.stream()
-                .map(activeChatRoomUser ->
-                        activeChatRoomUser.getUser().getUserId()
-                )
-                .toList();
-
         // ChatEvent 생성
         ChatEvent chatEvent = ChatEvent.of(
                 findChatRoom.getChatRoomId(),
@@ -705,7 +698,7 @@ public class ChatRoomService {
                 savedChatMessage.getChatMessageId(),
                 savedChatMessage.getChatMessageType(),
                 savedChatMessage.getCreatedAt(),
-                eventUserIds
+                List.of()
         );
 
         // 전체 ACTIVE 사용자를 이름순으로 한 번만 정렬
@@ -719,59 +712,54 @@ public class ChatRoomService {
         // ChatRoomListEvent 리스트 생성
         List<ChatRoomListEvent> chatRoomListEvents = activeChatRoomUsers.stream()
                         .map(activeChatRoomUser -> {
-                            Long receiverUserId = activeChatRoomUser.getUser().getUserId();
-                            List<User> otherUsers = sortedActiveUsers.stream()
+                            User receiver = activeChatRoomUser.getUser();
+                            List<User> others = sortedActiveUsers.stream()
                                     .filter(otherUser ->
-                                            !otherUser.getUserId().equals(receiverUserId)
+                                            !otherUser.getUserId().equals(receiver.getUserId())
                                     )
                                     .toList();
 
-                            String roomName;
-                            if(activeChatRoomUser.getCustomRoomName() != null) {
-                                roomName = activeChatRoomUser.getCustomRoomName();
-                            }
-                            else if(findChatRoom.getRoomName() != null) {
-                                roomName = findChatRoom.getRoomName();
-                            } else {
-                                int count = Math.min(otherUsers.size(), 10);
 
-                                String names = otherUsers.stream()
-                                        .limit(count)
-                                        .map(user -> user.getUsername())
-                                        .collect(Collectors.joining(", "));
+                            List<ChatRoomPreviewUser> userPreviews = others.stream()
+                                    .limit(4)
+                                    .map(other -> {
+                                        return ChatRoomPreviewUser.of(
+                                                other.getUserId(),
+                                                other.getUsername(),
+                                                other.getProfileImageKey()
+                                        );
+                                    })
+                                    .toList();
 
-                                int leftCount = otherUsers.size() - count;
-                                if (leftCount > 0) {
-                                    roomName = names + " 외 " + leftCount + "명";
-                                } else {
-                                    roomName = names;
-                                }
-                            }
-
-                            List<String> profileImageKeys = otherUsers.stream()
-                                            .map(otherUser -> {
-                                                return otherUser.getProfileImageKey();
-                                            })
-                                            .toList();
-
-                            if(roomAddedUserIds.contains(receiverUserId)) {
+                            if(roomAddedUserIds.contains(receiver.getUserId())) {
                                 return ChatRoomListEvent.roomAdded(
                                         findChatRoom.getChatRoomId(),
                                         findChatRoom.getChatRoomType(),
-                                        receiverUserId,
-                                        roomName,
+                                        receiver.getUserId(),
+                                        findChatRoom.getRoomName(),
+                                        activeChatRoomUser.getCustomRoomName(),
+                                        activeChatRoomUser.getChatRoomUserRole(),
                                         (long)activeChatRoomUsers.size(),
+                                        userPreviews,
+                                        savedChatMessage.getContent(),
+                                        savedChatMessage.getChatMessageId(),
                                         savedChatMessage.getCreatedAt(),
-                                        profileImageKeys
+                                        savedChatMessage.getChatMessageId(),
+                                        1L
                                 );
                             } else {
                                 return ChatRoomListEvent.roomChanged(
                                         findChatRoom.getChatRoomId(),
                                         findChatRoom.getChatRoomType(),
-                                        receiverUserId,
-                                        roomName,
+                                        receiver.getUserId(),
+                                        findChatRoom.getRoomName(),
+                                        activeChatRoomUser.getCustomRoomName(),
+                                        activeChatRoomUser.getChatRoomUserRole(),
                                         (long)activeChatRoomUsers.size(),
-                                        profileImageKeys
+                                        userPreviews,
+                                        savedChatMessage.getContent(),
+                                        savedChatMessage.getChatMessageId(),
+                                        savedChatMessage.getCreatedAt()
                                 );
                             }
                         })
