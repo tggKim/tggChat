@@ -838,12 +838,6 @@ public class ChatRoomService {
                     )
             );
 
-            List<Long> activeUserIdsExceptMe = activeChatRoomUsersExceptMe.stream()
-                    .map(chatRoomUser -> {
-                        return chatRoomUser.getUser().getUserId();
-                    })
-                    .toList();
-
             chatEvent = ChatEvent.of(
                     findChatRoom.getChatRoomId(),
                     findUser.getUserId(),
@@ -854,7 +848,7 @@ public class ChatRoomService {
                     savedChatMessage.getChatMessageId(),
                     savedChatMessage.getChatMessageType(),
                     savedChatMessage.getCreatedAt(),
-                    activeUserIdsExceptMe
+                    List.of()
             );
 
             // 요청유저를 제외한 나머지 유저들을 이름순으로 정렬
@@ -866,39 +860,22 @@ public class ChatRoomService {
                     .toList();
 
             activeChatRoomUsersExceptMe.forEach(chatRoomUser -> {
-                Long receiverUserId = chatRoomUser.getUser().getUserId();
-
-                List<User> otherUsers = sortedActiveUsersExceptMe.stream()
+                User receiver = chatRoomUser.getUser();
+                List<User> others = sortedActiveUsersExceptMe.stream()
                         .filter(otherUser ->
-                                !otherUser.getUserId().equals(receiverUserId)
+                                !otherUser.getUserId().equals(receiver.getUserId())
                         )
                         .toList();
 
-                String roomName;
-                if(chatRoomUser.getCustomRoomName() != null) {
-                    roomName = chatRoomUser.getCustomRoomName();
-                }
-                else if(findChatRoom.getRoomName() != null) {
-                    roomName = findChatRoom.getRoomName();
-                } else {
-                    int count = Math.min(otherUsers.size(), 10);
 
-                    String names = otherUsers.stream()
-                            .limit(count)
-                            .map(user -> user.getUsername())
-                            .collect(Collectors.joining(", "));
-
-                    int leftCount = otherUsers.size() - count;
-                    if (leftCount > 0) {
-                        roomName = names + " 외 " + leftCount + "명";
-                    } else {
-                        roomName = names;
-                    }
-                }
-
-                List<String> profileImageKeys = otherUsers.stream()
-                        .map(otherUser -> {
-                            return otherUser.getProfileImageKey();
+                List<ChatRoomPreviewUser> userPreviews = others.stream()
+                        .limit(4)
+                        .map(other -> {
+                            return ChatRoomPreviewUser.of(
+                                    other.getUserId(),
+                                    other.getUsername(),
+                                    other.getProfileImageKey()
+                            );
                         })
                         .toList();
 
@@ -906,10 +883,15 @@ public class ChatRoomService {
                         ChatRoomListEvent.roomChanged(
                             findChatRoom.getChatRoomId(),
                             findChatRoom.getChatRoomType(),
-                            receiverUserId,
-                            roomName,
+                            receiver.getUserId(),
+                            findChatRoom.getRoomName(),
+                            chatRoomUser.getCustomRoomName(),
+                            chatRoomUser.getChatRoomUserRole(),
                             (long)activeChatRoomUsersExceptMe.size(),
-                            profileImageKeys
+                            userPreviews,
+                            savedChatMessage.getContent(),
+                            savedChatMessage.getChatMessageId(),
+                            savedChatMessage.getCreatedAt()
                         )
                 );
             });
