@@ -559,7 +559,7 @@ public class ChatRoomController {
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "채팅방 초대 가능 친구 목록 조회",
-            description = "요청자의 친구 중 현재 채팅방에 ACTIVE 상태로 참여하지 않은 사용자를 조회한다."
+            description = "요청자의 친구 중 해당 채팅방 초대 정책에 따라 새로 초대하거나 복귀시킬 수 있는 사용자를 조회합니다."
     )
     @ApiResponses({
             @ApiResponse(

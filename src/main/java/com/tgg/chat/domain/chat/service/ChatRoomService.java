@@ -1014,8 +1014,9 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
-        // 채팅방에서 초대 가능한 친구목록 조회
-        List<User> invitableFriends = userFriendRepository.findInvitableFriends(userId, chatRoomId);
+        // 채팅방에서 초대 가능한 친구목록 조회, 1대1 채팅방은 나가기 여부와 관계없이 상대 유저 미포함
+        ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+        List<User> invitableFriends = userFriendRepository.findInvitableFriends(userId, chatRoomId, findChatRoom.getChatRoomType());
 
         // 응답 DTO 리스트 만들어서 반환
         return invitableFriends.stream()
