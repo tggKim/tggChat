@@ -19,14 +19,18 @@ public class FindChatRoomMembersResponseDto {
     @Schema(description = "유저의 권한", example = "OWNER")
     private final ChatRoomUserRole chatRoomUserRole;
 
-    private FindChatRoomMembersResponseDto(Long userId, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole) {
+    @Schema(description = "요청 사용자가 해당 유저를 친구로 추가할 수 있는지 여부", example = "true")
+    private final boolean canAddFriend;
+
+    private FindChatRoomMembersResponseDto(Long userId, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole, boolean canAddFriend) {
         this.userId = userId;
         this.username = username;
         this.profileImageKey = profileImageKey;
         this.chatRoomUserRole = chatRoomUserRole;
+        this.canAddFriend = canAddFriend;
     }
 
-    public static FindChatRoomMembersResponseDto of(Long userId, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole) {
-        return new FindChatRoomMembersResponseDto(userId, username, profileImageKey, chatRoomUserRole);
+    public static FindChatRoomMembersResponseDto of(Long userId, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole, boolean canAddFriend) {
+        return new FindChatRoomMembersResponseDto(userId, username, profileImageKey, chatRoomUserRole, canAddFriend);
     }
 }

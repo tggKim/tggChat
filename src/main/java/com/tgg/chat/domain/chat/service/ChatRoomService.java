@@ -1053,14 +1053,28 @@ public class ChatRoomService {
 
         ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
 
-        // 1대1 채팅방이면 채팅방 참여 여부와 관계없이 유저 정보를 반환하고, 단체 채팅방이면 ACTIVE인 유저들의 정보만 반환한다.
-        return chatRoomUsers.stream()
-                .filter(chatRoomUser -> {
-                    return findChatRoom.getChatRoomType() == ChatRoomType.DIRECT || chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.ACTIVE;
-                })
-                .sorted((chatRoomUser1, chatRoomUser2) -> {
-                    return chatRoomUser1.getUser().getUsername().compareTo(chatRoomUser2.getUser().getUsername());
-                })
+        // DIRECT 채팅방은 참여 상태와 관계없이 모든 참여자를, GROUP 채팅방은 ACTIVE 참여자만 반환한다.
+        List<ChatRoomUser> visibleChatRoomUsers = chatRoomUsers.stream()
+                .filter(chatRoomUser ->
+                        findChatRoom.getChatRoomType() == ChatRoomType.DIRECT
+                                || chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.ACTIVE
+                )
+                .sorted(Comparator.comparing(
+                        chatRoomUser -> chatRoomUser.getUser().getUsername()
+                ))
+                .toList();
+
+        // 친구추가 가능여부를 판단하기 위해 현재 친구인 유저들의 userId를 set에 저장한다
+        List<Long> visibleUserIds = visibleChatRoomUsers.stream()
+                .map(chatRoomUser -> chatRoomUser.getUser().getUserId())
+                .toList();
+        Set<Long> friendIds = userFriendRepository
+                .findActiveFriendsByIds(userId, visibleUserIds)
+                .stream()
+                .map(User::getUserId)
+                .collect(Collectors.toSet());
+
+        return visibleChatRoomUsers.stream()
                 .map(chatRoomUser -> {
                     User user = chatRoomUser.getUser();
 
@@ -1068,7 +1082,9 @@ public class ChatRoomService {
                             user.getUserId(),
                             user.getUsername(),
                             user.getProfileImageKey(),
-                            chatRoomUser.getChatRoomUserRole()
+                            chatRoomUser.getChatRoomUserRole(),
+                            !friendIds.contains(user.getUserId())
+                                    && !user.getUserId().equals(userId)
                     );
                 })
                 .toList();
