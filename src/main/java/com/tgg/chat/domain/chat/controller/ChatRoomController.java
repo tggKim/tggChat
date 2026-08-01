@@ -605,6 +605,47 @@ public class ChatRoomController {
     }
 
     @GetMapping("/chatRooms/{chatRoomId}/members")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방 참여자 목록 조회",
+            description = """
+                채팅방에 표시할 참여자 정보를 조회합니다.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방 참여자 목록 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(
+                                    schema = @Schema(
+                                            implementation = FindChatRoomMembersResponseDto.class
+                                    )
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = """
+                        CR010: 요청자가 채팅방에 속하지 않았거나 나간 상태인 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = """
+                        U003: 요청 사용자가 삭제된 사용자인 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
     public ResponseEntity<List<FindChatRoomMembersResponseDto>> findChatRoomMembers(
             @PathVariable Long chatRoomId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
