@@ -1029,4 +1029,48 @@ public class ChatRoomService {
                 })
                 .toList();
     }
+
+    // 채팅방별 유저 세부 정보 조회 api
+    @Transactional(readOnly = true)
+    public List<FindChatRoomMembersResponseDto> findChatRoomMembers(Long userId, Long chatRoomId) {
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if (findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User findUser = findChatRoomUser.getUser();
+        if (findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 현재 채팅방의 삭제되지 않은 ChatRoomUser 조회
+        List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
+
+        ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+
+        // 1대1 채팅방이면 채팅방 참여 여부와 관계없이 유저 정보를 반환하고, 단체 채팅방이면 ACTIVE인 유저들의 정보만 반환한다.
+        return chatRoomUsers.stream()
+                .filter(chatRoomUser -> {
+                    return findChatRoom.getChatRoomType() == ChatRoomType.DIRECT || chatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.ACTIVE;
+                })
+                .sorted((chatRoomUser1, chatRoomUser2) -> {
+                    return chatRoomUser1.getUser().getUsername().compareTo(chatRoomUser2.getUser().getUsername());
+                })
+                .map(chatRoomUser -> {
+                    User user = chatRoomUser.getUser();
+
+                    return FindChatRoomMembersResponseDto.of(
+                            user.getUserId(),
+                            user.getUsername(),
+                            user.getProfileImageKey(),
+                            chatRoomUser.getChatRoomUserRole()
+                    );
+                })
+                .toList();
+    }
 }

@@ -603,4 +603,16 @@ public class ChatRoomController {
 
         return ResponseEntity.status(HttpStatus.OK).body(findInvitableFriendsResponseDtos);
     }
+
+    @GetMapping("/chatRooms/{chatRoomId}/members")
+    public ResponseEntity<List<FindChatRoomMembersResponseDto>> findChatRoomMembers(
+            @PathVariable Long chatRoomId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        List<FindChatRoomMembersResponseDto> chatRoomMembersResponseDtos = chatRoomService.findChatRoomMembers(authenticatedUser.getUserId(), chatRoomId);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(chatRoomMembersResponseDtos);
+    }
 }
