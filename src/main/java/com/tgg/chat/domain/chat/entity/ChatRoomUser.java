@@ -111,7 +111,7 @@ public class ChatRoomUser {
         return new ChatRoomUser(user, chatRoom, chatRoomUserRole, chatRoomUserStatus);
     }
     
-    public void setChatRoomUserRole(ChatRoomUserRole chatRoomUserRole) {
+    public void updateChatRoomUserRole(ChatRoomUserRole chatRoomUserRole) {
         this.chatRoomUserRole = chatRoomUserRole;
     }
 
@@ -129,7 +129,7 @@ public class ChatRoomUser {
         this.customRoomName = null;
     }
 
-    public void setCustomRoomName(String customRoomName) {
+    public void updateCustomRoomName(String customRoomName) {
         this.customRoomName = customRoomName;
     }
 }

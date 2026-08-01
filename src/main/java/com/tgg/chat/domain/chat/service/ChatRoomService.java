@@ -425,7 +425,7 @@ public class ChatRoomService {
 
         // 1대1 채팅방을 그룹채팅방으로 변경하고, 초대한 유저를 방장으로 승격
         findChatRoom.convertToGroup();
-        findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
+        findChatRoomUser.updateChatRoomUserRole(ChatRoomUserRole.OWNER);
 
         List<User> sortedUsers = newInviteeUsers.stream()
                 .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
@@ -825,8 +825,8 @@ public class ChatRoomService {
                         .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_NEXT_OWNER_INVALID));
 
                 // 권한을 양도
-                findChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.MEMBER);
-                nextOwnerChatRoomUser.setChatRoomUserRole(ChatRoomUserRole.OWNER);
+                findChatRoomUser.updateChatRoomUserRole(ChatRoomUserRole.MEMBER);
+                nextOwnerChatRoomUser.updateChatRoomUserRole(ChatRoomUserRole.OWNER);
             }
 
             ChatMessage savedChatMessage = chatMessageRepository.save(
@@ -980,31 +980,16 @@ public class ChatRoomService {
         }
 
         // 사용자별 커스텀 채팅방 이름 변경
-        findChatRoomUser.setCustomRoomName(customRoomName);
-
-        List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
-        List<User> sortedActiveUsers = activeChatRoomUsers.stream()
-                .map(activeChatRoomUser -> {
-                    return activeChatRoomUser.getUser();
-                })
-                .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
-                .toList();
-
-        List<String> profileImageKeys = sortedActiveUsers.stream()
-                .filter(sortedActiveUser -> !sortedActiveUser.getUserId().equals(userId))
-                .map(sortedActiveUser -> sortedActiveUser.getProfileImageKey())
-                .toList();
+        findChatRoomUser.updateCustomRoomName(customRoomName);
 
         ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
         List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
         chatRoomListEvents.add(
-                ChatRoomListEvent.roomChanged(
+                ChatRoomListEvent.roomNameChanged(
                         findChatRoom.getChatRoomId(),
-                        findChatRoom.getChatRoomType(),
                         userId,
-                        customRoomName,
-                        (long) activeChatRoomUsers.size(),
-                        profileImageKeys
+                        findChatRoom.getRoomName(),
+                        customRoomName
                 )
         );
 
