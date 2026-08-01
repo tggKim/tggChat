@@ -13,14 +13,18 @@ public class FriendListResponseDto {
 	
 	@Schema(description = "유저 이름", example = "user1")
 	private final String friendUsername;
+
+    @Schema(description = "유저 프로필 이미지 키", example = "key")
+    private final String profileImageKey;
 	
-	private FriendListResponseDto(Long friendId, String friendUsername) {
+	private FriendListResponseDto(Long friendId, String friendUsername, String profileImageKey) {
 		this.friendId = friendId;
 		this.friendUsername = friendUsername;
+        this.profileImageKey = profileImageKey;
 	}
 	
-	public static FriendListResponseDto of(Long friendId, String friendUsername) {
-		return new FriendListResponseDto(friendId, friendUsername);
+	public static FriendListResponseDto of(Long friendId, String friendUsername, String profileImageKey) {
+		return new FriendListResponseDto(friendId, friendUsername, profileImageKey);
 	}
 	
 }

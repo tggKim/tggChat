@@ -1,10 +1,8 @@
 package com.tgg.chat.domain.friend.service;
 
-import com.tgg.chat.domain.friend.dto.query.UserFriendRowDto;
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
 import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
 import com.tgg.chat.domain.friend.entity.UserFriend;
-import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -24,7 +22,6 @@ public class UserFriendService {
 
     private final UserRepository userRepository;
     private final UserFriendRepository userFriendRepository;
-    private final UserFriendMapper userFriendMapper;
 
     @Transactional
     public void createFriend(Long loginUserId, CreateFriendRequestDto createFriendRequestDto) {
@@ -69,13 +66,17 @@ public class UserFriendService {
 		}
     	
 		// 친구목록 조회
-		List<UserFriendRowDto> friendList = userFriendMapper.findFriendListByOwnerId(ownerId);
+        List<User> friendList = userFriendRepository.findActiveFriends(ownerId);
 		
 		// 응답 DTO로 변환
-		return friendList.stream().map(userFriendRowDto -> {
-                    Long friendId = userFriendRowDto.getFriendId();
-                    String friendUsername = userFriendRowDto.getFriendUsername();
-                    return FriendListResponseDto.of(friendId, friendUsername);
+		return friendList.stream()
+                .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
+                .map(user -> {
+                    return FriendListResponseDto.of(
+                            user.getUserId(),
+                            user.getUsername(),
+                            user.getProfileImageKey()
+                    );
                 })
                 .collect(Collectors.toList());
     }

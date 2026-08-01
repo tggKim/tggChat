@@ -225,8 +225,8 @@ class UserFriendControllerTest {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-        FriendListResponseDto friendListResponseDto1 = FriendListResponseDto.of(1L, "friend1");
-        FriendListResponseDto friendListResponseDto2 = FriendListResponseDto.of(2L, "friend2");
+        FriendListResponseDto friendListResponseDto1 = FriendListResponseDto.of(1L, "friend1", "profileImage1");
+        FriendListResponseDto friendListResponseDto2 = FriendListResponseDto.of(2L, "friend2", "profileImage2");
         when(userFriendService.findFriendListByOwnerId(1L)).thenReturn(List.of(friendListResponseDto1, friendListResponseDto2));
 
         // when & then
@@ -237,8 +237,10 @@ class UserFriendControllerTest {
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[0].friendId").value(1))
                     .andExpect(jsonPath("$[0].friendUsername").value("friend1"))
+                    .andExpect(jsonPath("$[0].profileImageKey").value("profileImage1"))
                     .andExpect(jsonPath("$[1].friendId").value(2))
-                    .andExpect(jsonPath("$[1].friendUsername").value("friend2"));
+                    .andExpect(jsonPath("$[1].friendUsername").value("friend2"))
+                    .andExpect(jsonPath("$[1].profileImageKey").value("profileImage2"));
 
             verify(userFriendService, times(1)).findFriendListByOwnerId(1L);
         } finally {

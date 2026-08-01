@@ -1,10 +1,8 @@
 package com.tgg.chat.domain.friend.service;
 
-import com.tgg.chat.domain.friend.dto.query.UserFriendRowDto;
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
 import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
 import com.tgg.chat.domain.friend.entity.UserFriend;
-import com.tgg.chat.domain.friend.repository.UserFriendMapper;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -32,9 +30,6 @@ class UserFriendServiceTest {
 
     @Mock
     UserFriendRepository userFriendRepository;
-
-    @Mock
-    UserFriendMapper userFriendMapper;
 
     @InjectMocks
     UserFriendService userFriendService;
@@ -229,27 +224,28 @@ class UserFriendServiceTest {
         User findUser = User.of("test@test.com", "testPassword", "testUsername");
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
-        UserFriendRowDto friend1 = new UserFriendRowDto();
-        ReflectionTestUtils.setField(friend1, "friendId", 1L);
-        ReflectionTestUtils.setField(friend1, "friendUsername", "friend1");
-        UserFriendRowDto friend2 = new UserFriendRowDto();
-        ReflectionTestUtils.setField(friend2, "friendId", 2L);
-        ReflectionTestUtils.setField(friend2, "friendUsername", "friend2");
-        when(userFriendMapper.findFriendListByOwnerId(1L)).thenReturn(List.of(friend1, friend2));
+        User friend1 = User.of("email1", "password1", "friend1");
+        ReflectionTestUtils.setField(friend1, "userId", 1L);
+        ReflectionTestUtils.setField(friend1, "profileImageKey", "profileImage1");
+
+        User friend2 = User.of("email2", "password2", "friend2");
+        ReflectionTestUtils.setField(friend2, "userId", 2L);
+        ReflectionTestUtils.setField(friend2, "profileImageKey", "profileImage2");
+        when(userFriendRepository.findActiveFriends(1L)).thenReturn(List.of(friend1, friend2));
 
         // when
         List<FriendListResponseDto> result = userFriendService.findFriendListByOwnerId(1L);
 
         // then
         assertThat(result).hasSize(2)
-                .extracting(FriendListResponseDto::getFriendId, FriendListResponseDto::getFriendUsername)
+                .extracting(FriendListResponseDto::getFriendId, FriendListResponseDto::getFriendUsername, FriendListResponseDto::getProfileImageKey)
                 .containsExactly(
-                        tuple(1L, "friend1"),
-                        tuple(2L, "friend2")
+                        tuple(1L, "friend1", "profileImage1"),
+                        tuple(2L, "friend2", "profileImage2")
                 );
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userFriendMapper, times(1)).findFriendListByOwnerId(1L);
+        verify(userFriendRepository, times(1)).findActiveFriends(1L);
     }
 
     @Test
@@ -265,7 +261,7 @@ class UserFriendServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userFriendMapper, never()).findFriendListByOwnerId(anyLong());
+        verify(userFriendRepository, never()).findActiveFriends(anyLong());
     }
 
     @Test
@@ -283,6 +279,6 @@ class UserFriendServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userFriendMapper, never()).findFriendListByOwnerId(anyLong());
+        verify(userFriendRepository, never()).findActiveFriends(anyLong());
     }
 }

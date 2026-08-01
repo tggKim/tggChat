@@ -37,6 +37,15 @@ public interface UserFriendRepository extends JpaRepository<UserFriend, Long> {
             from UserFriend uf
             join uf.friend friend
             where uf.owner.userId = :userId
+            and friend.deleted = false
+            """)
+    List<User> findActiveFriends(Long userId);
+
+    @Query("""
+            select friend
+            from UserFriend uf
+            join uf.friend friend
+            where uf.owner.userId = :userId
             and uf.friend.deleted = false
             and not exists (
                 select cru
