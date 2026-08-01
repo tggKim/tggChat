@@ -907,7 +907,7 @@ public class ChatRoomService {
         return LeaveChatRoomResult.of(chatRoomListEvents, chatEvent);
     }
 
-    // 채팅방 이름 변경
+    // 단체 채팅방 기본 이름 변경
     @Transactional
     public UpdateRoomNameResult updateRoomName(Long userId, Long chatRoomId, UpdateRoomNameRequestDto requestDto) {
         String roomName = requestDto.getRoomName().strip();
@@ -942,31 +942,16 @@ public class ChatRoomService {
         findChatRoom.updateRoomName(roomName);
 
         List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
-        List<User> sortedActiveUsers = activeChatRoomUsers.stream()
-                .map(activeChatRoomUser -> {
-                    return activeChatRoomUser.getUser();
-                })
-                .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
-                .toList();
 
         List<ChatRoomListEvent> chatRoomListEvents = activeChatRoomUsers.stream()
-                .filter(activeChatRoomUser -> {
-                    return activeChatRoomUser.getCustomRoomName() == null;
-                })
                 .map(activeChatRoomUser -> {
-                    Long receiverId = activeChatRoomUser.getUser().getUserId();
-                    List<String> profileImageKeys = sortedActiveUsers.stream()
-                            .filter(sortedActiveUser -> !sortedActiveUser.getUserId().equals(receiverId))
-                            .map(sortedActiveUser -> sortedActiveUser.getProfileImageKey())
-                            .toList();
+                    User receiver = activeChatRoomUser.getUser();
 
-                    return ChatRoomListEvent.roomChanged(
+                    return ChatRoomListEvent.roomNameChanged(
                             findChatRoom.getChatRoomId(),
-                            findChatRoom.getChatRoomType(),
-                            receiverId,
-                            roomName,
-                            (long) activeChatRoomUsers.size(),
-                            profileImageKeys
+                            receiver.getUserId(),
+                            findChatRoom.getRoomName(),
+                            activeChatRoomUser.getCustomRoomName()
                     );
                 })
                 .toList();
