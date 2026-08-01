@@ -49,7 +49,6 @@ public interface UserFriendRepository extends JpaRepository<UserFriend, Long> {
                     :chatRoomType = com.tgg.chat.domain.chat.enums.ChatRoomType.DIRECT
                 )
             )
-            order by friend.username asc
             """)
     List<User> findInvitableFriends(Long userId, Long chatRoomId, ChatRoomType chatRoomType);
 }

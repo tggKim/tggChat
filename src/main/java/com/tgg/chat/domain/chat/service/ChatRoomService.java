@@ -1020,6 +1020,7 @@ public class ChatRoomService {
 
         // 응답 DTO 리스트 만들어서 반환
         return invitableFriends.stream()
+                .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
                 .map(invitableFriend -> {
                     return FindInvitableFriendsResponseDto.of(
                             invitableFriend.getUserId(),
