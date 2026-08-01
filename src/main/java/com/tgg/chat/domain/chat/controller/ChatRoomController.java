@@ -6,10 +6,7 @@ import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
 import com.tgg.chat.domain.chat.dto.request.*;
-import com.tgg.chat.domain.chat.dto.response.ChatRoomListResponseDto;
-import com.tgg.chat.domain.chat.dto.response.ChatRoomReadStatusResponseDto;
-import com.tgg.chat.domain.chat.dto.response.CreateDirectChatRoomResponseDto;
-import com.tgg.chat.domain.chat.dto.response.CreateGroupChatRoomResponseDto;
+import com.tgg.chat.domain.chat.dto.response.*;
 import com.tgg.chat.domain.chat.service.ChatRoomService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -556,5 +553,54 @@ public class ChatRoomController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(null);
+    }
+
+    @GetMapping("/chatRooms/{chatRoomId}/invitableFriends")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방 초대 가능 친구 목록 조회",
+            description = "요청자의 친구 중 현재 채팅방에 ACTIVE 상태로 참여하지 않은 사용자를 조회한다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방 초대 가능 친구 목록 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(
+                                    schema = @Schema(
+                                            implementation = FindInvitableFriendsResponseDto.class
+                                    )
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = """
+                        CR010: 요청자가 채팅방에 속하지 않았거나 나간 상태인 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = """
+                        U003: 요청 사용자가 삭제된 사용자인 경우
+                        """,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<List<FindInvitableFriendsResponseDto>> findInvitableFriends(
+            @PathVariable Long chatRoomId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        List<FindInvitableFriendsResponseDto> findInvitableFriendsResponseDtos = chatRoomService.findInvitableFriends(authenticatedUser.getUserId(), chatRoomId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(findInvitableFriendsResponseDtos);
     }
 }

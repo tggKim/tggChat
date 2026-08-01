@@ -995,4 +995,37 @@ public class ChatRoomService {
 
         return UpdateCustomRoomNameResult.of(chatRoomListEvents);
     }
+
+    // 채팅방별 초대가능한 유저 리스트 조회
+    @Transactional(readOnly = true)
+    public List<FindInvitableFriendsResponseDto> findInvitableFriends(Long userId, Long chatRoomId) {
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if (findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User findUser = findChatRoomUser.getUser();
+        if (findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 채팅방에서 초대 가능한 친구목록 조회
+        List<User> invitableFriends = userFriendRepository.findInvitableFriends(userId, chatRoomId);
+
+        // 응답 DTO 리스트 만들어서 반환
+        return invitableFriends.stream()
+                .map(invitableFriend -> {
+                    return FindInvitableFriendsResponseDto.of(
+                            invitableFriend.getUserId(),
+                            invitableFriend.getUsername(),
+                            invitableFriend.getProfileImageKey()
+                    );
+                })
+                .toList();
+    }
 }

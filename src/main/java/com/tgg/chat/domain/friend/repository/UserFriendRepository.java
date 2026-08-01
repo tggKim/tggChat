@@ -30,4 +30,21 @@ public interface UserFriendRepository extends JpaRepository<UserFriend, Long> {
             and uf.friend.deleted = false
             """)
     List<User> findActiveFriendsByIds(Long userId, List<Long> friendIds);
+
+    @Query("""
+            select friend
+            from UserFriend uf
+            join uf.friend friend
+            where uf.owner.userId = :userId
+            and uf.friend.deleted = false
+            and not exists (
+                select cru
+                from ChatRoomUser cru
+                where cru.chatRoom.chatRoomId = :chatRoomId
+                and cru.user.userId = friend.userId
+                and cru.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
+            )
+            order by friend.username asc
+            """)
+    List<User> findInvitableFriends(Long userId, Long chatRoomId);
 }
