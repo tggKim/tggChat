@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.chat.repository;
 
+import com.tgg.chat.domain.chat.dto.query.ChatRoomLatestMessageRowDto;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomMemberCountRowDto;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomPreviewUserRowDto;
@@ -14,4 +15,6 @@ public interface ChatRoomMapper {
     List<ChatRoomMemberCountRowDto> findMemberCountsByChatRoomIds(List<Long> roomIds);
 
     List<ChatRoomPreviewUserRowDto> findPreviewUsersByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
+
+    List<ChatRoomLatestMessageRowDto> findLatestVisibleMessagesByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
 }

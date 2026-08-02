@@ -77,7 +77,33 @@
     </select>
 
     <select id="findLatestVisibleMessagesByUserIdAndChatRoomIds">
-
+        SELECT
+            ranked.chat_room_id     AS roomId
+        ,   ranked.content          AS lastMessagePreview
+        ,   ranked.chat_message_id  AS messageId
+        ,   ranked.created_at       AS createdAt
+        FROM (
+            SELECT
+                cm.chat_room_id
+            ,   cm.chat_message_id
+            ,   cm.content
+            ,   cm.created_at
+            ,   ROW_NUMBER() OVER (
+                PARTITION BY cm.chat_room_id
+                ORDER BY cm.chat_message_id DESC
+            ) AS message_order
+            FROM chat_message cm
+            INNER JOIN chat_room_user cru
+                ON cru.chat_room_id = cm.chat_room_id
+                AND cru.user_id = #{userId}
+            WHERE cm.chat_room_id IN
+            <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+                #{roomId}
+            </foreach>
+            AND cm.chat_message_id &gt;= cru.visible_start_message_id
+        ) ranked
+        WHERE ranked.message_order = 1
+        ORDER BY ranked.chat_room_id
     </select>
 
     <select id="findUnreadMessageCountsByUserIdAndChatRoomIds">
