@@ -1,7 +1,6 @@
 package com.tgg.chat.domain.chat.dto.response;
 
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomListRowDto;
 import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserRole;
 import io.swagger.v3.oas.annotations.media.Schema;
