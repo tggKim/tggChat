@@ -4,6 +4,7 @@ import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomLatestMessageRowDto;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomMemberCountRowDto;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomPreviewUserRowDto;
@@ -1115,6 +1116,13 @@ public class ChatRoomService {
                                 },
                                 Collectors.toList()
                         )
+                ));
+
+        List<ChatRoomLatestMessageRowDto> latestMessageRows = chatRoomMapper.findLatestVisibleMessagesByUserIdAndChatRoomIds(userId, activeChatRoomIds);
+        Map<Long, ChatRoomLatestMessageRowDto> latestMessageByRoomId = latestMessageRows.stream()
+                .collect(Collectors.toMap(
+                        ChatRoomLatestMessageRowDto::getRoomId,
+                        latestMessageRow -> latestMessageRow
                 ));
 
         return null;
