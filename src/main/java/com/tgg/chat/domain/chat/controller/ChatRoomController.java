@@ -227,10 +227,10 @@ public class ChatRoomController {
                     )
             )
     })
-    public ResponseEntity<ChatRoomListResponseDto> findAllChatRooms(
+    public ResponseEntity<List<ChatRoomListResponseDto>> findAllChatRooms(
     		@AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        ChatRoomListResponseDto responseDto = chatRoomService.findAllChatRooms(authenticatedUser.getUserId());
+        List<ChatRoomListResponseDto> responseDto = chatRoomService.findAllChatRooms(authenticatedUser.getUserId());
 
         return ResponseEntity
                 .status(HttpStatus.OK)

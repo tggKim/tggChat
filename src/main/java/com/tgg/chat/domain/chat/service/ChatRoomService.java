@@ -767,19 +767,6 @@ public class ChatRoomService {
 
         return InviteUserToGroupChatRoomResult.of(chatRoomListEvents, chatEvent);
     }
-
-    // 채팅방 목록 조회
-    @Transactional(readOnly = true)
-    public ChatRoomListResponseDto findAllChatRooms(Long userId) {
-    	User user = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-    	
-		List<ChatRoomListItemReseponseDto> chatRooms = chatRoomMapper.findAllChatRoomsByUserId(userId)
-				.stream()
-				.map(ChatRoomListItemReseponseDto::from)
-				.toList();
-		 
-      return ChatRoomListResponseDto.of(userId, user.getUsername(), chatRooms);
-    }
     
     // 채팅방 나가기
     @Transactional
@@ -1089,5 +1076,16 @@ public class ChatRoomService {
                     );
                 })
                 .toList();
+    }
+
+    // 채팅방 목록 조회
+    @Transactional(readOnly = true)
+    public List<ChatRoomListResponseDto> findAllChatRooms(Long userId) {
+        User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return null;
     }
 }
