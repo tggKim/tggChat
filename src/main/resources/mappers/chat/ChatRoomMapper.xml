@@ -107,6 +107,19 @@
     </select>
 
     <select id="findUnreadMessageCountsByUserIdAndChatRoomIds">
-
+        SELECT
+            cm.chat_room_id     AS roomId
+        ,   COUNT(*)            AS unreadCount
+        FROM chat_message cm
+        INNER JOIN chat_room_user cru
+            ON cru.chat_room_id = cm.chat_room_id
+            AND cru.user_id = #{userId}
+        WHERE cm.chat_room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+        AND cm.chat_message_id &gt;= cru.unread_start_message_id
+        GROUP BY cm.chat_room_id
+        ORDER BY cm.chat_room_id
     </select>
 </mapper>
