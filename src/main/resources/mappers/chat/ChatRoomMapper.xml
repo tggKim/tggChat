@@ -40,7 +40,40 @@
     </select>
 
     <select id="findPreviewUsersByUserIdAndChatRoomIds">
-
+        SELECT
+            ranked.chat_room_id        AS roomId
+        ,   ranked.user_id             AS userId
+        ,   ranked.username            AS username
+        ,   ranked.profile_image_key   AS profileImageKey
+        FROM (
+            SELECT
+                cru.chat_room_id
+            ,   cru.user_id
+            ,   u.username
+            ,   u.profile_image_key
+            ,   ROW_NUMBER() OVER(
+                PARTITION BY cru.chat_room_id
+                ORDER BY u.username
+            ) AS preview_order
+            FROM chat_room_user cru
+            INNER JOIN chat_room cr
+                ON cru.chat_room_id = cr.chat_room_id
+            INNER JOIN user u
+                ON cru.user_id = u.user_id
+            WHERE cru.chat_room_id IN
+            <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+                #{roomId}
+            </foreach>
+            AND (
+                cr.chat_room_type = 'DIRECT'
+                OR
+                cru.chat_room_user_status = 'ACTIVE'
+            )
+            AND cru.user_id &lt;&gt; #{userId}
+            AND u.deleted = false
+        ) ranked
+        WHERE ranked.preview_order &lt;= 4
+        ORDER BY ranked.chat_room_id, ranked.preview_order
     </select>
 
     <select id="findLatestVisibleMessagesByUserIdAndChatRoomIds">
