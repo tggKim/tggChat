@@ -4,6 +4,7 @@ import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
 import com.tgg.chat.domain.chat.dto.request.*;
 import com.tgg.chat.domain.chat.dto.response.*;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
@@ -1085,6 +1086,16 @@ public class ChatRoomService {
         if(findUser.getDeleted()) {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
+
+        List<ChatRoomListBaseRowDto> baseRows = chatRoomMapper.findActiveChatRoomsByUserId(userId);
+
+        if (baseRows.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> activeChatRoomIds = baseRows.stream()
+                .map(ChatRoomListBaseRowDto::getRoomId)
+                .toList();
 
         return null;
     }
