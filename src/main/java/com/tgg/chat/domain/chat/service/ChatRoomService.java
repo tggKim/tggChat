@@ -6,6 +6,7 @@ import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomMemberCountRowDto;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomPreviewUserRowDto;
 import com.tgg.chat.domain.chat.dto.request.*;
 import com.tgg.chat.domain.chat.dto.response.*;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
@@ -1099,6 +1100,22 @@ public class ChatRoomService {
                 .toList();
 
         List<ChatRoomMemberCountRowDto> memberCountRows = chatRoomMapper.findMemberCountsByChatRoomIds(activeChatRoomIds);
+
+        List<ChatRoomPreviewUserRowDto> previewUserRows = chatRoomMapper.findPreviewUsersByUserIdAndChatRoomIds(userId, activeChatRoomIds);
+        Map<Long, List<ChatRoomPreviewUser>> previewUsersByRoomId = previewUserRows.stream()
+                .collect(Collectors.groupingBy(
+                        chatRoomPreviewUserRowDto -> chatRoomPreviewUserRowDto.getRoomId(),
+                        Collectors.mapping(
+                                chatRoomPreviewUserRowDto -> {
+                                    return ChatRoomPreviewUser.of(
+                                            chatRoomPreviewUserRowDto.getUserId(),
+                                            chatRoomPreviewUserRowDto.getUsername(),
+                                            chatRoomPreviewUserRowDto.getProfileImageKey()
+                                    );
+                                },
+                                Collectors.toList()
+                        )
+                ));
 
         return null;
     }
