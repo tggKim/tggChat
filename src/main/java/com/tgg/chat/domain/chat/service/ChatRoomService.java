@@ -1101,6 +1101,11 @@ public class ChatRoomService {
                 .toList();
 
         List<ChatRoomMemberCountRowDto> memberCountRows = chatRoomMapper.findMemberCountsByChatRoomIds(activeChatRoomIds);
+        Map<Long, Long> memberCountsByRoomId = memberCountRows.stream()
+                .collect(Collectors.toMap(
+                        chatRoomMemberCountRowDto -> chatRoomMemberCountRowDto.getRoomId(),
+                        chatRoomMemberCountRowDto -> chatRoomMemberCountRowDto.getMemberCount()
+                ));
 
         List<ChatRoomPreviewUserRowDto> previewUserRows = chatRoomMapper.findPreviewUsersByUserIdAndChatRoomIds(userId, activeChatRoomIds);
         Map<Long, List<ChatRoomPreviewUser>> previewUsersByRoomId = previewUserRows.stream()
@@ -1121,8 +1126,8 @@ public class ChatRoomService {
         List<ChatRoomLatestMessageRowDto> latestMessageRows = chatRoomMapper.findLatestVisibleMessagesByUserIdAndChatRoomIds(userId, activeChatRoomIds);
         Map<Long, ChatRoomLatestMessageRowDto> latestMessageByRoomId = latestMessageRows.stream()
                 .collect(Collectors.toMap(
-                        ChatRoomLatestMessageRowDto::getRoomId,
-                        latestMessageRow -> latestMessageRow
+                        chatRoomLatestMessageRowDto -> chatRoomLatestMessageRowDto.getRoomId(),
+                        chatRoomLatestMessageRowDto -> chatRoomLatestMessageRowDto
                 ));
 
         return null;

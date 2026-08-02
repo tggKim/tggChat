@@ -1,9 +1,6 @@
 package com.tgg.chat.domain.chat.repository;
 
-import com.tgg.chat.domain.chat.dto.query.ChatRoomLatestMessageRowDto;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomMemberCountRowDto;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomPreviewUserRowDto;
+import com.tgg.chat.domain.chat.dto.query.*;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -17,4 +14,6 @@ public interface ChatRoomMapper {
     List<ChatRoomPreviewUserRowDto> findPreviewUsersByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
 
     List<ChatRoomLatestMessageRowDto> findLatestVisibleMessagesByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
+
+    List<ChatRoomUnreadCountRowDto> findUnreadMessageCountsByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
 }
