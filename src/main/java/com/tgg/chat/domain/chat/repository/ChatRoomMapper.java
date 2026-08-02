@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.chat.repository;
 
 import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomMemberCountRowDto;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -8,4 +9,6 @@ import java.util.List;
 @Mapper
 public interface ChatRoomMapper {
     List<ChatRoomListBaseRowDto> findActiveChatRoomsByUserId(Long userId);
+
+    List<ChatRoomMemberCountRowDto> findMemberCountsByChatRoomIds(List<Long> roomIds);
 }

@@ -18,7 +18,25 @@
     </select>
 
     <select id="findMemberCountsByChatRoomIds">
-
+        SELECT
+            cru.chat_room_id    AS roomId
+        ,   COUNT(*)            AS memberCount
+        FROM chat_room_user cru
+        INNER JOIN user u
+            ON cru.user_id = u.user_id
+        INNER JOIN chat_room cr
+            ON cru.chat_room_id = cr.chat_room_id
+        WHERE cru.chat_room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+        AND (
+            cru.chat_room_user_status = 'ACTIVE'
+            OR
+            cr.chat_room_type = 'DIRECT'
+        )
+        AND u.deleted = false
+        GROUP BY cru.chat_room_id
     </select>
 
     <select id="findPreviewUsersByUserIdAndChatRoomIds">

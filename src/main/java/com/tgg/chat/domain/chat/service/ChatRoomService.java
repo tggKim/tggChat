@@ -5,6 +5,7 @@ import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
 import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
+import com.tgg.chat.domain.chat.dto.query.ChatRoomMemberCountRowDto;
 import com.tgg.chat.domain.chat.dto.request.*;
 import com.tgg.chat.domain.chat.dto.response.*;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
@@ -1096,6 +1097,8 @@ public class ChatRoomService {
         List<Long> activeChatRoomIds = baseRows.stream()
                 .map(ChatRoomListBaseRowDto::getRoomId)
                 .toList();
+
+        List<ChatRoomMemberCountRowDto> memberCountRows = chatRoomMapper.findMemberCountsByChatRoomIds(activeChatRoomIds);
 
         return null;
     }
