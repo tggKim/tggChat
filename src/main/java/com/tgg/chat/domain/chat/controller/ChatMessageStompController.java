@@ -6,7 +6,9 @@ import java.util.List;
 import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.redis.RedisPublisher;
+import com.tgg.chat.domain.chat.dto.internal.ReadChatMessageResult;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
+import com.tgg.chat.domain.chat.dto.request.ReadChatMessagesRequestDto;
 import com.tgg.chat.domain.chat.service.ChatMessageService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -19,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 public class ChatMessageStompController {
-
     private final ChatMessageService chatMessageService;
     private final RedisPublisher redisPublisher;
 	
@@ -39,5 +40,21 @@ public class ChatMessageStompController {
         redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
         chatEvents.forEach(redisPublisher::publishChatEvent);
 	}
-	
+
+    @MessageMapping("/chatRooms/{chatRoomId}/read")
+    public void readMessage(
+            @DestinationVariable Long chatRoomId,
+            ReadChatMessagesRequestDto requestDto,
+            Principal principal
+    ) {
+        Long userId = Long.parseLong(principal.getName());
+
+        ReadChatMessageResult readChatMessageResult = chatMessageService.readMessage(userId, chatRoomId, requestDto);
+
+        ChatEvent chatEvent = readChatMessageResult.getChatEvent();
+        List<ChatRoomListEvent> chatRoomListEvents = readChatMessageResult.getChatRoomListEvents();
+
+        redisPublisher.publishChatEvent(chatEvent);
+        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+    }
 }

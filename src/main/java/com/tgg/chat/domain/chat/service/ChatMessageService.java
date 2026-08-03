@@ -156,7 +156,7 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public ReadChatMessageResult readChatMessage(Long userId, Long chatRoomId, ReadChatMessagesRequestDto requestDto) {
+    public ReadChatMessageResult readMessage(Long userId, Long chatRoomId, ReadChatMessagesRequestDto requestDto) {
         Long readMessageId = requestDto.getReadMessageId();
 
         // 유저가 채팅방에 속한 유저인지 검증
