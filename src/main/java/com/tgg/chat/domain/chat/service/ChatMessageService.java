@@ -156,6 +156,8 @@ public class ChatMessageService {
 
     @Transactional
     public void readChatMessage(Long userId, Long chatRoomId, ReadChatMessagesRequestDto requestDto) {
+        Long readMessageId = requestDto.getReadMessageId();
+
         // 유저가 채팅방에 속한 유저인지 검증
         ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
@@ -172,8 +174,13 @@ public class ChatMessageService {
         }
 
         // 읽음 처리 요청한 메시지가 해당 채팅방의 메시지인지 검증
-        if(!chatMessageRepository.messageExistsByChatRoomIdAndChatMessageId(chatRoomId, requestDto.getReadMessageId())) {
+        if(!chatMessageRepository.messageExistsByChatRoomIdAndChatMessageId(chatRoomId, readMessageId)) {
             throw new ErrorException(ErrorCode.CHAT_MESSAGE_NOT_FOUND);
+        }
+
+        // 자신한테 보이지 않는 메시지에 대한 읽음 요청은 예외 발생
+        if(findChatRoomUser.getVisibleStartMessageId() > readMessageId) {
+            throw new ErrorException(ErrorCode.CHAT_MESSAGE_ACCESS_DENIED);
         }
     }
 }

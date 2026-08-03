@@ -56,6 +56,7 @@ public enum ErrorCode {
 
     // 메시지
     CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "CM001", "해당 채팅방에 존재하지 않는 메시지입니다."),
+    CHAT_MESSAGE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CM002", "해당 메시지에 접근할 권한이 없습니다."),
 
     // 웹소켓
     WEBSOCKET_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "W001", "인증되지 않은 WebSocket 요청입니다.");
