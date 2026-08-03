@@ -7,6 +7,7 @@ import java.util.Optional;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
+import com.tgg.chat.domain.chat.dto.request.ReadChatMessagesRequestDto;
 import com.tgg.chat.domain.chat.repository.*;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
@@ -154,7 +155,25 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public void readChatMessage() {
+    public void readChatMessage(Long userId, Long chatRoomId, ReadChatMessagesRequestDto requestDto) {
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
 
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User user = findChatRoomUser.getUser();
+        if(user.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 읽음 처리 요청한 메시지가 해당 채팅방의 메시지인지 검증
+        if(!chatMessageRepository.messageExistsByChatRoomIdAndChatMessageId(chatRoomId, requestDto.getReadMessageId())) {
+            throw new ErrorException(ErrorCode.CHAT_MESSAGE_NOT_FOUND);
+        }
     }
 }

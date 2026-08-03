@@ -39,4 +39,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             where cm.chatRoom.chatRoomId = :chatRoomId
             """)
     Optional<Long> findLatestMessageId(Long chatRoomId);
+
+    @Query("""
+            select count(*) > 0
+            from ChatMessage cm
+            where cm.chatRoom.chatRoomId = :chatRoomId
+            and cm.chatMessageId = :chatMessageId
+            """)
+    boolean messageExistsByChatRoomIdAndChatMessageId(Long chatRoomId, Long chatMessageId);
 }

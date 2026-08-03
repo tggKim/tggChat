@@ -54,6 +54,9 @@ public enum ErrorCode {
     CHAT_ROOM_NAME_UPDATE_GROUP_ONLY(HttpStatus.BAD_REQUEST, "CR018", "공통 채팅방 이름은 단체 채팅방에서만 변경할 수 있습니다."),
     CHAT_ROOM_NAME_UPDATE_PERMISSION_DENIED(HttpStatus.FORBIDDEN, "CR019", "공통 채팅방 이름은 방장만 변경할 수 있습니다."),
 
+    // 메시지
+    CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "CM001", "해당 채팅방에 존재하지 않는 메시지입니다."),
+
     // 웹소켓
     WEBSOCKET_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "W001", "인증되지 않은 WebSocket 요청입니다.");
 
