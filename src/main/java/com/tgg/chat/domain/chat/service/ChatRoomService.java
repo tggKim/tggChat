@@ -4,10 +4,7 @@ import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.*;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomLatestMessageRowDto;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomListBaseRowDto;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomMemberCountRowDto;
-import com.tgg.chat.domain.chat.dto.query.ChatRoomPreviewUserRowDto;
+import com.tgg.chat.domain.chat.dto.query.*;
 import com.tgg.chat.domain.chat.dto.request.*;
 import com.tgg.chat.domain.chat.dto.response.*;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
@@ -26,6 +23,7 @@ import com.tgg.chat.exception.ErrorException;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1130,6 +1128,52 @@ public class ChatRoomService {
                         chatRoomLatestMessageRowDto -> chatRoomLatestMessageRowDto
                 ));
 
-        return null;
+        List<ChatRoomUnreadCountRowDto> unreadCountRows = chatRoomMapper.findUnreadMessageCountsByUserIdAndChatRoomIds(userId, activeChatRoomIds);
+        Map<Long, Long> unreadCountByRoomId = unreadCountRows.stream()
+                .collect(Collectors.toMap(
+                        chatRoomUnreadCountRowDto -> chatRoomUnreadCountRowDto.getRoomId(),
+                        chatRoomUnreadCountRowDto -> chatRoomUnreadCountRowDto.getUnreadCount()
+                ));
+
+        return baseRows.stream()
+                .map(chatRoomListBaseRowDto -> {
+                    Long roomId = chatRoomListBaseRowDto.getRoomId();
+                    ChatRoomType roomType = chatRoomListBaseRowDto.getRoomType();
+                    String baseRoomName = chatRoomListBaseRowDto.getBaseRoomName();
+                    String customRoomName = chatRoomListBaseRowDto.getCustomRoomName();
+                    ChatRoomUserRole myRole = chatRoomListBaseRowDto.getMyRole();
+                    LocalDateTime joinedAt = chatRoomListBaseRowDto.getJoinedAt();
+                    Long unreadStartMessageId = chatRoomListBaseRowDto.getUnreadStartMessageId();
+
+                    Long memberCount = memberCountsByRoomId.get(roomId);
+
+                    List<ChatRoomPreviewUser> previewUsers = previewUsersByRoomId.getOrDefault(roomId, List.of());
+
+                    ChatRoomLatestMessageRowDto chatRoomLatestMessageRowDto = latestMessageByRoomId.get(roomId);
+                    String lastMessagePreview = chatRoomLatestMessageRowDto != null ? chatRoomLatestMessageRowDto.getLastMessagePreview() : null;
+                    Long messageId = chatRoomLatestMessageRowDto != null ? chatRoomLatestMessageRowDto.getMessageId() : null;
+                    LocalDateTime createdAt = chatRoomLatestMessageRowDto != null ? chatRoomLatestMessageRowDto.getCreatedAt() : null;
+
+                    Long unreadCount = unreadCountByRoomId.getOrDefault(roomId, 0L);
+
+                    return ChatRoomListResponseDto.of(
+                            roomId,
+                            roomType,
+                            baseRoomName,
+                            customRoomName,
+                            myRole,
+                            memberCount,
+                            previewUsers,
+                            lastMessagePreview,
+                            messageId,
+                            createdAt == null ? joinedAt : createdAt,
+                            unreadStartMessageId,
+                            unreadCount
+                    );
+                })
+                .sorted((response1, response2) -> {
+                    return response2.getLastActivityAt().compareTo(response1.getLastActivityAt());
+                })
+                .toList();
     }
 }
