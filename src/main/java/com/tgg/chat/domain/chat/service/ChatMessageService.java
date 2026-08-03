@@ -114,7 +114,7 @@ public class ChatMessageService {
             eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
         }
 
-        ChatEvent chatEvent = ChatEvent.of(
+        ChatEvent chatEvent = ChatEvent.messageSent(
                 chatRoomId,
                 userId,
                 user.getUsername(),
@@ -153,4 +153,8 @@ public class ChatMessageService {
     	return chatMessages.stream().map(ChatMessageListResponseDto::from).toList();
     }
 
+    @Transactional
+    public void readChatMessage() {
+
+    }
 }

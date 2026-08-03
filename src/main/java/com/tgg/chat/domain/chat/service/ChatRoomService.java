@@ -484,7 +484,7 @@ public class ChatRoomService {
         List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
 
         // ChatEvent 생성
-        ChatEvent chatEvent = ChatEvent.of(
+        ChatEvent chatEvent = ChatEvent.messageSent(
                 findChatRoom.getChatRoomId(),
                 userId,
                 findUser.getUsername(),
@@ -690,7 +690,7 @@ public class ChatRoomService {
         List<ChatRoomUser> activeChatRoomUsers = chatRoomUserRepository.findActiveChatRoomUsers(chatRoomId);
 
         // ChatEvent 생성
-        ChatEvent chatEvent = ChatEvent.of(
+        ChatEvent chatEvent = ChatEvent.messageSent(
                 findChatRoom.getChatRoomId(),
                 userId,
                 findUser.getUsername(),
@@ -827,7 +827,7 @@ public class ChatRoomService {
                     )
             );
 
-            chatEvent = ChatEvent.of(
+            chatEvent = ChatEvent.messageSent(
                     findChatRoom.getChatRoomId(),
                     findUser.getUserId(),
                     findUser.getUsername(),
