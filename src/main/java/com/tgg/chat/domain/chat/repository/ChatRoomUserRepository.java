@@ -3,6 +3,7 @@ package com.tgg.chat.domain.chat.repository;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -88,4 +89,16 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
           and cru.user.userId <> :userId
     """)
     List<ChatRoomUser> findOtherActiveChatRoomUsers(Long chatRoomId, Long userId);
+
+    @Modifying(
+            flushAutomatically = true,
+            clearAutomatically = true
+    )
+    @Query("""
+            update ChatRoomUser cru
+            set cru.unreadStartMessageId = :newUnreadStartMessageId
+            where cru.chatRoomUserId = :chatRoomUserId
+            and cru.unreadStartMessageId < :newUnreadStartMessageId
+            """)
+    int advanceUnreadStartMessageId(Long chatRoomUserId, Long newUnreadStartMessageId);
 }

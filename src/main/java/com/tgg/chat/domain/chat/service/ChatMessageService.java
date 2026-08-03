@@ -182,5 +182,24 @@ public class ChatMessageService {
         if(findChatRoomUser.getVisibleStartMessageId() > readMessageId) {
             throw new ErrorException(ErrorCode.CHAT_MESSAGE_ACCESS_DENIED);
         }
+
+        Long newUnreadStartMessageId = readMessageId + 1;
+        chatRoomUserRepository.advanceUnreadStartMessageId(findChatRoomUser.getChatRoomUserId(), newUnreadStartMessageId);
+
+        ChatRoomUser updatedChatRoomUser = chatRoomUserRepository.findById(findChatRoomUser.getChatRoomUserId()).get();
+        Long unreadCount = chatMessageRepository.countUnreadMessages(chatRoomId, updatedChatRoomUser.getUnreadStartMessageId());
+
+        ChatEvent chatEvent = ChatEvent.messageRead(
+            chatRoomId,
+            user.getUserId(),
+            updatedChatRoomUser.getUnreadStartMessageId()
+        );
+
+        ChatRoomListEvent chatRoomListEvent = ChatRoomListEvent.messageRead(
+                chatRoomId,
+                userId,
+                updatedChatRoomUser.getUnreadStartMessageId(),
+                unreadCount
+        );
     }
 }
