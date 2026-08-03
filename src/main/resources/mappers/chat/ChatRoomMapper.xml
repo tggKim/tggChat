@@ -103,7 +103,6 @@
             AND cm.chat_message_id &gt;= cru.visible_start_message_id
         ) ranked
         WHERE ranked.message_order = 1
-        ORDER BY ranked.chat_room_id
     </select>
 
     <select id="findUnreadMessageCountsByUserIdAndChatRoomIds">
@@ -120,6 +119,5 @@
         </foreach>
         AND cm.chat_message_id &gt;= cru.unread_start_message_id
         GROUP BY cm.chat_room_id
-        ORDER BY cm.chat_room_id
     </select>
 </mapper>
