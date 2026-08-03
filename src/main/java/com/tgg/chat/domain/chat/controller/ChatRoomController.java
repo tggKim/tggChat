@@ -211,32 +211,6 @@ public class ChatRoomController {
                 .body(responseDto);
     }
 
-    @GetMapping("/chatRooms")
-    @SecurityRequirement(name = "JWT Auth")
-    @Operation(
-            summary = "채팅방 목록 조회",
-            description =  "채팅방 목록을 조회합니다."
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "채팅방 목록 조회 성공",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ChatRoomListResponseDto.class)
-                    )
-            )
-    })
-    public ResponseEntity<List<ChatRoomListResponseDto>> findAllChatRooms(
-    		@AuthenticationPrincipal AuthenticatedUser authenticatedUser
-    ) {
-        List<ChatRoomListResponseDto> responseDto = chatRoomService.findAllChatRooms(authenticatedUser.getUserId());
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(responseDto);
-    }
-
     @PostMapping("/directChatRooms/{chatRoomId}/invites")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
@@ -655,5 +629,49 @@ public class ChatRoomController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(chatRoomMembersResponseDtos);
+    }
+
+    @GetMapping("/chatRooms")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "채팅방 목록 조회",
+            description = """
+                현재 사용자가 참여 중인 채팅방 목록을 조회합니다.
+                채팅방 목록은 최근 활동 시각을 기준으로 내림차순 정렬됩니다.
+                참여 중인 채팅방이 없으면 빈 배열을 반환합니다.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "채팅방 목록 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(
+                                    schema = @Schema(
+                                            implementation = ChatRoomListResponseDto.class
+                                    )
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "존재하지 않거나 삭제된 사용자입니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
+    public ResponseEntity<List<ChatRoomListResponseDto>> findAllChatRooms(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        List<ChatRoomListResponseDto> responseDto = chatRoomService.findAllChatRooms(authenticatedUser.getUserId());
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(responseDto);
     }
 }
