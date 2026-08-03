@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
+import com.tgg.chat.domain.chat.dto.internal.ReadChatMessageResult;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
 import com.tgg.chat.domain.chat.dto.request.ReadChatMessagesRequestDto;
 import com.tgg.chat.domain.chat.repository.*;
@@ -155,7 +156,7 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public void readChatMessage(Long userId, Long chatRoomId, ReadChatMessagesRequestDto requestDto) {
+    public ReadChatMessageResult readChatMessage(Long userId, Long chatRoomId, ReadChatMessagesRequestDto requestDto) {
         Long readMessageId = requestDto.getReadMessageId();
 
         // 유저가 채팅방에 속한 유저인지 검증
@@ -195,11 +196,19 @@ public class ChatMessageService {
             updatedChatRoomUser.getUnreadStartMessageId()
         );
 
-        ChatRoomListEvent chatRoomListEvent = ChatRoomListEvent.messageRead(
+        List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
+        chatRoomListEvents.add(
+            ChatRoomListEvent.messageRead(
                 chatRoomId,
                 userId,
                 updatedChatRoomUser.getUnreadStartMessageId(),
                 unreadCount
+            )
+        );
+
+        return ReadChatMessageResult.of(
+            chatRoomListEvents,
+            chatEvent
         );
     }
 }
