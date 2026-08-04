@@ -1,6 +1,5 @@
 package com.tgg.chat.domain.friend.repository;
 
-import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.friend.entity.UserFriend;
 import com.tgg.chat.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -50,14 +49,15 @@ public interface UserFriendRepository extends JpaRepository<UserFriend, Long> {
             and not exists (
                 select cru
                 from ChatRoomUser cru
+                join cru.chatRoom cr
                 where cru.chatRoom.chatRoomId = :chatRoomId
                 and cru.user.userId = friend.userId
                 and (
                     cru.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
                     or
-                    :chatRoomType = com.tgg.chat.domain.chat.enums.ChatRoomType.DIRECT
+                    cr.chatRoomType = com.tgg.chat.domain.chat.enums.ChatRoomType.DIRECT
                 )
             )
             """)
-    List<User> findInvitableFriends(Long userId, Long chatRoomId, ChatRoomType chatRoomType);
+    List<User> findInvitableFriends(Long userId, Long chatRoomId);
 }
