@@ -27,6 +27,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: rootpass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SECRET: tggChatProjectJwtSecretKey_2025_!@#A1b2C3
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     volumes:
       - chatApp_logs:/chatApp/logs
   
