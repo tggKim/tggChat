@@ -50,19 +50,21 @@ public class StoredFileService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
+        // 기존 저장된 파일들이 있다면 삭제하기 위해 미리 key 추출
         String previousProfileImageKey = findUser.getProfileImageKey();
 
-        // 새로운 fileKey를 생성 후 유저의 정보 업데이트
+        // 새로운 key를 생성 후 유저의 정보 업데이트
         String newProfileImageKey = "user:" + userId + ":" + UUID.randomUUID();
         findUser.updateProfileImageKey(newProfileImageKey);
 
-        // 이미지와 썸네일 이미지 저장
+        // 요청을 받은 파일의 타입을 검사하고 알아낸다, 이미지의 첫번째 프레임을 썸네일로 사용한다
         String imageFormat;
         BufferedImage firstFrame;
         try(
                 InputStream inputStream = userProfileImage.getInputStream();
                 ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream)
         ) {
+            // 파일을 처리할 수 있는 ImageReader가 있는지 검증
             Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
             if(!readers.hasNext()) {
                 throw new ErrorException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
@@ -74,6 +76,7 @@ public class StoredFileService {
                 reader.setInput(imageInputStream);
                 imageFormat = reader.getFormatName().toLowerCase(Locale.ROOT);
 
+                // 파일의 포맷을 가져온뒤 jpeg, png, gif, webp 중 하나인지 검증
                 if (!ALLOWED_IMAGE_FORMATS.contains(imageFormat)) {
                     throw new ErrorException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
                 }
