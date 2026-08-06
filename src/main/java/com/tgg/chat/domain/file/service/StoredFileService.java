@@ -13,15 +13,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
 public class StoredFileService {
+    private static final Set<String> ALLOWED_IMAGE_FORMATS = Set.of("jpeg", "png", "gif", "webp");
+
     private final UserRepository userRepository;
     private final StoredFileRepository storedFileRepository;
 
@@ -51,15 +57,48 @@ public class StoredFileService {
         findUser.updateProfileImageKey(newProfileImageKey);
 
         // 이미지와 썸네일 이미지 저장
-        String imageName = UUID.randomUUID().toString();
-        String thumbnailImageName = UUID.randomUUID().toString();
+        String imageFormat;
+        BufferedImage firstFrame;
+        try(
+                InputStream inputStream = userProfileImage.getInputStream();
+                ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream)
+        ) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+            if(!readers.hasNext()) {
+                throw new ErrorException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
+            }
+
+            ImageReader reader = readers.next();
+
+            try {
+                reader.setInput(imageInputStream);
+                imageFormat = reader.getFormatName().toLowerCase(Locale.ROOT);
+
+                if (!ALLOWED_IMAGE_FORMATS.contains(imageFormat)) {
+                    throw new ErrorException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
+                }
+
+                // GIF와 WebP가 애니메이션이어도 첫 프레임만 읽는다.
+                firstFrame = reader.read(0);
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String originalExtension = imageFormat.equals("jpeg") ? ".jpg" : "." + imageFormat;
+        String originalContentType = "image/" + imageFormat;
+
+        String imageName = UUID.randomUUID() + originalExtension;
+        String thumbnailImageName = UUID.randomUUID() + ".jpg";
         Path imagePath = fileRootPath.resolve(imageName);
         Path thumbnailImagePath = fileRootPath.resolve(thumbnailImageName);
         long thumbnailFileSize;
         try {
             userProfileImage.transferTo(imagePath);
 
-            Thumbnails.of(imagePath.toFile())
+            Thumbnails.of(firstFrame)
                     .size(320, 320)
                     .keepAspectRatio(true)
                     .outputFormat("jpg")
@@ -89,7 +128,7 @@ public class StoredFileService {
                         newProfileImageKey,
                         imageName,
                         userProfileImage.getOriginalFilename(),
-                        userProfileImage.getContentType(),
+                        originalContentType,
                         userProfileImage.getSize(),
                         1)
         );

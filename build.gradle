@@ -71,6 +71,9 @@ dependencies {
 
     // Thumbnail
     implementation 'net.coobird:thumbnailator:0.4.21'
+
+    // WebP ImageIO Reader
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
 }
 
 tasks.named('test') {
