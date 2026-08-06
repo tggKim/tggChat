@@ -29,8 +29,10 @@ services:
       SECRET: tggChatProjectJwtSecretKey_2025_!@#A1b2C3
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+      FILE_ROOT_PATH: /chatApp/files
     volumes:
       - chatApp_logs:/chatApp/logs
+      - /home/ubuntu/tgg-chat/files:/chatApp/files
   
   redis:
     image: redis:7
