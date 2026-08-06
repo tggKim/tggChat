@@ -30,3 +30,5 @@ springdoc:
  override-with-generic-response: false
 
 JWT_SECRET_KEY: ${SECRET}
+
+file_root_path: ${FILE_ROOT_PATH}

@@ -68,7 +68,9 @@ dependencies {
     
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	
+
+    // Thumbnail
+    implementation 'net.coobird:thumbnailator:0.4.21'
 }
 
 tasks.named('test') {
