@@ -11,13 +11,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Stored File API", description = "파일 저장 및 조회 API")
@@ -74,5 +73,21 @@ public class StoredFileController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(null);
+    }
+
+    @GetMapping(
+            value = "/profile-images/{fileKey}/thumbnail",
+            produces = MediaType.IMAGE_JPEG_VALUE
+    )
+    public ResponseEntity<FileSystemResource> findUserThumbnail(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable String fileKey
+    ) {
+        FileSystemResource fileSystemResource = storedFileService.findUserThumbnail(authenticatedUser.getUserId(), fileKey);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(fileSystemResource);
     }
 }

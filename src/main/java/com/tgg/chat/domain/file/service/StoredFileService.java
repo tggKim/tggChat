@@ -9,6 +9,7 @@ import com.tgg.chat.exception.ErrorException;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -165,5 +166,22 @@ public class StoredFileService {
 
             storedFileRepository.deleteAll(previousStoredFiles);
         }
+    }
+
+    public FileSystemResource findUserThumbnail(Long userId, String fileKey) {
+        User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        StoredFile findStoredFile = storedFileRepository.findByFileKeyAndFileOrder(fileKey, 2).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
+        String savedFileName = findStoredFile.getStoredFileName();
+
+        Path thumbnailImagePath = fileRootPath.resolve(savedFileName);
+        if(!Files.isRegularFile(thumbnailImagePath)) {
+            throw new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND);
+        }
+
+        return new FileSystemResource(thumbnailImagePath);
     }
 }
