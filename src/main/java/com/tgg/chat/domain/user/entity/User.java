@@ -61,4 +61,7 @@ public class User {
         this.username = username;
     }
 
+    public void updateProfileImageKey(String profileImageKey) {
+        this.profileImageKey = profileImageKey;
+    }
 }
