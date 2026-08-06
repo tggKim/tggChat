@@ -21,13 +21,13 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-public class FileStoredService {
+public class StoredFileService {
     private final UserRepository userRepository;
     private final StoredFileRepository storedFileRepository;
 
     private final Path fileRootPath;
 
-    public FileStoredService(
+    public StoredFileService(
             @Value("${file_root_path}") String fileRootPath,
             StoredFileRepository storedFileRepository,
             UserRepository userRepository
