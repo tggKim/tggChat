@@ -98,14 +98,8 @@ public class StoredFileController {
 
         MediaType mediaType = MediaType.parseMediaType(contentType);
 
-        ContentDisposition contentDisposition = ContentDisposition
-                .inline()
-                .filename(findUserImageResult.getOriginalFileName(), StandardCharsets.UTF_8)
-                .build();
-
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .contentType(mediaType)
                 .body(fileSystemResource);
     }

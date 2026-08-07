@@ -7,15 +7,13 @@ import org.springframework.core.io.FileSystemResource;
 public class FindUserImageResult {
     private final FileSystemResource fileSystemResource;
     private final String contentType;
-    private final String originalFileName;
 
-    private FindUserImageResult(FileSystemResource fileSystemResource, String contentType, String originalFileName) {
+    private FindUserImageResult(FileSystemResource fileSystemResource, String contentType) {
         this.fileSystemResource = fileSystemResource;
         this.contentType = contentType;
-        this.originalFileName = originalFileName;
     }
 
-    public static FindUserImageResult of(FileSystemResource fileSystemResource, String contentType, String originalFileName) {
-        return new FindUserImageResult(fileSystemResource, contentType, originalFileName);
+    public static FindUserImageResult of(FileSystemResource fileSystemResource, String contentType) {
+        return new FindUserImageResult(fileSystemResource, contentType);
     }
 }
