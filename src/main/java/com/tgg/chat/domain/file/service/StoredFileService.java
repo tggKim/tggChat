@@ -169,12 +169,7 @@ public class StoredFileService {
         }
     }
 
-    public FileSystemResource findUserThumbnail(Long userId, String fileKey) {
-        User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-        if(findUser.getDeleted()) {
-            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-        }
-
+    public FileSystemResource findUserThumbnail(String fileKey) {
         StoredFile findStoredFile = storedFileRepository.findByFileKeyAndFileOrder(fileKey, 2).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
 
@@ -186,12 +181,7 @@ public class StoredFileService {
         return new FileSystemResource(thumbnailImagePath);
     }
 
-    public FindUserImageResult findUserImage(Long userId, String fileKey) {
-        User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-        if(findUser.getDeleted()) {
-            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
-        }
-
+    public FindUserImageResult findUserImage(String fileKey) {
         StoredFile findStoredFile = storedFileRepository.findByFileKeyAndFileOrder(fileKey, 1).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
 
@@ -202,6 +192,6 @@ public class StoredFileService {
 
         FileSystemResource fileSystemResource = new FileSystemResource(imagePath);
 
-        return FindUserImageResult.of(fileSystemResource, findStoredFile.getContentType(), findStoredFile.getOriginalFileName());
+        return FindUserImageResult.of(fileSystemResource, findStoredFile.getContentType());
     }
 }

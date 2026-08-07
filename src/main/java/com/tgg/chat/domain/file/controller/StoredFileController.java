@@ -75,10 +75,9 @@ public class StoredFileController {
 
     @GetMapping(value = "/profile-images/{fileKey}/thumbnail")
     public ResponseEntity<FileSystemResource> findUserThumbnail(
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @PathVariable String fileKey
     ) {
-        FileSystemResource fileSystemResource = storedFileService.findUserThumbnail(authenticatedUser.getUserId(), fileKey);
+        FileSystemResource fileSystemResource = storedFileService.findUserThumbnail(fileKey);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -88,10 +87,9 @@ public class StoredFileController {
 
     @GetMapping("/profile-images/{fileKey}/image")
     public ResponseEntity<FileSystemResource> findUserImage(
-        @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
         @PathVariable String fileKey
     ) {
-        FindUserImageResult findUserImageResult = storedFileService.findUserImage(authenticatedUser.getUserId(), fileKey);
+        FindUserImageResult findUserImageResult = storedFileService.findUserImage(fileKey);
 
         FileSystemResource fileSystemResource = findUserImageResult.getFileSystemResource();
         String contentType = findUserImageResult.getContentType();
