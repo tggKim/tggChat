@@ -1,8 +1,11 @@
 package com.tgg.chat.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tgg.chat.common.messaging.event.UserMetadataEvent;
+import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.jwt.JwtSecurityFilter;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
+import com.tgg.chat.domain.user.dto.internal.UpdatedUserResult;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
@@ -28,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,6 +57,9 @@ class UserControllerTest {
 
     @MockitoBean
     JpaMetamodelMappingContext jpaMetamodelMappingContext;
+
+    @MockitoBean
+    RedisPublisher redisPublisher;
 
     @Test
     @DisplayName("회원가입 api 성공")
@@ -413,6 +420,14 @@ class UserControllerTest {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
+        UserMetadataEvent userMetadataEvent = UserMetadataEvent.usernameUpdated(
+                1L,
+                "updateUsername",
+                List.of(2L, 3L, 4L)
+        );
+        UpdatedUserResult updatedUserResult = UpdatedUserResult.of(userMetadataEvent);
+        when(userService.updateUser(eq(1L), any(UserUpdateRequestDto.class))).thenReturn(updatedUserResult);
+
         // when & then
         try {
             mockMvc.perform(patch("/me")
@@ -423,6 +438,8 @@ class UserControllerTest {
             ArgumentCaptor<UserUpdateRequestDto> argumentCaptor = ArgumentCaptor.forClass(UserUpdateRequestDto.class);
             verify(userService, times(1)).updateUser(eq(1L), argumentCaptor.capture());
             UserUpdateRequestDto userUpdateRequestDto = argumentCaptor.getValue();
+
+            verify(redisPublisher, times(1)).publishUserMetadataEvent(same(userMetadataEvent));
 
             assertThat(userUpdateRequestDto.getUsername()).isEqualTo("updateUsername");
         } finally {
@@ -449,6 +466,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("사용자명은 필수입니다."));
 
         verify(userService, never()).updateUser(anyLong(), any(UserUpdateRequestDto.class));
+        verify(redisPublisher, never()).publishUserMetadataEvent(any(UserMetadataEvent.class));
     }
 
     @Test
@@ -471,6 +489,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("사용자명 길이는 50자 이하입니다."));
 
         verify(userService, never()).updateUser(anyLong(), any(UserUpdateRequestDto.class));
+        verify(redisPublisher, never()).publishUserMetadataEvent(any(UserMetadataEvent.class));
     }
 
     @Test
@@ -503,6 +522,8 @@ class UserControllerTest {
             UserUpdateRequestDto userUpdateRequestDto = argumentCaptor.getValue();
 
             assertThat(userUpdateRequestDto.getUsername()).isEqualTo("updateUsername");
+
+            verify(redisPublisher, never()).publishUserMetadataEvent(any(UserMetadataEvent.class));
         } finally {
             SecurityContextHolder.clearContext();
         }
@@ -538,6 +559,8 @@ class UserControllerTest {
             UserUpdateRequestDto userUpdateRequestDto = argumentCaptor.getValue();
 
             assertThat(userUpdateRequestDto.getUsername()).isEqualTo("updateUsername");
+
+            verify(redisPublisher, never()).publishUserMetadataEvent(any(UserMetadataEvent.class));
         } finally {
             SecurityContextHolder.clearContext();
         }

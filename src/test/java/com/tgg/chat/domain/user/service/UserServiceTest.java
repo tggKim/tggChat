@@ -1,6 +1,9 @@
 package com.tgg.chat.domain.user.service;
 
+import com.tgg.chat.common.messaging.event.UserMetadataEvent;
+import com.tgg.chat.common.messaging.event.UserMetadataEventType;
 import com.tgg.chat.common.security.token.RedisTokenStore;
+import com.tgg.chat.domain.user.dto.internal.UpdatedUserResult;
 import com.tgg.chat.domain.user.dto.request.SignUpRequestDto;
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
@@ -21,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -258,14 +262,25 @@ class UserServiceTest {
 
         when(userRepository.existsByUsername("updateUsername")).thenReturn(false);
 
+        List<Long> eventUserIds = List.of(2L, 3L, 4L);
+        when(userRepository.findAllInteractingUserIds(1L)).thenReturn(eventUserIds);
+
         // when
-        userService.updateUser(1L, requestDto);
+        UpdatedUserResult updatedUserResult = userService.updateUser(1L, requestDto);
 
         // then
         assertThat(findUser.getUsername()).isEqualTo("updateUsername");
 
+        UserMetadataEvent userMetadataEvent = updatedUserResult.getUserMetadataEvent();
+        assertThat(userMetadataEvent.getUserMetadataEventType()).isEqualTo(UserMetadataEventType.USERNAME_UPDATED);
+        assertThat(userMetadataEvent.getUserId()).isEqualTo(1L);
+        assertThat(userMetadataEvent.getUsername()).isEqualTo("updateUsername");
+        assertThat(userMetadataEvent.getUserProfileImageKey()).isNull();
+        assertThat(userMetadataEvent.getEventUserIds()).containsExactlyElementsOf(eventUserIds);
+
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).existsByUsername("updateUsername");
+        verify(userRepository, times(1)).findAllInteractingUserIds(1L);
     }
 
     @Test
@@ -279,14 +294,25 @@ class UserServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
+        List<Long> eventUserIds = List.of(2L, 3L, 4L);
+        when(userRepository.findAllInteractingUserIds(1L)).thenReturn(eventUserIds);
+
         // when
-        userService.updateUser(1L, requestDto);
+        UpdatedUserResult updatedUserResult = userService.updateUser(1L, requestDto);
 
         // then
         assertThat(findUser.getUsername()).isEqualTo("testUsername");
 
+        UserMetadataEvent userMetadataEvent = updatedUserResult.getUserMetadataEvent();
+        assertThat(userMetadataEvent.getUserMetadataEventType()).isEqualTo(UserMetadataEventType.USERNAME_UPDATED);
+        assertThat(userMetadataEvent.getUserId()).isEqualTo(1L);
+        assertThat(userMetadataEvent.getUsername()).isEqualTo("testUsername");
+        assertThat(userMetadataEvent.getUserProfileImageKey()).isNull();
+        assertThat(userMetadataEvent.getEventUserIds()).containsExactlyElementsOf(eventUserIds);
+
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, never()).existsByUsername(anyString());
+        verify(userRepository, times(1)).findAllInteractingUserIds(1L);
     }
 
     @Test
@@ -306,6 +332,7 @@ class UserServiceTest {
 
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, never()).existsByUsername(anyString());
+        verify(userRepository, never()).findAllInteractingUserIds(anyLong());
     }
 
     @Test
@@ -327,6 +354,7 @@ class UserServiceTest {
 
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, never()).existsByUsername(anyString());
+        verify(userRepository, never()).findAllInteractingUserIds(anyLong());
     }
 
     @Test
@@ -349,6 +377,7 @@ class UserServiceTest {
 
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).existsByUsername("updateUsername");
+        verify(userRepository, never()).findAllInteractingUserIds(anyLong());
     }
 
     @Test
