@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.file.service;
 
+import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
 import com.tgg.chat.domain.file.repository.StoredFileRepository;
 import com.tgg.chat.domain.user.entity.User;
@@ -183,5 +184,24 @@ public class StoredFileService {
         }
 
         return new FileSystemResource(thumbnailImagePath);
+    }
+
+    public FindUserImageResult findUserImage(Long userId, String fileKey) {
+        User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        StoredFile findStoredFile = storedFileRepository.findByFileKeyAndFileOrder(fileKey, 1).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
+        String savedFileName = findStoredFile.getStoredFileName();
+
+        Path imagePath = fileRootPath.resolve(savedFileName);
+        if(!Files.isRegularFile(imagePath)) {
+            throw new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND);
+        }
+
+        FileSystemResource fileSystemResource = new FileSystemResource(imagePath);
+
+        return FindUserImageResult.of(fileSystemResource, findStoredFile.getContentType(), findStoredFile.getOriginalFileName());
     }
 }

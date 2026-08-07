@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.file.controller;
 
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
+import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.service.StoredFileService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,12 +13,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.charset.StandardCharsets;
 
 @Tag(name = "Stored File API", description = "파일 저장 및 조회 API")
 @RestController
@@ -25,10 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class StoredFileController {
     private final StoredFileService storedFileService;
 
-    @PutMapping(
-            value = "/me/profile-image",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PutMapping(value = "/me/profile-image")
     @SecurityRequirement(name = "JWT Auth")
     @Operation(
             summary = "프로필 이미지 변경",
@@ -75,10 +73,7 @@ public class StoredFileController {
                 .body(null);
     }
 
-    @GetMapping(
-            value = "/profile-images/{fileKey}/thumbnail",
-            produces = MediaType.IMAGE_JPEG_VALUE
-    )
+    @GetMapping(value = "/profile-images/{fileKey}/thumbnail")
     public ResponseEntity<FileSystemResource> findUserThumbnail(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @PathVariable String fileKey
@@ -88,6 +83,30 @@ public class StoredFileController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .contentType(MediaType.IMAGE_JPEG)
+                .body(fileSystemResource);
+    }
+
+    @GetMapping("/profile-images/{fileKey}/image")
+    public ResponseEntity<FileSystemResource> findUserImage(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+        @PathVariable String fileKey
+    ) {
+        FindUserImageResult findUserImageResult = storedFileService.findUserImage(authenticatedUser.getUserId(), fileKey);
+
+        FileSystemResource fileSystemResource = findUserImageResult.getFileSystemResource();
+        String contentType = findUserImageResult.getContentType();
+
+        MediaType mediaType = MediaType.parseMediaType(contentType);
+
+        ContentDisposition contentDisposition = ContentDisposition
+                .inline()
+                .filename(findUserImageResult.getOriginalFileName(), StandardCharsets.UTF_8)
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                .contentType(mediaType)
                 .body(fileSystemResource);
     }
 }
