@@ -20,6 +20,9 @@ public class UserResponseDto {
     @Schema(description = "유저 이름", example = "user1")
     private final String username;
 
+    @Schema(description = "유저 프로필 이미지 키", example = "use:1:key")
+    private final String profileImageKey;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "가입 일시", example = "2025-02-13 14:23:44")
     private final LocalDateTime createdAt;
@@ -28,16 +31,17 @@ public class UserResponseDto {
     @Schema(description = "마지막 수정 일시", example = "2025-02-13 14:23:44")
     private final LocalDateTime updatedAt;
 
-    private UserResponseDto(Long userId, String email, String username, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    private UserResponseDto(Long userId, String email, String username, LocalDateTime createdAt, LocalDateTime updatedAt, String profileImageKey) {
         this.userId = userId;
         this.email = email;
         this.username = username;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.profileImageKey = profileImageKey;
     }
 
     public static UserResponseDto of(User user) {
-        return new UserResponseDto(user.getUserId(), user.getEmail(), user.getUsername(), user.getCreatedAt(), user.getUpdatedAt());
+        return new UserResponseDto(user.getUserId(), user.getEmail(), user.getUsername(), user.getCreatedAt(), user.getUpdatedAt(), user.getProfileImageKey());
     }
 
 }
