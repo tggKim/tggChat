@@ -1,5 +1,8 @@
 package com.tgg.chat.domain.user.controller;
 
+import com.tgg.chat.common.messaging.event.UserMetadataEvent;
+import com.tgg.chat.common.messaging.redis.RedisPublisher;
+import com.tgg.chat.domain.user.dto.internal.UpdatedUserResult;
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import org.springframework.http.HttpStatus;
@@ -28,8 +31,8 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 public class UserController {
-
 	private final UserService userService;
+    private final RedisPublisher redisPublisher;
 	
 	@PostMapping("/user")
 	@Operation(
@@ -186,7 +189,11 @@ public class UserController {
         )
 	})
 	public ResponseEntity<Void> updateUser(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
-		userService.updateUser(authenticatedUser.getUserId(), userUpdateRequestDto);
+		UpdatedUserResult updatedUserResult = userService.updateUser(authenticatedUser.getUserId(), userUpdateRequestDto);
+
+        UserMetadataEvent userMetadataEvent = updatedUserResult.getUserMetadataEvent();
+
+        redisPublisher.publishUserMetadataEvent(userMetadataEvent);
 
 		return ResponseEntity
 				.status(HttpStatus.OK)

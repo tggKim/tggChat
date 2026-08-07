@@ -78,4 +78,8 @@ public class ChatEvent {
                 unreadStartMessageId
         );
     }
+
+    public void clearEventUserIds() {
+        this.eventUserIds = null;
+    }
 }

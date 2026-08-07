@@ -1,6 +1,8 @@
 package com.tgg.chat.domain.user.service;
 
+import com.tgg.chat.common.messaging.event.UserMetadataEvent;
 import com.tgg.chat.common.security.token.RedisTokenStore;
+import com.tgg.chat.domain.user.dto.internal.UpdatedUserResult;
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +18,8 @@ import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -61,7 +65,7 @@ public class UserService {
     }
 
 	@Transactional
-	public void updateUser(Long loginUserId, UserUpdateRequestDto userUpdateRequestDto) {
+	public UpdatedUserResult updateUser(Long loginUserId, UserUpdateRequestDto userUpdateRequestDto) {
 		User findUser = findActiveUserById(loginUserId);
 
         String newUsername = userUpdateRequestDto.getUsername();
@@ -71,7 +75,16 @@ public class UserService {
         }
 
 		findUser.update(newUsername);
-	}
+
+        List<Long> eventUserIds = userRepository.findAllInteractingUserIds(loginUserId);
+
+        return UpdatedUserResult.of(
+                UserMetadataEvent.usernameUpdated(
+                        loginUserId,
+                        newUsername,
+                        eventUserIds)
+        );
+    }
 
 	@Transactional
 	public void deleteUser(Long userId) {

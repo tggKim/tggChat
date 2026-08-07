@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.messaging.event.ChatEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
+import com.tgg.chat.common.messaging.event.UserMetadataEvent;
 import com.tgg.chat.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ public class RedisSubscriber implements MessageListener {
                 handleChatRoomListEvents(payload);
             } else if(channel.startsWith("chat:room:")) {
                 handleChatEvent(payload);
+            } else if(channel.equals("user:metadata")) {
+                handleUserMetadataEvent(payload);
             }
         } catch (Exception e) {
             ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
@@ -50,6 +53,9 @@ public class RedisSubscriber implements MessageListener {
         // ChatEvent 로 역직렬화
         ChatEvent chatEvent = objectMapper.readValue(payload, ChatEvent.class);
 
+        List<Long> eventUserIds = chatEvent.getEventUserIds();
+        chatEvent.clearEventUserIds();
+
         // 채팅방에서 구독중인 /topic/chatRooms/* 경로로 발행한다.
         messagingTemplate.convertAndSend("/topic/chatRooms/" + chatEvent.getRoomId(), chatEvent);
 
@@ -60,7 +66,7 @@ public class RedisSubscriber implements MessageListener {
                 chatEvent.getMessageId(),
                 chatEvent.getCreatedAt()
         );
-        chatEvent.getEventUserIds().forEach(userId -> {
+        eventUserIds.forEach(userId -> {
             messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/chatRooms/list", chatRoomListEvent);
         });
     }
@@ -71,6 +77,18 @@ public class RedisSubscriber implements MessageListener {
 
         chatRoomListEvents.forEach(chatRoomListEvent -> {
             messagingTemplate.convertAndSendToUser(String.valueOf(chatRoomListEvent.getReceiverUserId()), "/queue/chatRooms/list", chatRoomListEvent);
+        });
+    }
+
+    private void handleUserMetadataEvent(String payload) throws JsonProcessingException {
+        // UserMetadataEvent 로 역직렬화
+        UserMetadataEvent userMetadataEvent = objectMapper.readValue(payload, UserMetadataEvent.class);
+
+        List<Long> eventUserIds = userMetadataEvent.getEventUserIds();
+        userMetadataEvent.clearEventUserIds();
+
+        eventUserIds.forEach(userId -> {
+            messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/users/metadata", userMetadataEvent);
         });
     }
 }

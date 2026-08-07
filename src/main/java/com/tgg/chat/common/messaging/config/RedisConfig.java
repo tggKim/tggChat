@@ -38,6 +38,7 @@ public class RedisConfig {
         // 해당 채널들로 메시지 오면 messageListener로 전달
         container.addMessageListener(redisSubscriber, new PatternTopic("chat:room:*"));
         container.addMessageListener(redisSubscriber, new PatternTopic("chat:room-list"));
+        container.addMessageListener(redisSubscriber, new PatternTopic("user:metadata"));
 
         return container;
     }
