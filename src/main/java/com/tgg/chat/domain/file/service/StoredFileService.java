@@ -2,6 +2,7 @@ package com.tgg.chat.domain.file.service;
 
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
+import com.tgg.chat.domain.file.enums.StoredFileVariant;
 import com.tgg.chat.domain.file.repository.StoredFileRepository;
 import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
@@ -135,7 +136,9 @@ public class StoredFileService {
                         userProfileImage.getOriginalFilename(),
                         originalContentType,
                         userProfileImage.getSize(),
-                        1)
+                        1,
+                        StoredFileVariant.ORIGINAL
+                )
         );
 
         // 썸네일 이미지에 대한 StoredFile 저장
@@ -146,7 +149,9 @@ public class StoredFileService {
                         userProfileImage.getOriginalFilename(),
                         "image/jpeg",
                         thumbnailFileSize,
-                        2)
+                        2,
+                        StoredFileVariant.THUMBNAIL
+                )
         );
 
         // 기존의 파일이 있었다면 실제파일과 StoredFile 모두 삭제
@@ -170,7 +175,7 @@ public class StoredFileService {
     }
 
     public FileSystemResource findUserThumbnail(String fileKey) {
-        StoredFile findStoredFile = storedFileRepository.findByFileKeyAndFileOrder(fileKey, 2).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
+        StoredFile findStoredFile = storedFileRepository.findByFileKeyAndStoredFileVariant(fileKey, StoredFileVariant.THUMBNAIL).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
 
         Path thumbnailImagePath = fileRootPath.resolve(savedFileName);
@@ -182,7 +187,7 @@ public class StoredFileService {
     }
 
     public FindUserImageResult findUserImage(String fileKey) {
-        StoredFile findStoredFile = storedFileRepository.findByFileKeyAndFileOrder(fileKey, 1).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
+        StoredFile findStoredFile = storedFileRepository.findByFileKeyAndStoredFileVariant(fileKey, StoredFileVariant.ORIGINAL).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
 
         Path imagePath = fileRootPath.resolve(savedFileName);
