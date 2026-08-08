@@ -1,5 +1,7 @@
 package com.tgg.chat.domain.file.controller;
 
+import com.tgg.chat.common.messaging.event.UserMetadataEvent;
+import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.service.StoredFileService;
@@ -25,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class StoredFileController {
     private final StoredFileService storedFileService;
+    private final RedisPublisher redisPublisher;
 
     @PutMapping(value = "/me/profile-image")
     @SecurityRequirement(name = "JWT Auth")
@@ -66,7 +69,9 @@ public class StoredFileController {
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestPart MultipartFile userProfileImage
     ) {
-        storedFileService.saveUserProfile(authenticatedUser.getUserId(), userProfileImage);
+        UserMetadataEvent userMetadataEvent = storedFileService.saveUserProfile(authenticatedUser.getUserId(), userProfileImage);
+
+        redisPublisher.publishUserMetadataEvent(userMetadataEvent);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

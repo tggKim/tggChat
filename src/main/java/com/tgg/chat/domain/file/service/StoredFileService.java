@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.file.service;
 
+import com.tgg.chat.common.messaging.event.UserMetadataEvent;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
 import com.tgg.chat.domain.file.enums.StoredFileVariant;
@@ -47,7 +48,7 @@ public class StoredFileService {
     }
 
     @Transactional
-    public void saveUserProfile(Long userId, MultipartFile userProfileImage) {
+    public UserMetadataEvent saveUserProfile(Long userId, MultipartFile userProfileImage) {
         User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
         if(findUser.getDeleted()) {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
@@ -154,6 +155,9 @@ public class StoredFileService {
                 )
         );
 
+        // 수신자 조회 실패 시 기존 파일이 먼저 삭제되지 않도록 삭제 전에 조회
+        List<Long> eventUserIds = userRepository.findAllInteractingUserIds(userId);
+        
         // 기존의 파일이 있었다면 실제파일과 StoredFile 모두 삭제
         if(previousProfileImageKey != null) {
             List<StoredFile> previousStoredFiles = storedFileRepository.findAllByFileKey(previousProfileImageKey);
@@ -172,6 +176,8 @@ public class StoredFileService {
 
             storedFileRepository.deleteAll(previousStoredFiles);
         }
+        
+        return UserMetadataEvent.userProfileImageUpdated(userId, newProfileImageKey, eventUserIds);
     }
 
     public FileSystemResource findUserThumbnail(String fileKey) {
