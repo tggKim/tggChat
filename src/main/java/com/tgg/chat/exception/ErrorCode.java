@@ -61,6 +61,8 @@ public enum ErrorCode {
     // 파일(StoredFile)
     UNSUPPORTED_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "SF001", "JPG, PNG, GIF, WebP 형식의 이미지만 사용할 수 있습니다."),
     STORED_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "SF002", "해당 파일을 찾을 수 없습니다."),
+    CHAT_FILE_REQUIRED(HttpStatus.BAD_REQUEST, "SF003", "비어 있지 않은 파일을 1개 이상 선택해야 합니다."),
+    CHAT_FILE_COUNT_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "SF004", "한 번에 최대 30개의 파일만 전송할 수 있습니다."),
 
     // 웹소켓
     WEBSOCKET_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "W001", "인증되지 않은 WebSocket 요청입니다.");

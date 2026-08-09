@@ -1,6 +1,9 @@
 package com.tgg.chat.domain.file.service;
 
 import com.tgg.chat.common.messaging.event.UserMetadataEvent;
+import com.tgg.chat.domain.chat.entity.ChatRoomUser;
+import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
+import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
 import com.tgg.chat.domain.file.enums.FileCategory;
@@ -35,17 +38,20 @@ public class StoredFileService {
 
     private final UserRepository userRepository;
     private final StoredFileRepository storedFileRepository;
+    private final ChatRoomUserRepository chatRoomUserRepository;
 
     private final Path fileRootPath;
 
     public StoredFileService(
             @Value("${file_root_path}") String fileRootPath,
             StoredFileRepository storedFileRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            ChatRoomUserRepository chatRoomUserRepository
     ) {
         this.storedFileRepository = storedFileRepository;
         this.fileRootPath = Path.of(fileRootPath);
         this.userRepository = userRepository;
+        this.chatRoomUserRepository = chatRoomUserRepository;
     }
 
     @Transactional
@@ -207,5 +213,34 @@ public class StoredFileService {
         FileSystemResource fileSystemResource = new FileSystemResource(imagePath);
 
         return FindUserImageResult.of(fileSystemResource, findStoredFile.getContentType());
+    }
+
+    public void saveFile(Long userId, Long chatRoomId, List<MultipartFile> files) {
+        // 유저가 채팅방에 속한 유저인지 검증
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+
+        // 요청한 유저가 채팅방에서 나간 상태면 예외
+        if (findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // User 추출 후 삭제된 유저인지 검증
+        User findUser = findChatRoomUser.getUser();
+        if (findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 비어있지 않은 유효한 파일을 한번에 1개 이상 30개 이하 전송 가능
+        if(files == null
+                || files.isEmpty()
+                || files.stream().anyMatch(file -> file == null || file.isEmpty())) {
+            throw new ErrorException(ErrorCode.CHAT_FILE_REQUIRED);
+        }
+        if(files.size() > 30) {
+            throw new ErrorException(ErrorCode.CHAT_FILE_COUNT_LIMIT_EXCEEDED);
+        }
+
+
     }
 }
