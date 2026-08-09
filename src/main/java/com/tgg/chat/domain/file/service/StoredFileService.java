@@ -3,6 +3,7 @@ package com.tgg.chat.domain.file.service;
 import com.tgg.chat.common.messaging.event.UserMetadataEvent;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
+import com.tgg.chat.domain.file.enums.FileCategory;
 import com.tgg.chat.domain.file.enums.StoredFileVariant;
 import com.tgg.chat.domain.file.repository.StoredFileRepository;
 import com.tgg.chat.domain.user.entity.User;
@@ -138,7 +139,8 @@ public class StoredFileService {
                         originalContentType,
                         userProfileImage.getSize(),
                         1,
-                        StoredFileVariant.ORIGINAL
+                        StoredFileVariant.ORIGINAL,
+                        FileCategory.IMAGE
                 )
         );
 
@@ -151,7 +153,8 @@ public class StoredFileService {
                         "image/jpeg",
                         thumbnailFileSize,
                         2,
-                        StoredFileVariant.THUMBNAIL
+                        StoredFileVariant.THUMBNAIL,
+                        FileCategory.IMAGE
                 )
         );
 

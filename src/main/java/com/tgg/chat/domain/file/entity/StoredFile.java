@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.file.entity;
 
+import com.tgg.chat.domain.file.enums.FileCategory;
 import com.tgg.chat.domain.file.enums.StoredFileVariant;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -49,6 +50,10 @@ public class StoredFile {
     @Column(nullable = false, updatable = false)
     private StoredFileVariant storedFileVariant;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false)
+    private FileCategory fileCategory;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -60,7 +65,8 @@ public class StoredFile {
             String contentType,
             Long fileSize,
             Integer fileOrder,
-            StoredFileVariant storedFileVariant
+            StoredFileVariant storedFileVariant,
+            FileCategory fileCategory
     ) {
         this.fileKey = fileKey;
         this.storedFileName = storedFileName;
@@ -69,6 +75,7 @@ public class StoredFile {
         this.fileSize = fileSize;
         this.fileOrder = fileOrder;
         this.storedFileVariant = storedFileVariant;
+        this.fileCategory = fileCategory;
     }
 
     public static StoredFile of(
@@ -78,7 +85,8 @@ public class StoredFile {
             String contentType,
             Long fileSize,
             Integer fileOrder,
-            StoredFileVariant storedFileVariant
+            StoredFileVariant storedFileVariant,
+            FileCategory fileCategory
     ) {
         return new StoredFile(
                 fileKey,
@@ -87,7 +95,8 @@ public class StoredFile {
                 contentType,
                 fileSize,
                 fileOrder,
-                storedFileVariant
+                storedFileVariant,
+                fileCategory
         );
     }
 }
