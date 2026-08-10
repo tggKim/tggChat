@@ -1,9 +1,11 @@
 package com.tgg.chat.domain.file.service;
 
-import com.tgg.chat.common.messaging.event.UserMetadataEvent;
+import com.tgg.chat.common.messaging.event.*;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
+import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
 import com.tgg.chat.domain.chat.enums.ChatMessageType;
+import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
 import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
 import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
@@ -282,7 +284,7 @@ public class StoredFileService {
                 ChatMessage.of(
                         findChatRoomUser.getChatRoom(),
                         findUser,
-                        "파일 전송",
+                        "파일 " + files.size() + "개",
                         ChatMessageType.FILE
                 )
         );
@@ -407,6 +409,84 @@ public class StoredFileService {
             }
 
             storedFileRepository.saveAll(storedFiles);
+
+            List<ChatEventFile> chatEventFiles = storedFiles.stream()
+                    .filter(file -> file.getStoredFileVariant() == StoredFileVariant.ORIGINAL)
+                    .map(file -> {
+                        return ChatEventFile.of(
+                                file.getFileOrder(),
+                                file.getFileCategory(),
+                                file.getOriginalFileName(),
+                                file.getContentType(),
+                                file.getFileSize()
+                        );
+                    })
+                    .toList();
+
+            List<Long> eventUserIds;
+            List<ChatRoomListEvent> chatRoomListEvents = new ArrayList<>();
+            ChatRoom findChatRoom = findChatRoomUser.getChatRoom();
+            // 1대1 채팅방은 상대방이 LEFT 상태이면 ACTIVE 로 복귀, 삭제된 유저이면 제외
+            if(findChatRoom.getChatRoomType() == ChatRoomType.DIRECT) {
+                List<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findByChatRoomIdWithUser(chatRoomId);
+                Optional<ChatRoomUser> opponentOptional = chatRoomUsers.stream()
+                        .filter(chatRoomUser -> !userId.equals(chatRoomUser.getUser().getUserId()))
+                        .findFirst();
+
+                // 상대 유저가 delete 된 상태라면 거치치 않는다
+                if (opponentOptional.isPresent()) {
+                    ChatRoomUser opponent = opponentOptional.get();
+
+                    if (opponent.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+                        opponent.joinChatRoom(savedChatMessage.getChatMessageId());
+
+                        List<ChatRoomPreviewUser> chatRoomPreviewUsers = List.of(
+                                ChatRoomPreviewUser.of(
+                                        findUser.getUserId(),
+                                        findUser.getUsername(),
+                                        findUser.getProfileImageKey()
+                                )
+                        );
+
+                        chatRoomListEvents.add(ChatRoomListEvent.roomAdded(
+                                chatRoomId,
+                                ChatRoomType.DIRECT,
+                                opponent.getUser().getUserId(),
+                                findChatRoom.getRoomName(),
+                                opponent.getCustomRoomName(),
+                                opponent.getChatRoomUserRole(),
+                                2L,
+                                chatRoomPreviewUsers,
+                                savedChatMessage.getContent(),
+                                savedChatMessage.getChatMessageId(),
+                                savedChatMessage.getCreatedAt(),
+                                savedChatMessage.getChatMessageId(),
+                                1L
+                        ));
+
+                        eventUserIds = List.of(userId);
+                    } else {
+                        eventUserIds = chatRoomUsers.stream().map(chatRoomUser -> chatRoomUser.getUser().getUserId()).toList();
+                    }
+                } else {
+                    eventUserIds = chatRoomUsers.stream().map(chatRoomUser -> chatRoomUser.getUser().getUserId()).toList();
+                }
+            } else {
+                eventUserIds = chatRoomUserRepository.findActiveUserIds(chatRoomId);
+            }
+
+            ChatEvent chatEvent = ChatEvent.messageSent(
+                findChatRoomUser.getChatRoom().getChatRoomId(),
+                userId,
+                findUser.getUsername(),
+                findUser.getProfileImageKey(),
+                chatEventFiles,
+                savedChatMessage.getContent(),
+                savedChatMessage.getChatMessageId(),
+                savedChatMessage.getChatMessageType(),
+                savedChatMessage.getCreatedAt(),
+                eventUserIds
+            );
         } catch (Exception e) {
             for(Path createdFilePath : createdFilePaths) {
                 try {

@@ -1,20 +1,25 @@
 package com.tgg.chat.common.messaging.event;
 
+import com.tgg.chat.domain.file.enums.FileCategory;
 import lombok.Getter;
 
 @Getter
 public class ChatEventFile {
-    private String fileType;
-    private String fileKey;
-    private String fileName;
+    private Integer fileOrder;
+    private FileCategory fileCategory;
+    private String originalFileName;
+    private String contentType;
+    private Long fileSize;
 
-    private ChatEventFile(String fileType, String fileKey, String fileName) {
-        this.fileType = fileType;
-        this.fileKey = fileKey;
-        this.fileName = fileName;
+    private ChatEventFile(Integer fileOrder, FileCategory fileCategory, String originalFileName, String contentType, Long fileSize) {
+        this.fileOrder = fileOrder;
+        this.fileCategory = fileCategory;
+        this.originalFileName = originalFileName;
+        this.contentType = contentType;
+        this.fileSize = fileSize;
     }
 
-    public static ChatEventFile of(String fileType, String fileKey, String fileName) {
-        return new ChatEventFile(fileType, fileKey, fileName);
+    public static ChatEventFile of(Integer fileOrder, FileCategory fileCategory, String originalFileName, String contentType, Long fileSize) {
+        return new ChatEventFile(fileOrder, fileCategory, originalFileName, contentType, fileSize);
     }
 }
