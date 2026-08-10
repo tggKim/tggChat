@@ -1,8 +1,11 @@
 package com.tgg.chat.domain.file.service;
 
 import com.tgg.chat.common.messaging.event.UserMetadataEvent;
+import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
+import com.tgg.chat.domain.chat.enums.ChatMessageType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
+import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
 import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
@@ -39,6 +42,7 @@ public class StoredFileService {
     private final UserRepository userRepository;
     private final StoredFileRepository storedFileRepository;
     private final ChatRoomUserRepository chatRoomUserRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     private final Path fileRootPath;
 
@@ -48,12 +52,14 @@ public class StoredFileService {
             @Value("${file_root_path}") String fileRootPath,
             StoredFileRepository storedFileRepository,
             UserRepository userRepository,
-            ChatRoomUserRepository chatRoomUserRepository
+            ChatRoomUserRepository chatRoomUserRepository,
+            ChatMessageRepository chatMessageRepository
     ) {
         this.storedFileRepository = storedFileRepository;
         this.fileRootPath = Path.of(fileRootPath);
         this.userRepository = userRepository;
         this.chatRoomUserRepository = chatRoomUserRepository;
+        this.chatMessageRepository = chatMessageRepository;
     }
 
     @Transactional
@@ -219,6 +225,7 @@ public class StoredFileService {
         return FindUserImageResult.of(fileSystemResource, findStoredFile.getContentType());
     }
 
+    @Transactional
     public void saveFile(Long userId, Long chatRoomId, List<MultipartFile> files) {
         // 유저가 채팅방에 속한 유저인지 검증
         ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
@@ -251,7 +258,19 @@ public class StoredFileService {
             throw new ErrorException(ErrorCode.CHAT_FILE_TOTAL_SIZE_LIMIT_EXCEEDED);
         }
 
-        List<StoredFile> storedFiles = new ArrayList<>();
+        // ChatMessage 저장
+        ChatMessage savedChatMessage = chatMessageRepository.save(
+                ChatMessage.of(
+                        findChatRoomUser.getChatRoom(),
+                        findUser,
+                        "파일 전송",
+                        ChatMessageType.FILE
+                )
+        );
 
+        List<StoredFile> storedFiles = new ArrayList<>();
+        for(MultipartFile file : files) {
+
+        }
     }
 }
