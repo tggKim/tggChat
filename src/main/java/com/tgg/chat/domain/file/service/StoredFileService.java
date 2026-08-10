@@ -10,6 +10,7 @@ import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
 import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
 import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
+import com.tgg.chat.domain.file.dto.internal.SaveMessageFileResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
 import com.tgg.chat.domain.file.enums.FileCategory;
 import com.tgg.chat.domain.file.enums.StoredFileVariant;
@@ -88,6 +89,10 @@ public class StoredFileService {
         User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
         if(findUser.getDeleted()) {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        if(userProfileImage == null || userProfileImage.isEmpty()) {
+            throw new ErrorException(ErrorCode.PROFILE_FILE_REQUIRED);
         }
 
         // 기존 저장된 파일들이 있다면 삭제하기 위해 미리 key 추출
@@ -247,7 +252,7 @@ public class StoredFileService {
     }
 
     @Transactional
-    public void saveFile(Long userId, Long chatRoomId, List<MultipartFile> files) {
+    public SaveMessageFileResult saveMessageFile(Long userId, Long chatRoomId, List<MultipartFile> files) {
         // 유저가 채팅방에 속한 유저인지 검증
         ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserIdWithChatRoomAndUser(chatRoomId, userId)
                 .orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
@@ -486,6 +491,11 @@ public class StoredFileService {
                 savedChatMessage.getChatMessageType(),
                 savedChatMessage.getCreatedAt(),
                 eventUserIds
+            );
+
+            return SaveMessageFileResult.of(
+                    chatRoomListEvents,
+                    chatEvent
             );
         } catch (Exception e) {
             for(Path createdFilePath : createdFilePaths) {
