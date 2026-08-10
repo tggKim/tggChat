@@ -20,6 +20,8 @@ import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import lombok.extern.slf4j.Slf4j;
+import net.bramp.ffmpeg.FFmpeg;
+import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,7 +68,10 @@ public class StoredFileService {
 
     private static final Set<String> VIDEO_CONTENT_TYPES = Set.of(
             "video/mp4",
-            "video/quicktime", // MOV
+            "application/mp4",
+            "video/x-m4v",
+            "video/quicktime",
+            "application/quicktime",
             "video/webm"
     );
 
@@ -406,10 +411,102 @@ public class StoredFileService {
                             )
                     );
                 } else if (fileCategory == FileCategory.VIDEO) {
+                    String originalExtension;
+                    String originalContentType;
+                    if (detectedContentType.equals("video/mp4") || detectedContentType.equals("application/mp4") || detectedContentType.equals("video/x-m4v")) {
+                        originalExtension = ".mp4";
+                        originalContentType = "video/mp4";
+                    } else if (detectedContentType.equals("video/quicktime") || detectedContentType.equals("application/quicktime")) {
+                        originalExtension = ".mov";
+                        originalContentType = "video/quicktime";
+                    } else {
+                        originalExtension = ".webm";
+                        originalContentType = "video/webm";
+                    }
 
+                    String videoName = UUID.randomUUID() + originalExtension;
+                    String videoThumbnailName = UUID.randomUUID() + ".jpg";
+                    Path videoPath = fileRootPath.resolve(videoName);
+                    Path videoThumbNailPath = fileRootPath.resolve(videoThumbnailName);
+                    createdFilePaths.add(videoPath);
+                    createdFilePaths.add(videoThumbNailPath);
+                    long thumbnailFileSize;
+                    try {
+                        file.transferTo(videoPath);
+
+                        FFmpegBuilder builder = new FFmpegBuilder()
+                                .setInput(videoPath)
+                                .done()
+                                .overrideOutputFiles(true)
+                                .addOutput(videoThumbNailPath)
+                                .setFrames(1)
+                                .disableAudio()
+                                .setVideoCodec("mjpeg")
+                                .setVideoFilter(
+                                        "scale=320:320:force_original_aspect_ratio=decrease"
+                                )
+                                .setFormat("image2")
+                                .done();
+
+                        FFmpeg ffmpeg = new FFmpeg("ffmpeg");
+                        ffmpeg.run(builder);
+
+                        thumbnailFileSize = Files.size(videoThumbNailPath);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    storedFiles.add(
+                            StoredFile.of(
+                                    fileKey,
+                                    videoName,
+                                    file.getOriginalFilename(),
+                                    originalContentType,
+                                    file.getSize(),
+                                    fileOrder,
+                                    StoredFileVariant.ORIGINAL,
+                                    FileCategory.VIDEO
+                            )
+                    );
+
+                    storedFiles.add(
+                            StoredFile.of(
+                                    fileKey,
+                                    videoThumbnailName,
+                                    file.getOriginalFilename(),
+                                    "image/jpeg",
+                                    thumbnailFileSize,
+                                    fileOrder,
+                                    StoredFileVariant.THUMBNAIL,
+                                    FileCategory.VIDEO
+                            )
+                    );
                 } else {
+                    String originalExtension = "." + detectedContentType.substring(detectedContentType.lastIndexOf("/"));
+                    String fileName = UUID.randomUUID() + originalExtension;
+                    Path filePath = fileRootPath.resolve(fileName);
+                    createdFilePaths.add(filePath);
 
+                    try {
+                        file.transferTo(filePath);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    storedFiles.add(
+                            StoredFile.of(
+                                    fileKey,
+                                    fileName,
+                                    file.getOriginalFilename(),
+                                    detectedContentType,
+                                    file.getSize(),
+                                    fileOrder,
+                                    StoredFileVariant.ORIGINAL,
+                                    FileCategory.FILE
+                            )
+                    );
                 }
+
                 fileOrder++;
             }
 

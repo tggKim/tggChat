@@ -77,6 +77,9 @@ dependencies {
 
     // Tika
     implementation 'org.apache.tika:tika-core:3.3.2'
+
+    // Ffmpeg
+    implementation 'net.bramp.ffmpeg:ffmpeg:0.9.2'
 }
 
 tasks.named('test') {
