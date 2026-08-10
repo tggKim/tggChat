@@ -42,6 +42,8 @@ public class StoredFileService {
 
     private final Path fileRootPath;
 
+    private static final long MAX_TOTAL_FILE_SIZE = 3L * 1024 * 1024 * 1024;
+
     public StoredFileService(
             @Value("${file_root_path}") String fileRootPath,
             StoredFileRepository storedFileRepository,
@@ -189,6 +191,7 @@ public class StoredFileService {
         return UserMetadataEvent.userProfileImageUpdated(userId, newProfileImageKey, eventUserIds);
     }
 
+    @Transactional(readOnly = true)
     public FileSystemResource findUserThumbnail(String fileKey) {
         StoredFile findStoredFile = storedFileRepository.findByFileKeyAndStoredFileVariant(fileKey, StoredFileVariant.THUMBNAIL).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
@@ -201,6 +204,7 @@ public class StoredFileService {
         return new FileSystemResource(thumbnailImagePath);
     }
 
+    @Transactional(readOnly = true)
     public FindUserImageResult findUserImage(String fileKey) {
         StoredFile findStoredFile = storedFileRepository.findByFileKeyAndStoredFileVariant(fileKey, StoredFileVariant.ORIGINAL).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
@@ -241,6 +245,13 @@ public class StoredFileService {
             throw new ErrorException(ErrorCode.CHAT_FILE_COUNT_LIMIT_EXCEEDED);
         }
 
+        // 총 파일의 크키는 3GB 이하
+        long totalSize = files.stream().mapToLong(file -> file.getSize()).sum();
+        if(totalSize > MAX_TOTAL_FILE_SIZE) {
+            throw new ErrorException(ErrorCode.CHAT_FILE_TOTAL_SIZE_LIMIT_EXCEEDED);
+        }
+
+        List<StoredFile> storedFiles = new ArrayList<>();
 
     }
 }
