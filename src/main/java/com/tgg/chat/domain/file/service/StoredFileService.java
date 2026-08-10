@@ -18,6 +18,7 @@ import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
+import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
@@ -37,8 +38,6 @@ import java.util.*;
 @Slf4j
 @Service
 public class StoredFileService {
-    private static final Set<String> ALLOWED_IMAGE_FORMATS = Set.of("jpeg", "png", "gif", "webp");
-
     private final UserRepository userRepository;
     private final StoredFileRepository storedFileRepository;
     private final ChatRoomUserRepository chatRoomUserRepository;
@@ -47,6 +46,26 @@ public class StoredFileService {
     private final Path fileRootPath;
 
     private static final long MAX_TOTAL_FILE_SIZE = 3L * 1024 * 1024 * 1024;
+
+    private static final Set<String> ALLOWED_IMAGE_FORMATS = Set.of(
+            "jpeg",
+            "png",
+            "gif",
+            "webp"
+    );
+
+    private static final Set<String> IMAGE_CONTENT_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp"
+    );
+
+    private static final Set<String> VIDEO_CONTENT_TYPES = Set.of(
+            "video/mp4",
+            "video/quicktime", // MOV
+            "video/webm"
+    );
 
     public StoredFileService(
             @Value("${file_root_path}") String fileRootPath,
@@ -166,7 +185,7 @@ public class StoredFileService {
                         userProfileImage.getOriginalFilename(),
                         "image/jpeg",
                         thumbnailFileSize,
-                        2,
+                        1,
                         StoredFileVariant.THUMBNAIL,
                         FileCategory.IMAGE
                 )
@@ -268,9 +287,140 @@ public class StoredFileService {
                 )
         );
 
-        List<StoredFile> storedFiles = new ArrayList<>();
-        for(MultipartFile file : files) {
+        List<Path> createdFilePaths = new ArrayList<>();
+        try {
+            Tika tika = new Tika();
 
+            int fileOrder = 1;
+            String fileKey = "chat-message:" + savedChatMessage.getChatMessageId();
+            List<StoredFile> storedFiles = new ArrayList<>();
+            for(MultipartFile file : files) {
+                // 파일의 타입을 추론
+                String detectedContentType;
+                try(InputStream inputStream = file.getInputStream()) {
+                    detectedContentType = tika.detect(inputStream);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                FileCategory fileCategory;
+                if(IMAGE_CONTENT_TYPES.contains(detectedContentType)) {
+                    fileCategory = FileCategory.IMAGE;
+                } else if(VIDEO_CONTENT_TYPES.contains(detectedContentType)) {
+                    fileCategory = FileCategory.VIDEO;
+                } else {
+                    fileCategory = FileCategory.FILE;
+                }
+
+                if(fileCategory == FileCategory.IMAGE) {
+                    // 요청을 받은 파일의 타입을 검사하고 알아낸다, 이미지의 첫번째 프레임을 썸네일로 사용한다
+                    String imageFormat;
+                    BufferedImage firstFrame;
+                    try(
+                            InputStream inputStream = file.getInputStream();
+                            ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream)
+                    ) {
+                        // 파일을 처리할 수 있는 ImageReader가 있는지 검증
+                        Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+                        if(!readers.hasNext()) {
+                            throw new ErrorException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
+                        }
+
+                        ImageReader reader = readers.next();
+
+                        try {
+                            reader.setInput(imageInputStream);
+                            imageFormat = reader.getFormatName().toLowerCase(Locale.ROOT);
+
+                            // 파일의 포맷을 가져온뒤 jpeg, png, gif, webp 중 하나인지 검증
+                            if (!ALLOWED_IMAGE_FORMATS.contains(imageFormat)) {
+                                throw new ErrorException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
+                            }
+
+                            // GIF와 WebP가 애니메이션이어도 첫 프레임만 읽는다.
+                            firstFrame = reader.read(0);
+                        } finally {
+                            reader.dispose();
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    String originalExtension = imageFormat.equals("jpeg") ? ".jpg" : "." + imageFormat;
+                    String originalContentType = "image/" + imageFormat;
+
+                    String imageName = UUID.randomUUID() + originalExtension;
+                    String thumbnailImageName = UUID.randomUUID() + ".jpg";
+                    Path imagePath = fileRootPath.resolve(imageName);
+                    Path thumbnailImagePath = fileRootPath.resolve(thumbnailImageName);
+                    createdFilePaths.add(imagePath);
+                    createdFilePaths.add(thumbnailImagePath);
+                    long thumbnailFileSize;
+                    try {
+                        file.transferTo(imagePath);
+
+                        Thumbnails.of(firstFrame)
+                                .size(320, 320)
+                                .keepAspectRatio(true)
+                                .outputFormat("jpg")
+                                .outputQuality(0.9)
+                                .toFile(thumbnailImagePath.toFile());
+
+                        thumbnailFileSize = Files.size(thumbnailImagePath);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    // 원본 이미지에 대한 StoredFile 생성
+                    storedFiles.add(
+                            StoredFile.of(
+                                    fileKey,
+                                    imageName,
+                                    file.getOriginalFilename(),
+                                    originalContentType,
+                                    file.getSize(),
+                                    fileOrder,
+                                    StoredFileVariant.ORIGINAL,
+                                    FileCategory.IMAGE
+                            )
+                    );
+
+                    // 썸네일 이미지에 대한 StoredFile 생성
+                    storedFiles.add(
+                            StoredFile.of(
+                                    fileKey,
+                                    thumbnailImageName,
+                                    file.getOriginalFilename(),
+                                    "image/jpeg",
+                                    thumbnailFileSize,
+                                    fileOrder,
+                                    StoredFileVariant.THUMBNAIL,
+                                    FileCategory.IMAGE
+                            )
+                    );
+                } else if (fileCategory == FileCategory.VIDEO) {
+
+                } else {
+
+                }
+                fileOrder++;
+            }
+
+            storedFileRepository.saveAll(storedFiles);
+        } catch (Exception e) {
+            for(Path createdFilePath : createdFilePaths) {
+                try {
+                    Files.deleteIfExists(createdFilePath);
+                } catch (IOException cleanupException) {
+                    log.warn(
+                            "채팅 파일 저장 실패 후 생성 파일 정리 실패: {}",
+                            createdFilePath,
+                            cleanupException
+                    );
+                }
+            }
+
+            throw e;
         }
     }
 }

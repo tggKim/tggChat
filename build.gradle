@@ -74,6 +74,9 @@ dependencies {
 
     // WebP ImageIO Reader
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
+
+    // Tika
+    implementation 'org.apache.tika:tika-core:3.3.2'
 }
 
 tasks.named('test') {
