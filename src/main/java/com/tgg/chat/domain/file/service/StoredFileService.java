@@ -482,8 +482,7 @@ public class StoredFileService {
                             )
                     );
                 } else {
-                    String originalExtension = "." + detectedContentType.substring(detectedContentType.lastIndexOf("/"));
-                    String fileName = UUID.randomUUID() + originalExtension;
+                    String fileName = UUID.randomUUID().toString();
                     Path filePath = fileRootPath.resolve(fileName);
                     createdFilePaths.add(filePath);
 
