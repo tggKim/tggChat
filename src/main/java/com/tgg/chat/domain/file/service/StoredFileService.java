@@ -324,6 +324,7 @@ public class StoredFileService {
                     fileCategory = FileCategory.FILE;
                 }
 
+                // tika로 추론한 타입에 따라 이미지, 동영상, 기타 파일처리로 분류한다
                 if(fileCategory == FileCategory.IMAGE) {
                     // 요청을 받은 파일의 타입을 검사하고 알아낸다, 이미지의 첫번째 프레임을 썸네일로 사용한다
                     String imageFormat;
