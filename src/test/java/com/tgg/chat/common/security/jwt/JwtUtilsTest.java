@@ -74,7 +74,7 @@ class JwtUtilsTest {
 
         // when
         String mediaToken = jwtUtils.createMediaToken(user, sid);
-        Claims claims = jwtUtils.parseClaims(refreshToken);
+        Claims claims = jwtUtils.parseClaims(mediaToken);
 
         // then
         assertThat(claims.getSubject()).isEqualTo("1");
