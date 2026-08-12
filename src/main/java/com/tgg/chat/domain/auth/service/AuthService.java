@@ -26,7 +26,6 @@ public class AuthService {
 	
 	// 로그인
 	public TokenPair login(LoginRequestDto loginRequestDto, String refreshToken) {
-
         User findUser = findActiveUserByEmail(loginRequestDto.getEmail());
 		
 		boolean passwordMatch = passwordEncoder.matches(loginRequestDto.getPassword(), findUser.getPassword());
@@ -52,13 +51,13 @@ public class AuthService {
         String sid = jwtUtils.generateSid();
 		String newAccessToken = jwtUtils.createAccessToken(findUser, sid);
 		String newRefreshToken = jwtUtils.createRefreshToken(findUser, sid);
+        String newMediaToken = jwtUtils.createMediaToken(findUser, sid);
 		
 		// RefreshToken 레디스에 저장
         Long userId = findUser.getUserId();
         storeRefreshToken(userId, sid, newRefreshToken);
 		
-		return TokenPair.of(newAccessToken, newRefreshToken);
-		
+		return TokenPair.of(newAccessToken, newRefreshToken, newMediaToken);
 	}
 	
 	// 로그아웃
@@ -86,10 +85,11 @@ public class AuthService {
 
 		String newRefreshToken = jwtUtils.createRefreshToken(findUser, sid);
 		String newAccessToken = jwtUtils.createAccessToken(findUser, sid);
+        String newMediaToken = jwtUtils.createMediaToken(findUser, sid);
 
         storeRefreshToken(userId, sid, newRefreshToken);
 
-		return TokenPair.of(newAccessToken, newRefreshToken);
+		return TokenPair.of(newAccessToken, newRefreshToken, newMediaToken);
 
 	}
 	

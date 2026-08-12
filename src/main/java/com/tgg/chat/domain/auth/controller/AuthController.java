@@ -92,13 +92,16 @@ public class AuthController {
 
         String newAccessToken = tokenPair.getAccessToken();
         String newRefreshToken = tokenPair.getRefreshToken();
+        String newMediaToken = tokenPair.getMediaToken();
 
         ResponseCookie rtCookie = buildRefreshTokenCookie(newRefreshToken);
+        ResponseCookie mtCookie = buildMediaTokenCookie(newMediaToken);
 
         LoginResponseDto loginResponseDto = LoginResponseDto.of(newAccessToken);
 		
 		return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, rtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, mtCookie.toString())
                 .body(loginResponseDto);
 	}
 	
@@ -133,10 +136,12 @@ public class AuthController {
 	public ResponseEntity<Void> logout(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {		
 		authService.logout(authenticatedUser.getUserId(), authenticatedUser.getSid());
 
-        ResponseCookie responseCookie = buildExpiredRefreshTokenCookie();
+        ResponseCookie expiredRefreshTokenCookie = buildExpiredRefreshTokenCookie();
+        ResponseCookie expiredMediaTokenCookie = buildExpiredMediaTokenCookie();
 
 		return ResponseEntity.status(HttpStatus.OK)
-                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, expiredRefreshTokenCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, expiredMediaTokenCookie.toString())
                 .body(null);
 	}
 
@@ -184,13 +189,16 @@ public class AuthController {
 
         String newAccessToken = tokenPair.getAccessToken();
         String newRefreshToken = tokenPair.getRefreshToken();
+        String newMediaToken = tokenPair.getMediaToken();
 
         ResponseCookie rtCookie = buildRefreshTokenCookie(newRefreshToken);
+        ResponseCookie mtCookie = buildMediaTokenCookie(newMediaToken);
 
         RefreshResponseDto refreshResponseDto = RefreshResponseDto.of(newAccessToken);
 
 		return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, rtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, mtCookie.toString())
                 .body(refreshResponseDto);
 	}
 
@@ -204,8 +212,28 @@ public class AuthController {
 			.build();
 	}
 
+    private ResponseCookie buildMediaTokenCookie(String mediaToken) {
+        return ResponseCookie.from("mediaToken", mediaToken)
+                .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
+                .secure(false) // http 환경에서만 쿠키 전송
+                .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
+                .path("/") // 모든 경로의 요청에 쿠키 포함
+                .maxAge(Duration.ofMillis(jwtUtils.getMediaTokenTtlMillis())) // 만료시간 설정
+                .build();
+    }
+
     private ResponseCookie buildExpiredRefreshTokenCookie() {
         return ResponseCookie.from("refreshToken", "")
+                .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
+                .secure(false) // http 환경에서만 쿠키 전송
+                .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
+                .path("/") // 모든 경로의 요청에 쿠키 포함
+                .maxAge(0) // 만료시간 설정
+                .build();
+    }
+
+    private ResponseCookie buildExpiredMediaTokenCookie() {
+        return ResponseCookie.from("mediaToken", "")
                 .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
                 .secure(false) // http 환경에서만 쿠키 전송
                 .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
