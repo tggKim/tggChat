@@ -65,6 +65,26 @@ class JwtUtilsTest {
     }
 
     @Test
+    @DisplayName("MediaToken 생성 및 파싱 성공")
+    void create_media_token_and_parse_claims_success() {
+        // given
+        User user = User.of("test@test.com", "testPassword", "testUsername");
+        ReflectionTestUtils.setField(user, "userId", 1L);
+        String sid = jwtUtils.generateSid();
+
+        // when
+        String mediaToken = jwtUtils.createMediaToken(user, sid);
+        Claims claims = jwtUtils.parseClaims(refreshToken);
+
+        // then
+        assertThat(claims.getSubject()).isEqualTo("1");
+        assertThat(jwtUtils.getSid(claims)).isEqualTo(sid);
+        assertThat(jwtUtils.isMediaToken(claims)).isTrue();
+        assertThat(claims.getIssuedAt()).isNotNull();
+        assertThat(claims.getExpiration()).isAfter(claims.getIssuedAt());
+    }
+
+    @Test
     @DisplayName("토큰 만료 시간 조회 성공")
     void get_token_ttl_millis_success() {
         // when & then
