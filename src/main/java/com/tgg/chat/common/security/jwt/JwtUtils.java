@@ -31,9 +31,11 @@ public class JwtUtils {
     private static final String CLAIM_TYPE = "type";
     private static final String ACCESS_TOKEN_TYPE = "access";
     private static final String REFRESH_TOKEN_TYPE = "refresh";
+    private static final String MEDIA_TOKEN_TYPE = "media";
 
     private static final long ACCESS_TOKEN_MILLIS = Duration.ofMinutes(10).toMillis();
     private static final long REFRESH_TOKEN_MILLIS = Duration.ofDays(7).toMillis();
+    private static final long MEDIA_TOKEN_MILLIS = Duration.ofMinutes(10).toMillis();
 
     private final Key secretKey;
 
@@ -47,6 +49,10 @@ public class JwtUtils {
 
     public String createRefreshToken(User user, String sid) {
         return createToken(user, sid, REFRESH_TOKEN_TYPE, REFRESH_TOKEN_MILLIS);
+    }
+
+    public String createMediaToken(User user, String sid) {
+        return createToken(user, sid, MEDIA_TOKEN_TYPE, MEDIA_TOKEN_MILLIS);
     }
 
     private String createToken(User user, String sid, String tokenType, long ttlMillis) {
@@ -100,16 +106,20 @@ public class JwtUtils {
         return REFRESH_TOKEN_TYPE.equals(claims.get(CLAIM_TYPE, String.class));
     }
 
+    public boolean isMediaToken(Claims claims) {
+        return MEDIA_TOKEN_TYPE.equals(claims.get(CLAIM_TYPE, String.class));
+    }
+
     public String getSid(Claims claims) {
         return claims.get(CLAIM_SID, String.class);
     }
 
-    public long getAccessTokenTtlMillis() {
-        return ACCESS_TOKEN_MILLIS;
-    }
-
     public long getRefreshTokenTtlMillis() {
         return REFRESH_TOKEN_MILLIS;
+    }
+
+    public long getMediaTokenTtlMillis() {
+        return MEDIA_TOKEN_MILLIS;
     }
 
     public String generateSid() {
