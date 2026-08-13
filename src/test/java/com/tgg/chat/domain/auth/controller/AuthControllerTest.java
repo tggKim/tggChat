@@ -66,6 +66,7 @@ class AuthControllerTest {
         when(authService.login(any(LoginRequestDto.class), anyString())).thenReturn(tokenPair);
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
+        when(jwtUtils.getMediaTokenTtlMillis()).thenReturn(2000L);
 
         // when & then
         mockMvc.perform(post("/login")
@@ -80,7 +81,13 @@ class AuthControllerTest {
                 .andExpect(cookie().secure("refreshToken", false))
                 .andExpect(cookie().sameSite("refreshToken", "Lax"))
                 .andExpect(cookie().path("refreshToken", "/"))
-                .andExpect(cookie().maxAge("refreshToken", 2));
+                .andExpect(cookie().maxAge("refreshToken", 2))
+                .andExpect(cookie().value("mediaToken", "newMediaToken"))
+                .andExpect(cookie().httpOnly("mediaToken",true))
+                .andExpect(cookie().secure("mediaToken", false))
+                .andExpect(cookie().sameSite("mediaToken", "Lax"))
+                .andExpect(cookie().path("mediaToken", "/"))
+                .andExpect(cookie().maxAge("mediaToken", 2));
 
         ArgumentCaptor<LoginRequestDto> loginRequestCaptor = ArgumentCaptor.forClass(LoginRequestDto.class);
         ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
@@ -93,6 +100,7 @@ class AuthControllerTest {
         assertThat(refreshToken).isEqualTo("refreshToken");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+        verify(jwtUtils, times(1)).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -116,6 +124,7 @@ class AuthControllerTest {
 
         verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -139,6 +148,7 @@ class AuthControllerTest {
 
         verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -168,6 +178,7 @@ class AuthControllerTest {
 
         verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -191,6 +202,7 @@ class AuthControllerTest {
 
         verify(authService, never()).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -216,6 +228,7 @@ class AuthControllerTest {
 
         verify(authService, times(1)).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -242,6 +255,7 @@ class AuthControllerTest {
 
         verify(authService, times(1)).login(any(LoginRequestDto.class), isNull());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -264,7 +278,13 @@ class AuthControllerTest {
                     .andExpect(cookie().secure("refreshToken", false))
                     .andExpect(cookie().sameSite("refreshToken", "Lax"))
                     .andExpect(cookie().path("refreshToken", "/"))
-                    .andExpect(cookie().maxAge("refreshToken", 0));
+                    .andExpect(cookie().maxAge("refreshToken", 0))
+                    .andExpect(cookie().value("mediaToken", ""))
+                    .andExpect(cookie().httpOnly("mediaToken", true))
+                    .andExpect(cookie().secure("mediaToken", false))
+                    .andExpect(cookie().sameSite("mediaToken", "Lax"))
+                    .andExpect(cookie().path("mediaToken", "/"))
+                    .andExpect(cookie().maxAge("mediaToken", 0));
 
             verify(authService, times(1)).logout(1L, "sid");
         } finally {
@@ -280,6 +300,7 @@ class AuthControllerTest {
         when(authService.refresh("refreshToken")).thenReturn(tokenPair);
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
+        when(jwtUtils.getMediaTokenTtlMillis()).thenReturn(2000L);
 
         // when & then
         mockMvc.perform(post("/refresh")
@@ -292,10 +313,17 @@ class AuthControllerTest {
                 .andExpect(cookie().secure("refreshToken", false))
                 .andExpect(cookie().sameSite("refreshToken", "Lax"))
                 .andExpect(cookie().path("refreshToken", "/"))
-                .andExpect(cookie().maxAge("refreshToken", 2));
+                .andExpect(cookie().maxAge("refreshToken", 2))
+                .andExpect(cookie().value("mediaToken", "newMediaToken"))
+                .andExpect(cookie().httpOnly("mediaToken", true))
+                .andExpect(cookie().secure("mediaToken", false))
+                .andExpect(cookie().sameSite("mediaToken", "Lax"))
+                .andExpect(cookie().path("mediaToken", "/"))
+                .andExpect(cookie().maxAge("mediaToken", 2));
 
         verify(authService, times(1)).refresh("refreshToken");
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+        verify(jwtUtils, times(1)).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -315,6 +343,7 @@ class AuthControllerTest {
 
         verify(authService, times(1)).refresh("refreshToken");
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 
     @Test
@@ -334,5 +363,6 @@ class AuthControllerTest {
 
         verify(authService, times(1)).refresh("refreshToken");
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
     }
 }
