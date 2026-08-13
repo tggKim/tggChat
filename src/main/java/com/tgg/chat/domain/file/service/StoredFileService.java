@@ -617,8 +617,7 @@ public class StoredFileService {
         }
     }
 
-    //GET /messages/{messageId}/files/{fileOrder}?storedFileVariant=ORIGINAL
-    //GET /messages/{messageId}/files/{fileOrder}?storedFileVariant=THUMBNAIL
+    // 메시지 파일 조회
     public FindMessageFileResult findMessageFile(
             Long chatMessageId,
             Integer fileOrder,
