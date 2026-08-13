@@ -3,8 +3,11 @@ package com.tgg.chat.domain.file.controller;
 import com.tgg.chat.common.messaging.event.UserMetadataEvent;
 import com.tgg.chat.common.messaging.redis.RedisPublisher;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
+import com.tgg.chat.domain.file.dto.internal.FindMessageFileResult;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.dto.internal.SaveMessageFileResult;
+import com.tgg.chat.domain.file.enums.FileCategory;
+import com.tgg.chat.domain.file.enums.StoredFileVariant;
 import com.tgg.chat.domain.file.service.StoredFileService;
 import com.tgg.chat.exception.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -265,5 +268,47 @@ public class StoredFileController {
         redisPublisher.publishChatEvent(result.getChatEvent());
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/media/messages/{chatMessageId}/files/{fileOrder}")
+    public ResponseEntity<FileSystemResource> findMessageFile(
+            @CookieValue(value = "mediaToken", required = false) String mediaToken,
+            @PathVariable Long chatMessageId,
+            @PathVariable Integer fileOrder,
+            @RequestParam StoredFileVariant storedFileVariant
+    ) {
+        FindMessageFileResult findMessageFileResult= storedFileService.findMessageFile(chatMessageId, fileOrder, storedFileVariant, mediaToken);
+
+        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity
+                .status(HttpStatus.OK)
+                .contentLength(findMessageFileResult.getFileSize());
+
+        if (findMessageFileResult.getFileCategory() == FileCategory.FILE) {
+            responseBuilder
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            ContentDisposition.attachment()
+                                    .filename(findMessageFileResult.getOriginalFileName(), StandardCharsets.UTF_8)
+                                    .build()
+                                    .toString()
+                    );
+        } else {
+            responseBuilder.contentType(
+                    MediaType.parseMediaType(findMessageFileResult.getContentType())
+            );
+
+            if (storedFileVariant == StoredFileVariant.ORIGINAL) {
+                responseBuilder.header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline()
+                                .filename(findMessageFileResult.getOriginalFileName(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString()
+                );
+            }
+        }
+
+        return responseBuilder.body(findMessageFileResult.getFileSystemResource());
     }
 }
