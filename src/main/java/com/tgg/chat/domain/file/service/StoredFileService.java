@@ -525,7 +525,6 @@ public class StoredFileService {
                                 file.getFileOrder(),
                                 file.getFileCategory(),
                                 file.getOriginalFileName(),
-                                file.getContentType(),
                                 file.getFileSize()
                         );
                     })

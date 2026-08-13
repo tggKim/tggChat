@@ -8,18 +8,16 @@ public class ChatEventFile {
     private Integer fileOrder;
     private FileCategory fileCategory;
     private String originalFileName;
-    private String contentType;
     private Long fileSize;
 
-    private ChatEventFile(Integer fileOrder, FileCategory fileCategory, String originalFileName, String contentType, Long fileSize) {
+    private ChatEventFile(Integer fileOrder, FileCategory fileCategory, String originalFileName, Long fileSize) {
         this.fileOrder = fileOrder;
         this.fileCategory = fileCategory;
         this.originalFileName = originalFileName;
-        this.contentType = contentType;
         this.fileSize = fileSize;
     }
 
-    public static ChatEventFile of(Integer fileOrder, FileCategory fileCategory, String originalFileName, String contentType, Long fileSize) {
-        return new ChatEventFile(fileOrder, fileCategory, originalFileName, contentType, fileSize);
+    public static ChatEventFile of(Integer fileOrder, FileCategory fileCategory, String originalFileName, Long fileSize) {
+        return new ChatEventFile(fileOrder, fileCategory, originalFileName, fileSize);
     }
 }
