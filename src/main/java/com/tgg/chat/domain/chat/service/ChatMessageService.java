@@ -2,14 +2,19 @@ package com.tgg.chat.domain.chat.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import com.tgg.chat.common.messaging.event.ChatEventFile;
 import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.ReadChatMessageResult;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
+import com.tgg.chat.domain.chat.dto.query.ChatMessageFileRowDto;
 import com.tgg.chat.domain.chat.dto.request.ReadChatMessagesRequestDto;
 import com.tgg.chat.domain.chat.repository.*;
+import com.tgg.chat.domain.file.repository.StoredFileMapper;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +40,8 @@ public class ChatMessageService {
     private final ChatRoomUserRepository chatRoomUserRepository;
     
     private final ChatMessageRepository chatMessageRepository;
+
+    private final StoredFileMapper storedFileMapper;
     
     @Transactional
     public SaveChatMessageResult saveMessage(
@@ -151,8 +158,48 @@ public class ChatMessageService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
+        // 메시지 조회
         List<ChatMessage> chatMessages = chatMessageRepository.findVisibleMessages(userId, chatRoomId, offsetMessageId, Limit.of(100));
-    	return chatMessages.stream().map(ChatMessageListResponseDto::from).toList();
+
+        // 조회한 메시지중 파일 전송 메시지에 대한 fileKey 생성
+        List<String> storedFileKeys = chatMessages.stream()
+                .filter(chatMessage -> chatMessage.getChatMessageType() == ChatMessageType.FILE)
+                .map(chatMessage -> {
+                    return "chat-message:" + chatMessage.getChatMessageId();
+                })
+                .toList();
+
+        Map<String, List<ChatEventFile>> filesByFileKey;
+
+        if (storedFileKeys.isEmpty()) {
+            filesByFileKey = Map.of();
+        } else {
+            List<ChatMessageFileRowDto> fileRows =
+                    storedFileMapper.findOriginalMessageFilesByFileKeys(storedFileKeys);
+
+            filesByFileKey = fileRows.stream()
+                    .collect(Collectors.groupingBy(
+                            ChatMessageFileRowDto::getFileKey,
+                            Collectors.mapping(
+                                    row -> ChatEventFile.of(
+                                            row.getFileOrder(),
+                                            row.getFileCategory(),
+                                            row.getOriginalFileName(),
+                                            row.getFileSize()
+                                    ),
+                                    Collectors.toList()
+                            )
+                    ));
+        }
+
+        return chatMessages.stream()
+                .map(message -> ChatMessageListResponseDto.from(
+                        message,
+                        filesByFileKey.get(
+                                "chat-message:" + message.getChatMessageId()
+                        )
+                ))
+                .toList();
     }
 
     @Transactional

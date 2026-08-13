@@ -1,7 +1,9 @@
 package com.tgg.chat.domain.chat.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.tgg.chat.common.messaging.event.ChatEventFile;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.enums.ChatMessageType;
 
@@ -32,6 +34,8 @@ public class ChatMessageListResponseDto {
     @Schema(description = "채팅 메시지 생성 시각")
     private final LocalDateTime createdAt;
 
+    private final List<ChatEventFile> chatEventFiles;
+
     private ChatMessageListResponseDto(
             Long messageId,
             ChatMessageType chatMessageType,
@@ -39,7 +43,8 @@ public class ChatMessageListResponseDto {
             Long senderId,
             String senderName,
             String senderProfileImageKey,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            List<ChatEventFile> chatEventFiles
     ) {
         this.messageId = messageId;
         this.chatMessageType = chatMessageType;
@@ -48,9 +53,10 @@ public class ChatMessageListResponseDto {
         this.senderName = senderName;
         this.senderProfileImageKey = senderProfileImageKey;
         this.createdAt = createdAt;
+        this.chatEventFiles = chatEventFiles;
     }
 
-    public static ChatMessageListResponseDto from(ChatMessage chatMessage) {
+    public static ChatMessageListResponseDto from(ChatMessage chatMessage, List<ChatEventFile> chatEventFiles) {
         return new ChatMessageListResponseDto(
                 chatMessage.getChatMessageId(),
                 chatMessage.getChatMessageType(),
@@ -58,7 +64,8 @@ public class ChatMessageListResponseDto {
                 chatMessage.getSender().getDeleted() ? null : chatMessage.getSender().getUserId(),
                 chatMessage.getSender().getDeleted() ? null : chatMessage.getSender().getUsername(),
                 chatMessage.getSender().getDeleted() ? null : chatMessage.getSender().getProfileImageKey(),
-                chatMessage.getCreatedAt()
+                chatMessage.getCreatedAt(),
+                chatEventFiles
         );
     }
 }

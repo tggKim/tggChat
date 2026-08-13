@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tgg.chat.domain.file.repository.StoredFileMapper">
+    <select id="findOriginalMessageFilesByFileKeys">
+        SELECT
+            file_key
+        ,   file_order
+        ,   file_category
+        ,   original_file_name
+        ,   file_size
+        FROM stored_file
+        WHERE file_key IN
+        <foreach collection="storedFileKeys" item="storedFileKey" open="(" separator="," close=")">
+            #{storedFileKey}
+        </foreach>
+        AND stored_file_variant = 'ORIGINAL'
+        ORDER BY file_key, file_order
+    </select>
+</mapper>
