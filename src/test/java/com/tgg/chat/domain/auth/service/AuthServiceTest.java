@@ -66,6 +66,7 @@ class AuthServiceTest {
         when(jwtUtils.generateSid()).thenReturn("newSid");
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
+        when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
@@ -75,6 +76,7 @@ class AuthServiceTest {
         // then
         assertThat(tokenPair.getAccessToken()).isEqualTo("accessToken");
         assertThat(tokenPair.getRefreshToken()).isEqualTo("refreshToken");
+        assertThat(tokenPair.getMediaToken()).isEqualTo("mediaToken");
 
         verify(userRepository, times(1)).findByEmail("test@test.com");
         verify(passwordEncoder, times(1)).matches("testPassword", "encoded-password");
@@ -88,6 +90,7 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
+        verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
@@ -111,6 +114,7 @@ class AuthServiceTest {
         when(jwtUtils.generateSid()).thenReturn("newSid");
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
+        when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
@@ -120,6 +124,7 @@ class AuthServiceTest {
         // then
         assertThat(tokenPair.getAccessToken()).isEqualTo("accessToken");
         assertThat(tokenPair.getRefreshToken()).isEqualTo("refreshToken");
+        assertThat(tokenPair.getMediaToken()).isEqualTo("mediaToken");
 
         verify(userRepository, times(1)).findByEmail("test@test.com");
         verify(passwordEncoder, times(1)).matches("testPassword", "encoded-password");
@@ -132,6 +137,7 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
+        verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
@@ -157,6 +163,8 @@ class AuthServiceTest {
         when(jwtUtils.generateSid()).thenReturn("newSid");
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
+        when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
+
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
@@ -166,6 +174,7 @@ class AuthServiceTest {
         // then
         assertThat(tokenPair.getAccessToken()).isEqualTo("accessToken");
         assertThat(tokenPair.getRefreshToken()).isEqualTo("refreshToken");
+        assertThat(tokenPair.getMediaToken()).isEqualTo("mediaToken");
 
         verify(userRepository, times(1)).findByEmail("test@test.com");
         verify(passwordEncoder, times(1)).matches("testPassword", "encoded-password");
@@ -178,6 +187,7 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
+        verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
@@ -205,6 +215,7 @@ class AuthServiceTest {
         when(jwtUtils.generateSid()).thenReturn("newSid");
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
+        when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
@@ -214,6 +225,7 @@ class AuthServiceTest {
         // then
         assertThat(tokenPair.getAccessToken()).isEqualTo("accessToken");
         assertThat(tokenPair.getRefreshToken()).isEqualTo("refreshToken");
+        assertThat(tokenPair.getMediaToken()).isEqualTo("mediaToken");
 
         verify(userRepository, times(1)).findByEmail("test@test.com");
         verify(passwordEncoder, times(1)).matches("testPassword", "encoded-password");
@@ -227,6 +239,7 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).generateSid();
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
+        verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
 
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
@@ -259,6 +272,7 @@ class AuthServiceTest {
         verify(jwtUtils, never()).generateSid();
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
+        verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
 
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
@@ -293,6 +307,7 @@ class AuthServiceTest {
         verify(jwtUtils, never()).generateSid();
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
+        verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
 
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
@@ -328,6 +343,7 @@ class AuthServiceTest {
         verify(jwtUtils, never()).generateSid();
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
+        verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
 
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
@@ -366,6 +382,7 @@ class AuthServiceTest {
 
         when(jwtUtils.createRefreshToken(user, "sid")).thenReturn("newRefreshToken");
         when(jwtUtils.createAccessToken(user, "sid")).thenReturn("newAccessToken");
+        when(jwtUtils.createMediaToken(user, "sid")).thenReturn("newMediaToken");
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
         // when
@@ -374,6 +391,7 @@ class AuthServiceTest {
         // then
         assertThat(tokenPair.getAccessToken()).isEqualTo("newAccessToken");
         assertThat(tokenPair.getRefreshToken()).isEqualTo("newRefreshToken");
+        assertThat(tokenPair.getMediaToken()).isEqualTo("newMediaToken");
 
         verify(jwtUtils, times(1)).parseClaims(refreshToken);
         verify(jwtUtils, times(1)).isRefreshToken(claims);
@@ -386,6 +404,7 @@ class AuthServiceTest {
 
         verify(jwtUtils, times(1)).createRefreshToken(user, "sid");
         verify(jwtUtils, times(1)).createAccessToken(user, "sid");
+        verify(jwtUtils, times(1)).createMediaToken(user, "sid");
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
 
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "sid", "newRefreshToken", 2000L);
@@ -418,6 +437,7 @@ class AuthServiceTest {
 
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
+        verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
@@ -453,6 +473,7 @@ class AuthServiceTest {
 
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
+        verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
@@ -491,6 +512,7 @@ class AuthServiceTest {
 
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
+        verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
@@ -531,6 +553,7 @@ class AuthServiceTest {
 
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
+        verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());

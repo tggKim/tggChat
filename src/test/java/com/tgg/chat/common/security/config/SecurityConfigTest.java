@@ -92,7 +92,7 @@ class SecurityConfigTest {
                 "password", "testPassword"
         );
 
-        TokenPair tokenPair = TokenPair.of("accessToken", "refreshToken");
+        TokenPair tokenPair = TokenPair.of("accessToken", "refreshToken", "mediaToken");
 
         when(authService.login(any(LoginRequestDto.class), any())).thenReturn(tokenPair);
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(Duration.ofMinutes(10).toMillis());

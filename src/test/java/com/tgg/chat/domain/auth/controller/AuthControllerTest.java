@@ -62,7 +62,7 @@ class AuthControllerTest {
                 "password", "testPassword"
         );
 
-        TokenPair tokenPair = TokenPair.of("newAccessToken", "newRefreshToken");
+        TokenPair tokenPair = TokenPair.of("newAccessToken", "newRefreshToken", "newMediaToken");
         when(authService.login(any(LoginRequestDto.class), anyString())).thenReturn(tokenPair);
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
@@ -276,7 +276,7 @@ class AuthControllerTest {
     @DisplayName("토큰 재발급 API 성공")
     void token_refresh_api_success() throws Exception {
         // given
-        TokenPair tokenPair = TokenPair.of("newAccessToken", "newRefreshToken");
+        TokenPair tokenPair = TokenPair.of("newAccessToken", "newRefreshToken", "newMediaToken");
         when(authService.refresh("refreshToken")).thenReturn(tokenPair);
 
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
