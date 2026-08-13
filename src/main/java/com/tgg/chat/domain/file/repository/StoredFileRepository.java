@@ -13,4 +13,6 @@ public interface StoredFileRepository extends JpaRepository<StoredFile, Long> {
     List<StoredFile> findAllByFileKey(String fileKey);
 
     Optional<StoredFile> findByFileKeyAndStoredFileVariant(String fileKey, StoredFileVariant storedFileVariant);
+
+    Optional<StoredFile> findByFileKeyAndFileOrderAndStoredFileVariant(String fileKey, Integer fileOrder, StoredFileVariant storedFileVariant);
 }

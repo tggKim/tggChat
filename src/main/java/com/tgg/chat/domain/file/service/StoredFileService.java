@@ -10,6 +10,7 @@ import com.tgg.chat.domain.chat.enums.ChatRoomType;
 import com.tgg.chat.domain.chat.enums.ChatRoomUserStatus;
 import com.tgg.chat.domain.chat.repository.ChatMessageRepository;
 import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
+import com.tgg.chat.domain.file.dto.internal.FindMessageFileResult;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.dto.internal.SaveMessageFileResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
@@ -618,7 +619,7 @@ public class StoredFileService {
 
     //GET /messages/{messageId}/files/{fileOrder}?storedFileVariant=ORIGINAL
     //GET /messages/{messageId}/files/{fileOrder}?storedFileVariant=THUMBNAIL
-    public void findMessageFile(
+    public FindMessageFileResult findMessageFile(
             Long chatMessageId,
             Integer fileOrder,
             StoredFileVariant storedFileVariant,
@@ -651,5 +652,25 @@ public class StoredFileService {
         if(findChatRoomUser.getVisibleStartMessageId() > findChatMessage.getChatMessageId()) {
             throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
+
+        // StoredFile 조회
+        String fileKey = "chat-message:" + findChatMessage.getChatMessageId();
+        StoredFile findStoredFile = storedFileRepository.findByFileKeyAndFileOrderAndStoredFileVariant(fileKey, fileOrder, storedFileVariant).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
+
+        // 실제 로컬 저장소에 존재하는 파일인지 검증
+        Path filePath = fileRootPath.resolve(findStoredFile.getStoredFileName());
+        if(!Files.isRegularFile(filePath)) {
+            throw new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND);
+        }
+
+        FileSystemResource fileSystemResource = new FileSystemResource(filePath);
+
+        return FindMessageFileResult.of(
+                fileSystemResource,
+                findStoredFile.getContentType(),
+                findStoredFile.getOriginalFileName(),
+                findStoredFile.getFileSize(),
+                findStoredFile.getFileCategory()
+        );
     }
 }
