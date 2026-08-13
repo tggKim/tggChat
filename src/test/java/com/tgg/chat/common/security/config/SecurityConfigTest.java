@@ -96,6 +96,7 @@ class SecurityConfigTest {
 
         when(authService.login(any(LoginRequestDto.class), any())).thenReturn(tokenPair);
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(Duration.ofMinutes(10).toMillis());
+        when(jwtUtils.getMediaTokenTtlMillis()).thenReturn(Duration.ofMinutes(10).toMillis());
 
         // when & then
         mockMvc.perform(post("/login")
@@ -109,10 +110,17 @@ class SecurityConfigTest {
                 .andExpect(cookie().sameSite("refreshToken", "Lax"))
                 .andExpect(cookie().path("refreshToken", "/"))
                 .andExpect(cookie().maxAge("refreshToken", 600))
-                .andExpect(cookie().value("refreshToken", "refreshToken"));
+                .andExpect(cookie().value("refreshToken", "refreshToken"))
+                .andExpect(cookie().httpOnly("mediaToken", true))
+                .andExpect(cookie().secure("mediaToken", false))
+                .andExpect(cookie().sameSite("mediaToken", "Lax"))
+                .andExpect(cookie().path("mediaToken", "/"))
+                .andExpect(cookie().maxAge("mediaToken", 600))
+                .andExpect(cookie().value("mediaToken", "mediaToken"));
 
         verify(accessTokenAuthenticator, never()).authenticateBearerToken(any());
         verify(authService, times(1)).login(any(LoginRequestDto.class), any());
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+        verify(jwtUtils, times(1)).getMediaTokenTtlMillis();
     }
 }
