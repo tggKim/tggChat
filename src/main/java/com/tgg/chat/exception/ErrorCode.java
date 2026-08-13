@@ -29,6 +29,7 @@ public enum ErrorCode {
 	JWT_INVALID_AUTH_SCHEME(HttpStatus.UNAUTHORIZED, "J006", "Authorization 헤더가 Bearer 형식이 아닙니다."),
 	JWT_INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "J007", "유효하지 않은 리프레시 토큰입니다."),
 	ACCESS_TOKEN_MISMATCH(HttpStatus.UNAUTHORIZED, "J008", "현재 사용할 수 없는 액세스 토큰입니다."),
+    JWT_INVALID_MEDIA_TOKEN(HttpStatus.UNAUTHORIZED, "J009", "유효하지 않은 미디어 토큰입니다."),
 	
 	// 친구(Friend)
 	ALREADY_FRIEND(HttpStatus.CONFLICT, "F001", "이미 친구로 등록되어 있습니다."),

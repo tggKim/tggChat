@@ -55,4 +55,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             and cm.chatMessageId >= :unreadStartMessageId
             """)
     Long countUnreadMessages(Long chatRoomId, Long unreadStartMessageId);
+
+    @Query("""
+            select cm
+            from ChatMessage cm
+            join fetch cm.chatRoom cr
+            where cm.chatMessageId = :chatMessageId
+            """)
+    Optional<ChatMessage> findByChatMessageIdWithChatRoom(Long chatMessageId);
 }

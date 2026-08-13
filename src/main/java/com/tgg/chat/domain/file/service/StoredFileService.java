@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.file.service;
 
 import com.tgg.chat.common.messaging.event.*;
+import com.tgg.chat.common.security.jwt.JwtUtils;
 import com.tgg.chat.domain.chat.entity.ChatMessage;
 import com.tgg.chat.domain.chat.entity.ChatRoom;
 import com.tgg.chat.domain.chat.entity.ChatRoomUser;
@@ -19,6 +20,7 @@ import com.tgg.chat.domain.user.entity.User;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
+import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
@@ -47,6 +49,7 @@ public class StoredFileService {
     private final StoredFileRepository storedFileRepository;
     private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final JwtUtils jwtUtils;
 
     private final Path fileRootPath;
 
@@ -80,13 +83,15 @@ public class StoredFileService {
             StoredFileRepository storedFileRepository,
             UserRepository userRepository,
             ChatRoomUserRepository chatRoomUserRepository,
-            ChatMessageRepository chatMessageRepository
+            ChatMessageRepository chatMessageRepository,
+            JwtUtils jwtUtils
     ) {
         this.storedFileRepository = storedFileRepository;
         this.fileRootPath = Path.of(fileRootPath);
         this.userRepository = userRepository;
         this.chatRoomUserRepository = chatRoomUserRepository;
         this.chatMessageRepository = chatMessageRepository;
+        this.jwtUtils = jwtUtils;
     }
 
     @Transactional
@@ -608,6 +613,43 @@ public class StoredFileService {
             }
 
             throw e;
+        }
+    }
+
+    //GET /messages/{messageId}/files/{fileOrder}?storedFileVariant=ORIGINAL
+    //GET /messages/{messageId}/files/{fileOrder}?storedFileVariant=THUMBNAIL
+    public void findMessageFile(
+            Long chatMessageId,
+            Integer fileOrder,
+            StoredFileVariant storedFileVariant,
+            String mediaToken
+    ) {
+        // 미디어 토큰 파싱 시도하고 미디어 토큰인지 확인
+        Claims claims = jwtUtils.parseClaims(mediaToken);
+        if(!jwtUtils.isMediaToken(claims)) {
+            throw new ErrorException(ErrorCode.JWT_INVALID_MEDIA_TOKEN);
+        }
+
+        // 유저의 삭제 여부 검증
+        Long userId = Long.parseLong(claims.getSubject());
+        User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+        if(findUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 메시지의 존재 여부 검증
+        ChatMessage findChatMessage = chatMessageRepository.findByChatMessageIdWithChatRoom(chatMessageId).orElseThrow(() -> new ErrorException(ErrorCode.CHAT_MESSAGE_NOT_FOUND));
+
+        // 요청 유저가 메시지의 채팅방에 참여중인지 검증
+        Long findChatRoomId = findChatMessage.getChatRoom().getChatRoomId();
+        ChatRoomUser findChatRoomUser = chatRoomUserRepository.findByChatRoomIdAndUserId(findChatRoomId, userId).orElseThrow(() -> new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
+        if(findChatRoomUser.getChatRoomUserStatus() == ChatRoomUserStatus.LEFT) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        // 요청 유저가 볼 수 있는 메시지 범위인지 검증
+        if(findChatRoomUser.getVisibleStartMessageId() > findChatMessage.getChatMessageId()) {
+            throw new ErrorException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
     }
 }
