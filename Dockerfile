@@ -16,6 +16,11 @@ RUN /app/gradlew clean bootJar
 
 # 2) Run stage: 기존 구조 유지 (/chatApp + chatApp.jar)
 FROM eclipse-temurin:17-jdk
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /chatApp
 COPY --from=build /app/build/libs/*.jar chatApp.jar
 ENTRYPOINT ["java", "-jar", "chatApp.jar"]
