@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 
 @Tag(name = "Stored File API", description = "파일 저장 및 조회 API")
@@ -125,6 +126,11 @@ public class StoredFileController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .contentType(MediaType.IMAGE_JPEG)
+                .cacheControl(
+                        CacheControl.maxAge(Duration.ofDays(365))
+                                .cachePublic()
+                                .immutable()
+                )
                 .body(fileSystemResource);
     }
 
@@ -282,6 +288,14 @@ public class StoredFileController {
         ResponseEntity.BodyBuilder responseBuilder = ResponseEntity
                 .status(HttpStatus.OK)
                 .contentLength(findMessageFileResult.getFileSize());
+
+        if(storedFileVariant == StoredFileVariant.THUMBNAIL) {
+            responseBuilder.cacheControl(
+                    CacheControl
+                            .maxAge(Duration.ofMinutes(10)).cachePrivate()
+            )
+            .header(HttpHeaders.VARY, HttpHeaders.COOKIE);
+        }
 
         if (findMessageFileResult.getFileCategory() == FileCategory.FILE) {
             responseBuilder
