@@ -126,11 +126,11 @@ public class StoredFileController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .contentType(MediaType.IMAGE_JPEG)
-                .cacheControl(
-                        CacheControl.maxAge(Duration.ofDays(365))
-                                .cachePublic()
-                                .immutable()
-                )
+                //.cacheControl(
+                //        CacheControl.maxAge(Duration.ofDays(365))
+                //                .cachePublic()
+                //                .immutable()
+                //)
                 .body(fileSystemResource);
     }
 
@@ -289,13 +289,13 @@ public class StoredFileController {
                 .status(HttpStatus.OK)
                 .contentLength(findMessageFileResult.getFileSize());
 
-        if(storedFileVariant == StoredFileVariant.THUMBNAIL) {
-            responseBuilder.cacheControl(
-                    CacheControl
-                            .maxAge(Duration.ofMinutes(10)).cachePrivate()
-            )
-            .header(HttpHeaders.VARY, HttpHeaders.COOKIE);
-        }
+//        if(storedFileVariant == StoredFileVariant.THUMBNAIL) {
+//            responseBuilder.cacheControl(
+//                    CacheControl
+//                            .maxAge(Duration.ofMinutes(10)).cachePrivate()
+//            )
+//            .header(HttpHeaders.VARY, HttpHeaders.COOKIE);
+//        }
 
         if (findMessageFileResult.getFileCategory() == FileCategory.FILE) {
             responseBuilder
