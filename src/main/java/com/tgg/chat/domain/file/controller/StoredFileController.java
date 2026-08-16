@@ -289,14 +289,6 @@ public class StoredFileController {
                 .status(HttpStatus.OK)
                 .contentLength(findMessageFileResult.getFileSize());
 
-        if(storedFileVariant == StoredFileVariant.THUMBNAIL) {
-            responseBuilder.cacheControl(
-                    CacheControl
-                            .maxAge(Duration.ofMinutes(10)).cachePrivate()
-            )
-            .header(HttpHeaders.VARY, HttpHeaders.COOKIE);
-        }
-
         if (findMessageFileResult.getFileCategory() == FileCategory.FILE) {
             responseBuilder
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -310,7 +302,9 @@ public class StoredFileController {
         } else {
             responseBuilder.contentType(
                     MediaType.parseMediaType(findMessageFileResult.getContentType())
-            );
+            ).cacheControl(
+                 CacheControl.maxAge(Duration.ofMinutes(10)).cachePrivate()
+            ).header(HttpHeaders.VARY, HttpHeaders.COOKIE);
 
             if (storedFileVariant == StoredFileVariant.ORIGINAL) {
                 responseBuilder.header(
