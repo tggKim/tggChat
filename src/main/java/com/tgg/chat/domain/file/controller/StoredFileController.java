@@ -184,6 +184,11 @@ public class StoredFileController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .contentType(mediaType)
+                .cacheControl(
+                        CacheControl.maxAge(Duration.ofDays(365))
+                                .cachePublic()
+                                .immutable()
+                )
                 .body(fileSystemResource);
     }
 
