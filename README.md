@@ -1,197 +1,933 @@
-# tggChat 채팅 서버
-WebSocket(STOMP) 기반의 실시간 채팅 서버로, Redis를 활용해 분산 환경에서도 안정적인 메시징을 지원하는 프로젝트입니다.
+# TGG Chat
 
-# 기술 스택
-- **언어** : Java 17
-- **프레임워크** : Spring Boot 3.5
-- **실시간 통신** : WebSocket(STOMP)
-- **데이터베이스** : MySQL 8, Spring Data JPA, MyBatis
-- **메시징/캐싱** : Redis Pub/Sub
-- **인증/인가** : JWT, Spring Security
-- **클라우드 및 CI/CD** : Docker
-- **빌드 도구** : Gradle
+## 프로젝트 소개
 
-# ERD
-<img width="2531" height="1253" alt="chatDB (1)" src="https://github.com/user-attachments/assets/ce545f8a-1e7f-4432-ae29-1399e0692afd" />
+WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백엔드입니다.
 
-# 주요 기능
+1대1·그룹 채팅, 사용자별 읽음 상태, 채팅방 퇴장과 재입장, JWT 세션 관리, 이미지·동영상·일반 파일 메시지를 지원합니다. 단순한 메시지 송수신을 넘어 메시지 순서, 사용자별 공개 범위, 재연결 이후 상태 복구처럼 실시간 채팅에서 발생하는 정합성 문제를 다루는 데 중점을 두었습니다.
 
-# 기능별 흐름
+## 프로젝트 배경 및 목표
+
+실시간 채팅은 WebSocket 연결만으로 완성되지 않습니다. 연결이 끊기거나 여러 서버 인스턴스가 동시에 동작하는 상황에서도 사용자가 일관된 채팅방 목록과 메시지 상태를 볼 수 있어야 합니다.
+
+이 프로젝트는 다음 문제를 직접 정의하고 해결하는 것을 목표로 합니다.
+
+- 서버 인스턴스가 달라도 채팅 이벤트를 전달할 수 있어야 합니다.
+- 채팅방을 나갔다가 다시 참여한 사용자는 허용된 시점 이후의 메시지만 볼 수 있어야 합니다.
+- 동시에 읽음 요청이 들어와도 읽음 위치가 이전 값으로 되돌아가면 안 됩니다.
+- 채팅방 메시지와 채팅방 목록 이벤트가 다른 순서로 도착하더라도 최종 상태를 복구할 수 있어야 합니다.
+- RefreshToken을 세션 단위로 관리하고 탈취·재사용 가능 범위를 줄여야 합니다.
+- 이미지와 동영상은 원본과 썸네일을 구분해 전달하고, 채팅 참여 권한이 있는 사용자만 조회할 수 있어야 합니다.
+
+## 시스템 아키텍처
+
+```mermaid
+flowchart LR
+    Client["Web / App Client"]
+
+    subgraph Server["Spring Boot"]
+        Security["Spring Security<br/>JWT Filter"]
+        REST["REST Controller"]
+        STOMP["STOMP Controller"]
+        Interceptor["STOMP JWT /<br/>Subscription Interceptor"]
+        Service["Domain Service"]
+        Publisher["Redis Publisher"]
+        Subscriber["Redis Subscriber"]
+        Broker["Simple Broker"]
+        Persistence["JPA / MyBatis"]
+        Media["Tika / Thumbnailator / FFmpeg"]
+    end
+
+    MySQL[(MySQL)]
+    Redis[("Redis<br/>Pub/Sub · Token Store")]
+    FileStorage[(File Storage)]
+
+    Client -->|"HTTP + Bearer Token"| Security
+    Security --> REST
+    REST --> Service
+
+    Client -->|"SockJS / STOMP"| Interceptor
+    Interceptor --> STOMP
+    STOMP --> Service
+
+    Service --> Persistence
+    Persistence --> MySQL
+    Service --> Publisher
+    Publisher --> Redis
+    Redis --> Subscriber
+    Subscriber --> Broker
+    Broker -->|"Topic / User Queue"| Client
+
+    Service --> Media
+    Media --> FileStorage
+```
+
+- HTTP 요청은 Spring Security의 JWT 필터에서 AccessToken을 검증합니다.
+- STOMP `CONNECT` 요청은 별도의 채널 인터셉터에서 AccessToken을 검증하고 사용자 Principal을 구성합니다.
+- 채팅 이벤트는 DB 저장 이후 Redis Pub/Sub으로 발행합니다.
+- 각 서버 인스턴스의 Redis Subscriber는 수신한 이벤트를 로컬 STOMP 구독자에게 전달합니다.
+- RefreshToken은 Redis에 저장하고, 메시지와 채팅방 상태는 MySQL에 저장합니다.
+- 이미지·동영상·일반 파일은 로컬 파일 저장소에 저장하고 메타데이터는 MySQL에서 관리합니다.
+
+## 데이터 모델 및 ERD
+
+<img width="2531" height="1253" alt="TGG Chat ERD" src="https://github.com/user-attachments/assets/ce545f8a-1e7f-4432-ae29-1399e0692afd" />
+
+핵심 모델은 다음과 같습니다.
+
+- `User`는 사용자 계정과 소프트 삭제 상태, 프로필 이미지 키를 관리합니다.
+- `UserFriend`는 사용자 간 단방향 친구 관계를 표현합니다.
+- `ChatRoom`은 `DIRECT`, `GROUP` 채팅방을 구분하고 1대1 채팅방의 중복 생성을 방지합니다.
+- `ChatRoomUser`는 사용자별 참여 상태, 권한, 읽음 범위, 메시지 공개 범위, 개인 채팅방 이름을 관리합니다.
+- `ChatMessage`는 DB가 생성한 ID를 메시지 식별자이자 정렬 기준으로 사용합니다.
+- `StoredFile`은 메시지 또는 프로필 이미지에 연결된 원본·썸네일 파일의 메타데이터를 관리합니다.
+
+`ChatRoomUser`의 두 커서가 사용자별 메시지 상태의 핵심입니다.
+
+| 필드 | 의미 |
+|---|---|
+| `visibleStartMessageId` | 해당 ID를 포함한 이후 메시지만 사용자에게 노출합니다. |
+| `unreadStartMessageId` | 해당 ID를 포함한 이후 메시지를 읽지 않은 상태로 판단합니다. |
+
+## 핵심 기능
+
+### 사용자 및 인증
+
+- 이메일 기반 회원가입과 BCrypt 비밀번호 해싱
+- AccessToken, RefreshToken, MediaToken 분리
+- `sid` 기반 다중 로그인 세션 관리
+- RefreshToken 회전과 사용자별 최대 10개 세션 제한
+- 세션 단위 로그아웃과 회원 삭제 시 전체 RefreshToken 제거
+- 사용자명·프로필 이미지 변경 이벤트 실시간 전달
+
+### 친구
+
+- 사용자명 기반 단방향 친구 추가
+- 삭제된 사용자를 제외한 친구 목록 조회
+- 채팅방 유형과 참여 상태를 반영한 초대 가능 친구 조회
+
+### 채팅방
+
+- 1대1 및 그룹 채팅방 생성
+- 기존 1대1 채팅방 재사용과 중복 생성 방지
+- 1대1 채팅방에 사용자를 초대할 때 그룹 채팅방으로 전환
+- 그룹 채팅방 초대, 퇴장, 방장 권한 양도
+- 공통 채팅방 이름과 사용자별 개인 채팅방 이름 관리
+- 사용자별 채팅방 목록과 최근 메시지, 안 읽은 메시지 수 조회
+
+### 메시지 및 파일
+
+- STOMP 기반 텍스트 메시지 전송
+- 메시지 ID 기반 커서 조회와 최대 100개 단위 페이징
+- 사용자별 읽음 커서 갱신과 읽음 이벤트 전달
+- 이미지, 동영상, 일반 파일을 한 메시지에 최대 30개·총 3GB까지 첨부
+- 이미지 및 동영상 썸네일 생성
+- MediaToken과 채팅방 참여 상태를 함께 검증한 파일 조회
+
+## 주요 처리 흐름
+
+### 메시지 전송
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant W as STOMP Controller
+    participant S as ChatMessageService
+    participant DB as MySQL
+    participant R as Redis Pub/Sub
+    participant B as STOMP Broker
+
+    C->>W: SEND /app/chatRooms/{chatRoomId}/message
+    W->>S: 사용자·채팅방 권한 검증 및 저장 요청
+    S->>DB: ChatMessage 저장
+    DB-->>S: messageId 반환
+    S-->>W: ChatEvent / ChatRoomListEvent
+    W->>R: 이벤트 발행
+    R->>B: Redis Subscriber가 STOMP 목적지로 전달
+    B-->>C: 채팅방 Topic 및 사용자 Queue 이벤트
+```
+
+### 읽음 상태 갱신
+
+1. 클라이언트가 마지막으로 읽은 `readMessageId`를 전송합니다.
+2. 서버는 해당 메시지가 채팅방에 존재하고 사용자의 공개 범위 안에 있는지 검증합니다.
+3. `readMessageId + 1`을 새로운 `unreadStartMessageId`로 계산합니다.
+4. 기존 커서보다 새로운 값이 클 때만 조건부 UPDATE하여 커서가 과거로 돌아가지 않게 합니다.
+5. 실제 DB 값과 안 읽은 메시지 수를 다시 조회해 채팅방 Topic과 사용자 목록 Queue에 전달합니다.
+
+### 재연결 이후 상태 복구
+
+Redis Pub/Sub은 연결이 끊긴 동안의 이벤트를 재전송하지 않습니다. 따라서 클라이언트는 재연결 시 WebSocket 이벤트만으로 상태를 복구하지 않습니다.
+
+```text
+STOMP 재연결
+→ 사용자 Queue 재구독
+→ HTTP 채팅방 목록 재조회
+→ 초기 조회 중 수신한 이벤트 병합
+→ 현재 채팅방 Topic 재구독
+```
+
+## 핵심 기술적 결정
+
+| 문제 | 선택 | 이유와 트레이드오프 |
+|---|---|---|
+| 서버 인스턴스 간 실시간 이벤트 전달 | Redis Pub/Sub | 별도 메시지 브로커보다 구성이 단순하고 빠르지만 이벤트 보관과 재전송을 지원하지 않아 HTTP 재동기화를 함께 사용합니다. |
+| 메시지 순서 판단 | DB가 생성한 `chatMessageId` | 서버 시간이나 인스턴스별 시계에 의존하지 않고 하나의 증가하는 값을 식별자와 정렬 기준으로 사용합니다. |
+| 읽음 커서 동시성 | 조건부 UPDATE | 늦게 도착한 읽음 요청이 더 최신 커서를 과거 값으로 덮어쓰는 것을 방지합니다. |
+| 퇴장·재입장 처리 | 참여 행 유지 + 공개 범위 커서 갱신 | `ChatRoomUser`를 삭제하지 않고 `ACTIVE/LEFT` 상태와 `visibleStartMessageId`를 관리해 재입장 정책을 표현합니다. |
+| RefreshToken 관리 | JWT `sid` + Redis | AccessToken은 Stateless하게 검증하면서 세션별 로그아웃, RefreshToken 회전, 최대 세션 수 제한을 지원합니다. |
+| 복잡한 채팅방 목록 조회 | JPA와 MyBatis 역할 분리 | 일반 영속성은 JPA로 처리하고 채팅방 목록처럼 여러 집계 결과를 조합하는 조회는 MyBatis를 사용합니다. |
+| 미디어 접근 제어 | 짧은 MediaToken + 참여 상태 검증 | 브라우저의 `<img>`·`<video>` 요청에서도 쿠키로 인증하면서 현재 채팅방 접근 권한과 메시지 공개 범위를 다시 검증합니다. |
+| 미디어 캐시 | 프로필은 장기 Public, 채팅 미디어는 단기 Private | 불변 프로필 키는 장기 캐시하고 권한이 필요한 채팅 미디어는 사용자 브라우저에만 짧게 캐시합니다. |
+
+## 기술 스택
+
+| 분류 | 기술 | 사용 목적 |
+|---|---|---|
+| Language | Java 17 | 애플리케이션 구현 |
+| Framework | Spring Boot 3.5.7 | REST API와 애플리케이션 구성 |
+| Realtime | WebSocket, STOMP, SockJS | 채팅 메시지와 사용자별 이벤트 전달 |
+| Security | Spring Security, JWT, BCrypt | HTTP·STOMP 인증과 비밀번호 해싱 |
+| Persistence | MySQL 8, Spring Data JPA, MyBatis | 영속성 처리와 복잡한 조회 |
+| Messaging | Redis Pub/Sub | 서버 인스턴스 간 이벤트 전달 |
+| Token Store | Redis | RefreshToken과 사용자별 세션 관리 |
+| Media | Apache Tika, Thumbnailator, TwelveMonkeys, FFmpeg | 파일 유형 판별과 이미지·동영상 썸네일 생성 |
+| API Docs | springdoc-openapi, Swagger UI | REST API 문서 제공 |
+| Build | Gradle Wrapper | 빌드와 의존성 관리 |
+| Infrastructure | Docker, Docker Compose, GitHub Actions, GHCR, EC2 | 컨테이너 이미지 생성과 배포 자동화 |
+
+## 배포 아키텍처 및 CI/CD
+
+```mermaid
+flowchart LR
+    Push["main branch push"] --> Actions["GitHub Actions"]
+    Actions --> Build["Docker image build"]
+    Build --> GHCR["GHCR push"]
+    GHCR --> Deploy["EC2 SSH deployment"]
+    Deploy --> Compose["Docker Compose"]
+    Compose --> App["Spring Boot"]
+    Compose --> MySQL[(MySQL)]
+    Compose --> Redis[(Redis)]
+```
+
+- `main` 브랜치 Push 또는 수동 실행으로 워크플로우가 시작됩니다.
+- GitHub Actions가 Docker 이미지를 빌드해 GHCR에 Push합니다.
+- 이후 EC2에 SSH로 접속해 Docker Compose의 이미지 Pull과 컨테이너 갱신 명령을 실행합니다.
+- 애플리케이션 로그와 업로드 파일, MySQL·Redis 데이터는 컨테이너 외부 볼륨에 유지합니다.
+
+## 현재 제약사항 및 개선 계획
+
+- Redis Pub/Sub은 이벤트를 보관하지 않으므로 재연결 이후 HTTP API를 통한 상태 재동기화가 필요합니다.
+- 내장 Simple Broker를 사용하므로 대규모 연결과 메시지 보존이 필요해지면 외부 STOMP Broker 도입을 검토해야 합니다.
+- 채팅 이벤트와 채팅방 목록 이벤트가 서로 다른 Redis 채널을 사용하므로 일시적인 도착 순서 차이를 허용합니다.
+- 업로드 파일을 서버 로컬 볼륨에 저장하므로 애플리케이션을 여러 인스턴스로 확장하려면 공유 스토리지 또는 오브젝트 스토리지가 필요합니다.
+- 운영 HTTPS와 도메인 구성이 아직 적용되지 않았으며, 적용 시 쿠키의 `Secure`·`SameSite` 정책과 WebSocket Origin을 함께 조정해야 합니다.
+- 현재 Docker Compose의 애플리케이션 이미지 설정과 GHCR 기반 배포 흐름을 일치시키는 정리가 필요합니다.
+
+## API 사용 가이드
+
 <details>
- 
-<summary>유저 관리</summary>
+<summary><strong>시작하기</strong></summary>
 
-### 유저 생성(POST /user)
-1. 요청값 검증
-2. 이메일 중복 검사
-3. 유저명 중복 검사
-4. 비밀번호 인코딩
-5. 유저 저장
-6. 저장된 유저 정보 응답
+### 요구 사항
 
-### 타 유저 조회(GET /user/{userId})
-1. 요청 경로의 userId로 조회 대상 유저 식별
-2. 조회 대상 유저 존재와 삭제여부 검증
-3. 조회 대상 유저 정보 응답
+- Java 17
+- MySQL 8
+- Redis 7
+- FFmpeg
 
-### 본인 조회(GET /me)
-1. JWT 인증 정보에서 로그인한 유저 ID 추출
-2. 로그인 유저 존재와 삭제여부 검증
-3. 본인 유저 정보 응답 
+### 로컬 인프라
 
-### 유저 정보 수정(PATCH /me)
-1. JWT 인증 정보에서 로그인한 유저 ID 추출
-2. 요청값 검증
-3. 로그인 유저 존재와 삭제여부 검증
-4. 수정할 유저명이 기존 유저명과 다른 경우 유저명 중복 검사
-5. 유저명 수정
+1. MySQL에 `chatdb` 데이터베이스를 생성합니다.
+2. `application-local.yml`의 MySQL 접속 정보를 로컬 환경에 맞게 설정합니다.
+3. MySQL은 기본 `3306`, Redis는 기본 `6379` 포트에서 실행합니다.
+4. 업로드 파일을 저장할 디렉터리를 준비합니다.
 
-### 유저 삭제(DELETE /me)
-1. JWT 인증 정보에서 로그인한 유저 ID 추출
-2. 로그인 유저 존재와 삭제여부 검증
-3. 유저 삭제 상태로 변경
-4. Redis에 저장된 해당 유저의 RefreshToken 세션 전체 삭제
+### 필수 환경 변수
 
-### 유저 관리 주의사항
-- 유저 삭제는 DB row를 제거하는 것이 아닌 deleted 값을 true로 변경하는 소프트 삭제 방식
-- 이메일과 유저명은 DB unique 제약이 걸려있어 삭제된 유저의 이메일/유저명도 재사용할 수 없다.
+| 환경 변수 | 설명 |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | 로컬 실행 시 `local` |
+| `SECRET` | JWT 서명에 사용할 최소 32바이트 문자열 |
+| `FILE_ROOT_PATH` | 업로드 파일을 저장할 디렉터리의 절대 경로 |
+
+Linux/macOS:
+
+```bash
+SPRING_PROFILES_ACTIVE=local \
+SECRET="replace-with-at-least-32-byte-secret" \
+FILE_ROOT_PATH="/absolute/path/to/files" \
+./gradlew bootRun
+```
+
+Windows PowerShell:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE = "local"
+$env:SECRET = "replace-with-at-least-32-byte-secret"
+$env:FILE_ROOT_PATH = "C:\absolute\path\to\files"
+.\gradlew.bat bootRun
+```
+
+애플리케이션이 실행되면 Swagger UI에서 REST API를 확인할 수 있습니다.
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
 
 </details>
 
 <details>
- 
-<summary>친구 관리</summary>
+<summary><strong>인터페이스 공통 규칙</strong></summary>
 
-### 친구 추가(POST /friends)
-1. JWT 인증 정보에서 로그인한 유저 ID 추출
-2. 요청값 검증
-3. 로그인 유저 존재와 삭제여부 검증
-4. 요청한 username으로 친구 추가 대상 유저 조회
-5. 친구 추가 대상 유저 존재와 삭제여부 검증
-6. 자기 자신을 친구로 추가하는 요청인지 검증
-7. 이미 친구로 등록된 유저인지 검증
-8. 친구 관계 저장
+### Base URL
 
-### 친구 목록 조회(GET /friends)
-1. JWT 인증 정보에서 로그인한 유저 ID 추출
-2. 로그인 유저 존재와 삭제여부 검증
-3. 로그인 유저 ID를 기준으로 삭제되지 않은 친구 목록 조회
-5. 친구 ID와 친구 유저명 응답
+```text
+http://localhost:8080
+```
 
-### 친구 관리 주의사항
-- 친구 관계는 단방향 관계로 유저 A가 유저 B를 친구로 추가해도 유저 B의 친구 목록에 유저 A가 자동으로 추가되지는 않는다.
-- 삭제된 유저는 친구로 추가할 수 없고, 친구 목록 조회에서도 제외된다.
+### 인증
 
-</details>
+보호된 HTTP API는 AccessToken을 Bearer 형식으로 전달합니다.
 
-<details>
- 
-<summary>인증/인가</summary>
+```http
+Authorization: Bearer {accessToken}
+```
 
-### 토큰 관리 전략
-- AccessToken과 RefreshToken을 사용한다.
+| 토큰 | 전달 방식 | 용도 | 유효 시간 |
+|---|---|---|---|
+| AccessToken | 응답 Body → `Authorization` 헤더 | 보호된 REST API와 STOMP 연결 | 10분 |
+| RefreshToken | HttpOnly Cookie | AccessToken 재발급 | 7일 |
+| MediaToken | HttpOnly Cookie | 채팅 메시지 파일 조회 | 10분 |
 
-- AccessToken은 요청 인증에 사용하고, RefreshToken은 AccessToken 재발급에 사용한다.
+쿠키를 사용하는 브라우저 요청은 Fetch의 `credentials: "include"` 또는 Axios의 `withCredentials: true` 설정이 필요합니다.
 
-    - AccessToken은 응답 바디로 전달하고, 클라이언트는 Authorization 헤더의 Bearer 형식으로 요청한다.
+### 요청과 응답
 
-    - RefreshToken은 HttpOnly 쿠키로 전달한다.
+- 기본 요청·응답 형식은 `application/json; charset=UTF-8`입니다.
+- 파일 업로드는 `multipart/form-data`, 파일 조회는 실제 파일의 Content-Type 또는 `application/octet-stream`을 사용합니다.
+- 성공 응답은 공통 Wrapper 없이 DTO, 배열 또는 빈 Body를 반환합니다.
+- Enum은 대문자 문자열로 직렬화하며, 가능한 값과 의미는 Enum을 사용하는 API 명세에서 설명합니다.
+- 사용자·인증 응답과 오류 응답의 시각은 `yyyy-MM-dd HH:mm:ss` 형식입니다.
+- 채팅 응답과 STOMP 이벤트의 `LocalDateTime`은 기본 ISO-8601 형식으로 직렬화합니다.
 
-- AccessToken과 RefreshToken에는 공통으로 `sub`, `sid`, `type`, `iat`, `exp`를 포함한다.
+### 공통 오류 응답
 
-    - `sub`는 유저 ID를 의미한다.
+```json
+{
+  "code": "CR010",
+  "status": 403,
+  "message": "채팅방에 접근할 권한이 없습니다.",
+  "timestamp": "2026-08-17 15:30:00"
+}
+```
 
-    - `sid`는 로그인 세션 식별자를 의미한다.
-
-    - `type`은 `access` 또는 `refresh`를 의미한다.
-
-- AccessToken은 Redis에 저장하지 않고 JWT 자체의 서명, 만료 시간, 토큰 타입을 기준으로 검증한다.
-
-- RefreshToken은 Redis에 저장하여 재발급 가능 여부를 서버에서 제어한다.
-
-- 유저 존재 여부, 삭제 여부, 기능 수행 권한은 각 서비스 계층에서 추가로 검증한다.
-
-### 레디스 Key 구조
-
-- `RT:{sid}` = RefreshToken
-
-- `USER_SESSIONS:{userId}` = 해당 유저의 sid 목록을 저장하는 Sorted Set
-
-- `USER_SESSIONS:{userId}`의 score는 세션 갱신 시점의 시간값이다.
-
-- RefreshToken과 유저 세션 목록은 RefreshToken 만료 시간과 동일한 TTL을 가진다.
-
-- 유저별 세션 수가 제한 개수를 초과하면 가장 오래된 sid부터 제거한다.
-
-### 1. 로그인(POST /login)
-1. 요청값 검증
-2. 이메일로 유저 조회 후 존재와 삭제여부 검증
-3. 비밀번호 일치 검증
-4. 기존 RefreshToken 쿠키가 존재하면 검증 후 타입이 `refresh`인지 검증
-5. 기존 RefreshToken 의 `sub`, `sid`를 이용해 Redis의 기존 세션 제거
-6. 기존 쿠키 파싱 실패는 로그인 흐름을 막지 않음
-7. 새로운 sid 생성
-8. AccessToken, RefreshToken 발급
-9. Redis에 `RT:{sid}` 형식으로 RefreshToken 저장
-10. Redis의 `USER_SESSIONS:{userId}`에 sid 추가
-11. 유저별 세션 수가 제한 개수를 초과하면 오래된 세션 제거
-12. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
-
-### 2. 로그아웃(POST /logout)
-1. AccessToken 인증 정보에서 현재 유저 ID와 sid 추출
-2. Redis에서 `RT:{sid}` 삭제
-3. Redis의 `USER_SESSIONS:{userId}`에서 sid 제거
-4. RefreshToken 쿠키 만료 처리
-5. 클라이언트는 보관 중인 AccessToken 제거
-
-### 3. 토큰 재발급(POST /refresh)
-1. 쿠키에서 RefreshToken 획득
-2. RefreshToken 검증
-3. 토큰 타입이 `refresh`인지 검증
-4. RefreshToken에서 `sid` 추출
-5. Redis의 `RT:{sid}` 값과 현재 RefreshToken 일치 여부 검증
-6. RefreshToken의 `sub`로 유저 조회 후 존재와 삭제여부 검증
-7. 같은 sid로 새로운 AccessToken, RefreshToken 생성
-8. Redis의 `RT:{sid}` 값을 새로운 RefreshToken으로 변경 후 TTL 갱신
-9. Redis의 `USER_SESSIONS:{userId}`에서 sid score와 TTL 갱신
-10. AccessToken은 응답 바디, RefreshToken은 HttpOnly 쿠키로 전달
-
-### 스프링 시큐리티 흐름
-
-1. 공개 요청용 시큐리티 체인과 인증 요청용 시큐리티 체인을 각각 빈으로 등록한다.
-
-   1-1. 화이트리스트에 해당하는 요청은 공개 요청용 시큐리티 체인에서 처리된다.
-  이때 먼저 매칭된 체인 하나만 적용된다.
-
-2. 화이트리스트에 해당하지 않는 요청은 인증 요청용 시큐리티 체인에서 처리된다.
-
-   2-1. 인증 요청용 체인에 등록된 `JwtSecurityFilter`가 `Authorization` 헤더에서 AccessToken을 추출하고 검증한다.
-
-   2-2. 토큰 검증 과정에서 발생한 `ErrorException`은 `JwtSecurityFilter`에서 에러 응답을 생성한다.
-
-   2-3. 토큰 검증이 성공하면 `AuthenticatedUser`를 기반으로
-  `UsernamePasswordAuthenticationToken`을 생성하고, 이를 `SecurityContextHolder`에 저장한다.
-
-   2-4. 이후 컨트롤러에서는 `@AuthenticationPrincipal`을 통해 인증 사용자 정보를 꺼내 사용한다.
-
-### 인증/인가 주의사항
-
-- AccessToken은 Redis에 저장하지 않으므로 로그아웃 직후에도 만료 전까지 JWT 자체의 서명 검증은 통과할 수 있다.
-
-- 로그아웃은 현재 sid에 해당하는 RefreshToken을 제거하여 재발급을 막는 방식이다.
-
-- 유저 삭제 시에는 해당 유저의 Redis RefreshToken 세션을 전체 삭제한다.
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `code` | String | 클라이언트에서 오류를 구분하기 위한 코드 |
+| `status` | Number | 대응되는 HTTP 상태 코드 |
+| `message` | String | 오류 설명 |
+| `timestamp` | String | 오류 발생 시각 |
 
 </details>
 
 <details>
- 
-<summary>채팅방</summary>
+<summary><strong>REST API 명세</strong></summary>
+
+### 엔드포인트 요약
+
+| 도메인 | Method | 경로 | 인증 | 설명 |
+|---|---|---|---|---|
+| Auth | POST | `/login` | 공개 | 로그인 |
+| Auth | POST | `/logout` | AccessToken | 현재 세션 로그아웃 |
+| Auth | POST | `/refresh` | RefreshToken Cookie | 토큰 재발급 |
+| User | POST | `/user` | 공개 | 회원가입 |
+| User | GET | `/user/{userId}` | 공개 | 다른 사용자 조회 |
+| User | GET | `/me` | AccessToken | 로그인 사용자 조회 |
+| User | PATCH | `/me` | AccessToken | 사용자명 변경 |
+| User | DELETE | `/me` | AccessToken | 회원 삭제 |
+| User | PUT | `/me/profile-image` | AccessToken | 프로필 이미지 변경 |
+| User | GET | `/profile-images/{fileKey}/thumbnail` | 공개 | 프로필 썸네일 조회 |
+| User | GET | `/profile-images/{fileKey}/image` | 공개 | 프로필 원본 조회 |
+| Friend | POST | `/friends` | AccessToken | 친구 추가 |
+| Friend | GET | `/friends` | AccessToken | 친구 목록 조회 |
+| ChatRoom | POST | `/directChatRooms` | AccessToken | 1대1 채팅방 생성·재입장 |
+| ChatRoom | POST | `/groupChatRooms` | AccessToken | 그룹 채팅방 생성 |
+| ChatRoom | POST | `/directChatRooms/{chatRoomId}/invites` | AccessToken | 1대1 방 초대 및 그룹 전환 |
+| ChatRoom | POST | `/groupChatRooms/{chatRoomId}/invites` | AccessToken | 그룹 채팅방 초대 |
+| ChatRoom | POST | `/chatRooms/{chatRoomId}/leave` | AccessToken | 채팅방 나가기 |
+| ChatRoom | PATCH | `/chatRooms/{chatRoomId}/name` | AccessToken | 그룹 채팅방 기본 이름 변경 |
+| ChatRoom | PATCH | `/chatRooms/{chatRoomId}/customName` | AccessToken | 개인 채팅방 이름 변경 |
+| ChatRoom | GET | `/chatRooms/{chatRoomId}/invitableFriends` | AccessToken | 초대 가능 친구 조회 |
+| ChatRoom | GET | `/chatRooms/{chatRoomId}/members` | AccessToken | 채팅방 참여자 조회 |
+| ChatRoom | GET | `/chatRooms/{chatRoomId}/readStatuses` | AccessToken | 참여자별 읽음 범위 조회 |
+| ChatRoom | GET | `/chatRooms` | AccessToken | 내 채팅방 목록 조회 |
+| Message | GET | `/chatRooms/{chatRoomId}/messages` | AccessToken | 채팅 메시지 조회 |
+| File | POST | `/chatRooms/{chatRoomId}/files` | AccessToken | 파일 메시지 전송 |
+| File | GET | `/media/messages/{chatMessageId}/files/{fileOrder}` | MediaToken Cookie | 메시지 파일 조회 |
+
+### 인증 API
+
+#### `POST /login`
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+```
+
+성공 시 AccessToken을 Body로 반환하고 RefreshToken과 MediaToken을 HttpOnly Cookie로 설정합니다.
+
+```json
+{
+  "accessToken": "eyJ..."
+}
+```
+
+#### `POST /logout`
+
+AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거하고 RefreshToken·MediaToken Cookie를 만료시킵니다. 성공 응답 Body는 없습니다.
+
+#### `POST /refresh`
+
+요청 Body 없이 RefreshToken Cookie를 사용합니다. 기존 RefreshToken과 동일한 `sid`로 토큰을 회전합니다.
+
+```json
+{
+  "accessToken": "eyJ..."
+}
+```
+
+응답에서 새로운 RefreshToken과 MediaToken Cookie도 함께 설정합니다.
+
+### 사용자 API
+
+#### `POST /user`
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password",
+  "username": "user1"
+}
+```
+
+```json
+{
+  "userId": 1,
+  "username": "user1",
+  "createdAt": "2026-08-17 15:30:00",
+  "updatedAt": "2026-08-17 15:30:00"
+}
+```
+
+#### `GET /user/{userId}`
+
+```json
+{
+  "userId": 2,
+  "username": "user2",
+  "createdAt": "2026-08-17 15:30:00",
+  "updatedAt": "2026-08-17 15:30:00"
+}
+```
+
+#### `GET /me`
+
+```json
+{
+  "userId": 1,
+  "email": "user@example.com",
+  "username": "user1",
+  "profileImageKey": "user:1:550e8400-e29b-41d4-a716-446655440000",
+  "createdAt": "2026-08-17 15:30:00",
+  "updatedAt": "2026-08-17 15:30:00"
+}
+```
+
+#### `PATCH /me`
+
+```json
+{
+  "username": "newUsername"
+}
+```
+
+성공 응답 Body는 없습니다. 사용자명 변경은 상호작용한 사용자의 `/user/queue/users/metadata` 구독에도 전달됩니다.
+
+#### `DELETE /me`
+
+사용자를 소프트 삭제하고 Redis의 모든 RefreshToken 세션을 제거합니다. 성공 응답 Body는 없습니다.
+
+#### `PUT /me/profile-image`
+
+`multipart/form-data`의 `userProfileImage` Part에 JPG, PNG, GIF 또는 WebP 이미지를 전달합니다. 성공 응답 Body는 없습니다.
+
+#### `GET /profile-images/{fileKey}/thumbnail`
+
+JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+
+#### `GET /profile-images/{fileKey}/image`
+
+프로필 원본 이미지 바이너리와 실제 이미지 Content-Type을 반환합니다. 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+
+### 친구 API
+
+#### `POST /friends`
+
+친구 관계는 요청 사용자를 기준으로 하는 단방향 관계입니다.
+
+```json
+{
+  "username": "user2"
+}
+```
+
+성공 응답 Body는 없습니다.
+
+#### `GET /friends`
+
+```json
+[
+  {
+    "friendId": 2,
+    "friendUsername": "user2",
+    "profileImageKey": "user:2:550e8400-e29b-41d4-a716-446655440001"
+  }
+]
+```
+
+### 채팅방 API
+
+#### `POST /directChatRooms`
+
+```json
+{
+  "friendId": 2
+}
+```
+
+```json
+{
+  "chatRoomId": 10
+}
+```
+
+동일한 두 사용자 사이에 기존 1대1 채팅방이 있으면 새로 만들지 않고 기존 채팅방을 사용합니다.
+
+#### `POST /groupChatRooms`
+
+`friendIds`에는 요청 사용자를 제외한 친구 ID를 전달합니다. 중복 ID는 서버에서 제거합니다.
+
+```json
+{
+  "friendIds": [2, 3],
+  "chatRoomName": "백엔드 스터디"
+}
+```
+
+```json
+{
+  "chatRoomId": 11
+}
+```
+
+#### `POST /directChatRooms/{chatRoomId}/invites`
+
+1대1 채팅방에 기존 참여자가 아닌 사용자를 한 명 이상 초대하고 그룹 채팅방으로 전환합니다.
+
+```json
+{
+  "friendIds": [3, 4]
+}
+```
+
+성공 응답 Body는 없습니다.
+
+#### `POST /groupChatRooms/{chatRoomId}/invites`
+
+그룹 채팅방에 신규 사용자를 초대하거나 `LEFT` 상태의 기존 사용자를 복귀시킵니다.
+
+```json
+{
+  "friendIds": [3, 4]
+}
+```
+
+성공 응답 Body는 없습니다.
+
+#### `POST /chatRooms/{chatRoomId}/leave`
+
+그룹 채팅방의 방장이 나가고 다른 활성 사용자가 남아 있다면 `nextOwnerId`가 필요합니다. 그 외에는 빈 객체를 전달할 수 있습니다.
+
+```json
+{
+  "nextOwnerId": 2
+}
+```
+
+성공 응답 Body는 없습니다.
+
+#### `PATCH /chatRooms/{chatRoomId}/name`
+
+그룹 채팅방의 `OWNER`만 공통 이름을 변경할 수 있습니다.
+
+```json
+{
+  "roomName": "새 그룹 이름"
+}
+```
+
+성공 응답 Body는 없습니다.
+
+#### `PATCH /chatRooms/{chatRoomId}/customName`
+
+1대1·그룹 채팅방 모두 사용할 수 있으며 요청 사용자에게만 적용됩니다.
+
+```json
+{
+  "customRoomName": "내가 정한 이름"
+}
+```
+
+성공 응답 Body는 없습니다.
+
+#### `GET /chatRooms/{chatRoomId}/invitableFriends`
+
+```json
+[
+  {
+    "userId": 3,
+    "username": "user3",
+    "profileImageKey": "user:3:550e8400-e29b-41d4-a716-446655440002"
+  }
+]
+```
+
+#### `GET /chatRooms/{chatRoomId}/members`
+
+```json
+[
+  {
+    "userId": 1,
+    "username": "user1",
+    "profileImageKey": "user:1:550e8400-e29b-41d4-a716-446655440000",
+    "chatRoomUserRole": "OWNER",
+    "canAddFriend": false
+  }
+]
+```
+
+`chatRoomUserRole`의 가능한 값:
+
+| 값 | 의미 |
+|---|---|
+| `OWNER` | 그룹 채팅방 방장 |
+| `MEMBER` | 일반 참여자. 1대1 채팅방의 두 사용자도 `MEMBER`입니다. |
+
+#### `GET /chatRooms/{chatRoomId}/readStatuses`
+
+```json
+[
+  {
+    "userId": 1,
+    "unreadStartMessageId": 151
+  },
+  {
+    "userId": 2,
+    "unreadStartMessageId": 145
+  }
+]
+```
+
+`unreadStartMessageId`를 포함한 이후 메시지를 해당 사용자가 읽지 않은 것으로 판단합니다.
+
+#### `GET /chatRooms`
+
+현재 `ACTIVE` 상태로 참여한 채팅방을 `lastActivityAt` 내림차순으로 반환합니다.
+
+```json
+[
+  {
+    "roomId": 10,
+    "roomType": "GROUP",
+    "baseRoomName": "백엔드 스터디",
+    "customRoomName": null,
+    "myRole": "OWNER",
+    "memberCount": 3,
+    "previewUsers": [
+      {
+        "userId": 2,
+        "username": "user2",
+        "profileImageKey": "user:2:550e8400-e29b-41d4-a716-446655440001"
+      }
+    ],
+    "lastMessagePreview": "안녕하세요",
+    "messageId": 150,
+    "lastActivityAt": "2026-08-17T15:30:00",
+    "unreadStartMessageId": 148,
+    "unreadCount": 3
+  }
+]
+```
+
+`roomType`의 가능한 값:
+
+| 값 | 의미 |
+|---|---|
+| `DIRECT` | 1대1 채팅방 |
+| `GROUP` | 그룹 채팅방 |
+
+`myRole`의 가능한 값은 `OWNER`, `MEMBER`입니다. `baseRoomName`, `customRoomName`, 최근 메시지 관련 필드는 값이 없으면 `null`일 수 있습니다.
+
+### 메시지 API
+
+#### `GET /chatRooms/{chatRoomId}/messages`
+
+| Query Parameter | 필수 | 설명 |
+|---|---|---|
+| `offsetMessageId` | 아니요 | 전달하면 해당 ID보다 작은 이전 메시지를 조회합니다. |
+
+최신 메시지부터 `messageId` 내림차순으로 최대 100개를 반환합니다.
+
+```json
+[
+  {
+    "messageId": 150,
+    "chatMessageType": "TEXT",
+    "content": "안녕하세요",
+    "senderId": 1,
+    "senderName": "user1",
+    "senderProfileImageKey": "user:1:550e8400-e29b-41d4-a716-446655440000",
+    "createdAt": "2026-08-17T15:30:00",
+    "chatEventFiles": []
+  }
+]
+```
+
+`chatMessageType`의 가능한 값:
+
+| 값 | 의미 |
+|---|---|
+| `TEXT` | 일반 텍스트 메시지 |
+| `FILE` | 파일 첨부 메시지 |
+| `JOIN_TEXT` | 참여 안내 메시지 |
+| `LEAVE_TEXT` | 퇴장 안내 메시지 |
+
+삭제된 발신자의 메시지는 유지되지만 `senderId`, `senderName`, `senderProfileImageKey`는 `null`로 반환합니다.
+
+파일 메시지의 `chatEventFiles` 항목:
+
+```json
+{
+  "fileOrder": 1,
+  "fileCategory": "IMAGE",
+  "originalFileName": "photo.png",
+  "fileSize": 204800
+}
+```
+
+`fileCategory`의 가능한 값:
+
+| 값 | 의미 |
+|---|---|
+| `IMAGE` | 이미지 파일 |
+| `VIDEO` | 동영상 파일 |
+| `FILE` | 그 외 일반 파일 |
+
+### 파일 API
+
+#### `POST /chatRooms/{chatRoomId}/files`
+
+`multipart/form-data`의 `files` Part에 1개 이상 30개 이하의 파일을 전달합니다. 전체 파일 크기는 최대 3GB입니다. 성공 응답 Body는 없으며 저장된 파일 메시지는 STOMP 이벤트로 전달됩니다.
+
+#### `GET /media/messages/{chatMessageId}/files/{fileOrder}`
+
+MediaToken Cookie가 필요합니다.
+
+| Query Parameter | 필수 | 가능한 값 | 설명 |
+|---|---|---|---|
+| `storedFileVariant` | 예 | `ORIGINAL`, `THUMBNAIL` | 원본 또는 썸네일 선택 |
+
+```text
+GET /media/messages/150/files/1?storedFileVariant=THUMBNAIL
+```
+
+`IMAGE`, `VIDEO`는 해당 Content-Type으로 인라인 응답하고 10분간 Private Cache를 적용합니다. 일반 `FILE`은 `application/octet-stream`과 Attachment 형식으로 내려받습니다.
 
 </details>
 
 <details>
- 
-<summary>메시징</summary>
+<summary><strong>WebSocket/STOMP 명세</strong></summary>
+
+### 연결
+
+| 항목 | 값 |
+|---|---|
+| SockJS Endpoint | `/ws` |
+| STOMP CONNECT Header | `Authorization: Bearer {accessToken}` |
+| Client SEND Prefix | `/app` |
+| Broker Prefix | `/topic`, `/queue` |
+| User Destination Prefix | `/user` |
+
+권장 연결 순서:
+
+```text
+POST /login으로 AccessToken 획득
+→ /ws에 SockJS 연결
+→ Authorization 헤더를 포함해 STOMP CONNECT
+→ 사용자 Queue 구독
+→ GET /chatRooms로 초기 상태 조회
+→ 채팅방 입장 시 Topic 구독
+```
+
+### 클라이언트 → 서버
+
+| 목적 | SEND 경로 | Payload |
+|---|---|---|
+| 텍스트 메시지 전송 | `/app/chatRooms/{chatRoomId}/message` | `ChatMessageRequest` |
+| 읽음 처리 | `/app/chatRooms/{chatRoomId}/read` | `ReadChatMessagesRequest` |
+
+텍스트 메시지 전송:
+
+```json
+{
+  "content": "안녕하세요"
+}
+```
+
+읽음 처리:
+
+```json
+{
+  "readMessageId": 150
+}
+```
+
+### 서버 → 클라이언트
+
+| 구독 경로 | 이벤트 | 설명 |
+|---|---|---|
+| `/topic/chatRooms/{chatRoomId}` | `ChatEvent` | 채팅방 메시지와 읽음 상태 변경 |
+| `/user/queue/chatRooms/list` | `ChatRoomListEvent` | 현재 사용자의 채팅방 목록 변경 |
+| `/user/queue/users/metadata` | `UserMetadataEvent` | 상호작용한 사용자의 이름·프로필 변경 |
+| `/user/queue/errors` | `ErrorResponse` | 구독·메시지 처리 오류 |
+
+### ChatEvent
+
+#### `MESSAGE_SENT`
+
+```json
+{
+  "chatEventType": "MESSAGE_SENT",
+  "roomId": 10,
+  "senderId": 1,
+  "senderName": "user1",
+  "senderProfileImageKey": "user:1:550e8400-e29b-41d4-a716-446655440000",
+  "chatEventFiles": null,
+  "content": "안녕하세요",
+  "messageId": 150,
+  "chatMessageType": "TEXT",
+  "createdAt": "2026-08-17T15:30:00",
+  "eventUserIds": null,
+  "readerUserId": null,
+  "unreadStartMessageId": null
+}
+```
+
+`chatMessageType`은 `TEXT`, `FILE`, `JOIN_TEXT`, `LEAVE_TEXT` 중 하나입니다. `FILE`이면 `chatEventFiles`에 파일 순서, 분류, 원본 이름, 크기가 포함됩니다.
+
+#### `MESSAGE_READ`
+
+```json
+{
+  "chatEventType": "MESSAGE_READ",
+  "roomId": 10,
+  "senderId": null,
+  "senderName": null,
+  "senderProfileImageKey": null,
+  "chatEventFiles": null,
+  "content": null,
+  "messageId": null,
+  "chatMessageType": null,
+  "createdAt": null,
+  "eventUserIds": null,
+  "readerUserId": 2,
+  "unreadStartMessageId": 151
+}
+```
+
+### ChatRoomListEvent
+
+| `eventType` | 발생 시점 | 사용 필드 |
+|---|---|---|
+| `ROOM_ADDED` | 채팅방 생성·초대·재입장 | 채팅방 전체 정보, 참여자 미리보기, 최근 메시지, 읽음 상태 |
+| `ROOM_CHANGED` | 참여자 초대·퇴장 등 방 정보 변경 | 방 정보, 인원수, 미리보기 사용자, 최근 메시지 |
+| `ROOM_NAME_CHANGED` | 기본 또는 개인 이름 변경 | `roomId`, `baseRoomName`, `customRoomName` |
+| `ROOM_REMOVED` | 현재 사용자가 채팅방에서 나감 | `roomId` |
+| `MESSAGE_SENT` | 새로운 메시지 저장 | `roomId`, `lastMessagePreview`, `messageId`, `lastActivityAt` |
+| `MESSAGE_READ` | 현재 사용자의 읽음 처리 | `roomId`, `unreadStartMessageId`, `unreadCount` |
+
+`ROOM_ADDED` 예시:
+
+```json
+{
+  "eventType": "ROOM_ADDED",
+  "roomId": 10,
+  "roomType": "GROUP",
+  "receiverUserId": 1,
+  "baseRoomName": "백엔드 스터디",
+  "customRoomName": null,
+  "myRole": "MEMBER",
+  "memberCount": 3,
+  "previewUsers": [
+    {
+      "userId": 2,
+      "username": "user2",
+      "profileImageKey": "user:2:550e8400-e29b-41d4-a716-446655440001"
+    }
+  ],
+  "lastMessagePreview": null,
+  "messageId": null,
+  "lastActivityAt": "2026-08-17T15:30:00",
+  "unreadStartMessageId": 0,
+  "unreadCount": 0
+}
+```
+
+모든 이벤트가 모든 필드를 채우지는 않습니다. 이벤트에서 `null`인 필드는 기존 클라이언트 상태를 덮어쓰지 않아야 합니다. 최근 메시지는 수신한 `messageId`가 현재 값보다 큰 경우에만 갱신하고, 읽음 커서는 더 작은 값으로 되돌리지 않습니다.
+
+### UserMetadataEvent
+
+| `userMetadataEventType` | 의미 | 변경 필드 |
+|---|---|---|
+| `USERNAME_UPDATED` | 사용자명 변경 | `username` |
+| `USER_PROFILE_IMAGE_UPDATE` | 프로필 이미지 변경 | `userProfileImageKey` |
+
+```json
+{
+  "userMetadataEventType": "USERNAME_UPDATED",
+  "userId": 2,
+  "username": "newUsername",
+  "userProfileImageKey": null,
+  "eventUserIds": null
+}
+```
+
+### 오류 처리
+
+- STOMP `CONNECT` 인증 실패는 `ERROR` 프레임으로 전달되며 연결이 종료됩니다.
+- `/topic/chatRooms/{chatRoomId}` 구독 권한이 없으면 해당 구독만 차단하고 `/user/queue/errors`로 오류를 전달합니다.
+- 메시지 전송과 읽음 처리 중 발생한 오류도 `/user/queue/errors`로 전달하며 연결은 유지합니다.
+
+```json
+{
+  "code": "CR010",
+  "status": 403,
+  "message": "채팅방에 접근할 권한이 없습니다.",
+  "timestamp": "2026-08-17 15:30:00"
+}
+```
 
 </details>
