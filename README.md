@@ -180,24 +180,6 @@ STOMP 재연결
 
 ---
 
-## 기술 스택
-
-| 분류 | 기술 | 사용 목적 |
-|---|---|---|
-| Language | Java 17 | 애플리케이션 구현 |
-| Framework | Spring Boot 3.5.7 | REST API와 애플리케이션 구성 |
-| Realtime | WebSocket, STOMP, SockJS | 채팅 메시지와 사용자별 이벤트 전달 |
-| Security | Spring Security, JWT, BCrypt | HTTP·STOMP 인증과 비밀번호 해싱 |
-| Persistence | MySQL 8, Spring Data JPA, MyBatis | 영속성 처리와 복잡한 조회 |
-| Messaging | Redis Pub/Sub | 서버 인스턴스 간 이벤트 전달 |
-| Token Store | Redis | RefreshToken과 사용자별 세션 관리 |
-| Media | Apache Tika, Thumbnailator, TwelveMonkeys, FFmpeg | 파일 유형 판별과 이미지·동영상 썸네일 생성 |
-| API Docs | springdoc-openapi, Swagger UI | REST API 문서 제공 |
-| Build | Gradle Wrapper | 빌드와 의존성 관리 |
-| Infrastructure | Docker, Docker Compose, GitHub Actions, GHCR, EC2 | 컨테이너 이미지 생성과 배포 자동화 |
-
----
-
 ## 배포 아키텍처 및 CI/CD
 
 ```mermaid
