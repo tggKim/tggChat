@@ -6,6 +6,8 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 1대1·그룹 채팅, 사용자별 읽음 상태, 채팅방 퇴장과 재입장, JWT 세션 관리, 이미지·동영상·일반 파일 메시지를 지원합니다. 특히 채팅방 참여 상태에 따른 메시지 공개 범위와 사용자별 읽음 경계를 관리하는 데 중점을 두었습니다.
 
+---
+
 ## 프로젝트 목표
 
 ### WebSocket/STOMP 기반 실시간 이벤트 전달
@@ -45,55 +47,26 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 - MediaToken, 채팅방 참여 상태, 메시지 공개 범위를 검증한 후 파일 제공
 - 프로필 이미지는 장기 Public Cache, 채팅 미디어는 단기 Private Cache 적용
 
+---
+
+## 기술 스택
+
+| 구분 | 기술 |
+|---|---|
+| 백엔드 | Java 17, Spring Boot 3.5, Gradle |
+| 데이터베이스 | MySQL 8, Spring Data JPA, MyBatis |
+| 실시간 통신 | WebSocket, STOMP, Redis Pub/Sub |
+| 인증·보안 | Spring Security, JWT |
+| 파일 처리 | Apache Tika, Thumbnailator, FFmpeg |
+| 배포·인프라 | Docker, Docker Compose, GitHub Actions, GHCR |
+
+---
+
 ## 시스템 아키텍처
 
-```mermaid
-flowchart LR
-    Client["Web / App Client"]
+미완성
 
-    subgraph Server["Spring Boot"]
-        Security["Spring Security<br/>JWT Filter"]
-        REST["REST Controller"]
-        STOMP["STOMP Controller"]
-        Interceptor["STOMP JWT /<br/>Subscription Interceptor"]
-        Service["Domain Service"]
-        Publisher["Redis Publisher"]
-        Subscriber["Redis Subscriber"]
-        Broker["Simple Broker"]
-        Persistence["JPA / MyBatis"]
-        Media["Tika / Thumbnailator / FFmpeg"]
-    end
-
-    MySQL[(MySQL)]
-    Redis[("Redis<br/>Pub/Sub · Token Store")]
-    FileStorage[(File Storage)]
-
-    Client -->|"HTTP + Bearer Token"| Security
-    Security --> REST
-    REST --> Service
-
-    Client -->|"SockJS / STOMP"| Interceptor
-    Interceptor --> STOMP
-    STOMP --> Service
-
-    Service --> Persistence
-    Persistence --> MySQL
-    Service --> Publisher
-    Publisher --> Redis
-    Redis --> Subscriber
-    Subscriber --> Broker
-    Broker -->|"Topic / User Queue"| Client
-
-    Service --> Media
-    Media --> FileStorage
-```
-
-- HTTP 요청은 Spring Security의 JWT 필터에서 AccessToken을 검증합니다.
-- STOMP `CONNECT` 요청은 별도의 채널 인터셉터에서 AccessToken을 검증하고 사용자 Principal을 구성합니다.
-- 채팅 이벤트는 DB 저장 이후 Redis Pub/Sub으로 발행합니다.
-- 각 서버 인스턴스의 Redis Subscriber는 수신한 이벤트를 로컬 STOMP 구독자에게 전달합니다.
-- RefreshToken은 Redis에 저장하고, 메시지와 채팅방 상태는 MySQL에 저장합니다.
-- 이미지·동영상·일반 파일은 로컬 파일 저장소에 저장하고 메타데이터는 MySQL에서 관리합니다.
+---
 
 ## 데이터 모델 및 ERD
 
@@ -104,16 +77,11 @@ flowchart LR
 - `User`는 사용자 계정과 소프트 삭제 상태, 프로필 이미지 키를 관리합니다.
 - `UserFriend`는 사용자 간 단방향 친구 관계를 표현합니다.
 - `ChatRoom`은 `DIRECT`, `GROUP` 채팅방을 구분하고 1대1 채팅방의 중복 생성을 방지합니다.
-- `ChatRoomUser`는 사용자별 참여 상태, 권한, 읽음 범위, 메시지 공개 범위, 개인 채팅방 이름을 관리합니다.
-- `ChatMessage`는 DB가 생성한 ID를 메시지 식별자이자 정렬 기준으로 사용합니다.
+- `ChatRoomUser`는 사용자와 채팅방의 관계를 표현하며, 참여 상태, 권한, 읽음 범위, 메시지 공개 범위, 개인 채팅방 이름을 관리합니다.
+- `ChatMessage`는 데이터베이스가 생성한 ID를 메시지 식별, 커서 조회, 공개·읽음 범위 판단에 사용합니다.
 - `StoredFile`은 메시지 또는 프로필 이미지에 연결된 원본·썸네일 파일의 메타데이터를 관리합니다.
 
-`ChatRoomUser`의 두 커서가 사용자별 메시지 상태의 핵심입니다.
-
-| 필드 | 의미 |
-|---|---|
-| `visibleStartMessageId` | 해당 ID를 포함한 이후 메시지만 사용자에게 노출합니다. |
-| `unreadStartMessageId` | 해당 ID를 포함한 이후 메시지를 읽지 않은 상태로 판단합니다. |
+---
 
 ## 핵심 기능
 
@@ -149,6 +117,8 @@ flowchart LR
 - 이미지, 동영상, 일반 파일을 한 메시지에 최대 30개·총 3GB까지 첨부
 - 이미지 및 동영상 썸네일 생성
 - MediaToken과 채팅방 참여 상태를 함께 검증한 파일 조회
+
+---
 
 ## 주요 처리 흐름
 
@@ -193,6 +163,8 @@ STOMP 재연결
 → 현재 채팅방 Topic 재구독
 ```
 
+---
+
 ## 핵심 기술적 결정
 
 | 문제 | 선택 | 이유와 트레이드오프 |
@@ -205,6 +177,8 @@ STOMP 재연결
 | 복잡한 채팅방 목록 조회 | JPA와 MyBatis 역할 분리 | 일반 영속성은 JPA로 처리하고 채팅방 목록처럼 여러 집계 결과를 조합하는 조회는 MyBatis를 사용합니다. |
 | 미디어 접근 제어 | 짧은 MediaToken + 참여 상태 검증 | 브라우저의 `<img>`·`<video>` 요청에서도 쿠키로 인증하면서 현재 채팅방 접근 권한과 메시지 공개 범위를 다시 검증합니다. |
 | 미디어 캐시 | 프로필은 장기 Public, 채팅 미디어는 단기 Private | 불변 프로필 키는 장기 캐시하고 권한이 필요한 채팅 미디어는 사용자 브라우저에만 짧게 캐시합니다. |
+
+---
 
 ## 기술 스택
 
@@ -221,6 +195,8 @@ STOMP 재연결
 | API Docs | springdoc-openapi, Swagger UI | REST API 문서 제공 |
 | Build | Gradle Wrapper | 빌드와 의존성 관리 |
 | Infrastructure | Docker, Docker Compose, GitHub Actions, GHCR, EC2 | 컨테이너 이미지 생성과 배포 자동화 |
+
+---
 
 ## 배포 아키텍처 및 CI/CD
 
@@ -241,6 +217,8 @@ flowchart LR
 - 이후 EC2에 SSH로 접속해 Docker Compose의 이미지 Pull과 컨테이너 갱신 명령을 실행합니다.
 - 애플리케이션 로그와 업로드 파일, MySQL·Redis 데이터는 컨테이너 외부 볼륨에 유지합니다.
 
+---
+
 ## 현재 제약사항 및 개선 계획
 
 - Redis Pub/Sub은 이벤트를 보관하지 않으므로 재연결 이후 HTTP API를 통한 상태 재동기화가 필요합니다.
@@ -249,6 +227,8 @@ flowchart LR
 - 업로드 파일을 서버 로컬 볼륨에 저장하므로 애플리케이션을 여러 인스턴스로 확장하려면 공유 스토리지 또는 오브젝트 스토리지가 필요합니다.
 - 운영 HTTPS와 도메인 구성이 아직 적용되지 않았으며, 적용 시 쿠키의 `Secure`·`SameSite` 정책과 WebSocket Origin을 함께 조정해야 합니다.
 - 현재 Docker Compose의 애플리케이션 이미지 설정과 GHCR 기반 배포 흐름을 일치시키는 정리가 필요합니다.
+
+---
 
 ## API 사용 가이드
 
@@ -262,12 +242,16 @@ flowchart LR
 - Redis 7
 - FFmpeg
 
+---
+
 ### 로컬 인프라
 
 1. MySQL에 `chatdb` 데이터베이스를 생성합니다.
 2. `application-local.yml`의 MySQL 접속 정보를 로컬 환경에 맞게 설정합니다.
 3. MySQL은 기본 `3306`, Redis는 기본 `6379` 포트에서 실행합니다.
 4. 업로드 파일을 저장할 디렉터리를 준비합니다.
+
+---
 
 ### 필수 환경 변수
 
