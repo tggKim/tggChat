@@ -8,12 +8,12 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 ## 프로젝트 목표
 
-### WebSocket/STOMP 기반 실시간 채팅 구현
+### WebSocket/STOMP 기반 실시간 이벤트 전달
 
-- WebSocket과 STOMP를 사용해 채팅 메시지와 읽음 상태를 실시간으로 전달
-- Redis Pub/Sub을 통해 각 서버 인스턴스가 채팅 이벤트를 공유할 수 있는 구조로 구성
-- 채팅방 전체 이벤트는 Topic, 사용자별 채팅방 목록 이벤트는 User Queue로 분리
-- STOMP `CONNECT` 단계에서 JWT를 검증하고, 채팅방 Topic 구독 시 참여 권한을 추가로 검증
+- 채팅 메시지, 메시지 읽음 상태, 채팅방 목록 변경, 사용자명·프로필 변경을 실시간 이벤트로 전달
+- 이벤트의 역할에 따라 `ChatEvent`, `ChatRoomListEvent`, `UserMetadataEvent`로 모델을 분리
+- 채팅방 구독자 전체에 전달되는 이벤트와 특정 사용자에게 전달되는 이벤트의 전송 경로를 구분
+- Redis Pub/Sub을 통해 여러 서버 인스턴스가 동일한 이벤트를 공유할 수 있도록 구성
 
 ### 채팅방 퇴장 및 재참여에 따른 메시지 공개 범위 관리
 
@@ -21,20 +21,20 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 - `visibleStartMessageId`를 사용해 사용자마다 조회할 수 있는 메시지 시작 범위를 구분
 - 사용자가 채팅방에 다시 참여하면 재참여 시점 이후의 메시지만 조회하도록 처리
 
-### 사용자별 읽음 상태 제어
+### 사용자별 읽음 상태 관리
 
 - `unreadStartMessageId`를 기준으로 사용자별 읽음 위치와 안 읽은 메시지 수 관리
-- 읽음 요청 시 기존 값보다 큰 경우에만 갱신하는 조건부 UPDATE 적용
-- 동시에 여러 읽음 요청이 들어와도 읽음 위치가 이전 값으로 되돌아가는 문제 방지
-- 변경된 읽음 상태를 채팅방 Topic과 사용자별 채팅방 목록 Queue에 실시간 전달
+- 읽음 요청 시 기존 값보다 큰 경우에만 조건부 UPDATE하여, 동시에 여러 요청이 들어와도 읽음 위치가 이전 값으로 되돌아가지 않도록 처리
+- 변경된 읽음 위치를 채팅방 구독자에게 실시간 전달
+- 요청 사용자에게는 읽음 위치와 안 읽은 메시지 수가 포함된 채팅방 목록 갱신 이벤트 전달
 
 ### JWT 기반 다중 로그인 세션 관리
 
-- AccessToken, RefreshToken, MediaToken을 용도별로 분리
+- AccessToken과 RefreshToken을 용도별로 분리
 - AccessToken은 Stateless하게 검증하고 RefreshToken은 Redis에 세션 단위로 저장
 - JWT의 `sid`를 이용해 로그인 세션별 로그아웃과 RefreshToken 회전 처리
 - 사용자별 세션을 최대 10개로 제한하고 오래된 세션부터 제거
-- HTTP 요청은 Security Filter, STOMP 연결은 ChannelInterceptor에서 JWT 검증
+- HTTP 요청은 Security Filter, STOMP 연결은 ChannelInterceptor에서 AccessToken 검증
 
 ### 이미지·동영상·일반 파일 메시지 처리
 
