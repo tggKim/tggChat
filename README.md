@@ -70,7 +70,7 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 ## 데이터 모델 및 ERD
 
-<img width="2531" height="1253" alt="TGG Chat ERD" src="https://github.com/user-attachments/assets/ce545f8a-1e7f-4432-ae29-1399e0692afd" />
+<img width="1824" height="1282" alt="Untitled" src="https://github.com/user-attachments/assets/8a14ffef-ba67-4b8a-89fb-d40811d0f4ae" />
 
 핵심 모델은 다음과 같습니다.
 
