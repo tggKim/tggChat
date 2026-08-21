@@ -64,7 +64,71 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 ## 시스템 아키텍처
 
-미완성
+```mermaid
+flowchart TB
+    Client["사용자 브라우저<br/>Web Client"]
+
+    subgraph AWS["AWS Cloud"]
+        direction TB
+
+        subgraph EC2["Amazon EC2 · Ubuntu"]
+            direction TB
+
+            Nginx["Nginx<br/>정적 파일 제공 · Reverse Proxy<br/>Host Port 80"]
+            Frontend["Frontend Static Files<br/>HTML · CSS · JavaScript"]
+
+            subgraph Compose["Docker Compose Network"]
+                direction LR
+                App["Spring Boot Application<br/>chat-app · Container 8080<br/>Java 17 · FFmpeg"]
+                MySQL[("MySQL 8.0<br/>chat-mysql · 3306")]
+                Redis[("Redis 7<br/>chat-redis · 6379")]
+            end
+
+            subgraph Storage["EC2 Persistent Storage"]
+                direction LR
+                Files[("Uploaded Files<br/>Host Bind Mount")]
+                DBVolume[("chatdb_data<br/>Docker Volume")]
+                RedisVolume[("chatRedis_data<br/>Docker Volume")]
+                LogVolume[("chatApp_logs<br/>Docker Volume")]
+            end
+        end
+    end
+
+    Client <-->|"HTTP · STOMP/WebSocket"| Nginx
+    Frontend -.->|"정적 파일 읽기"| Nginx
+    Nginx <-->|"REST · /media · /ws<br/>Host 8081 → Container 8080"| App
+
+    App -->|"JPA · MyBatis"| MySQL
+    App <-->|"세션 상태 · Redis Pub/Sub"| Redis
+    App <-->|"프로필 · 메시지 파일"| Files
+
+    MySQL --- DBVolume
+    Redis --- RedisVolume
+    App --- LogVolume
+
+    classDef client fill:#ffffff,stroke:#334155,stroke-width:2px,color:#0f172a;
+    classDef gateway fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d;
+    classDef application fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
+    classDef database fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f;
+    classDef cache fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d;
+    classDef storage fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#1e293b;
+
+    class Client client;
+    class Nginx gateway;
+    class App application;
+    class MySQL database;
+    class Redis cache;
+    class Frontend,Files,DBVolume,RedisVolume,LogVolume storage;
+
+    style AWS fill:#f8fafc,stroke:#64748b,stroke-width:2px
+    style EC2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
+    style Compose fill:#eff6ff,stroke:#60a5fa,stroke-width:1px
+    style Storage fill:#ffffff,stroke:#cbd5e1,stroke-width:1px
+```
+
+- Nginx가 정적 프론트엔드를 제공하고 REST API, 미디어, WebSocket 요청을 Spring Boot 컨테이너로 전달합니다.
+- Spring Boot는 Docker Compose 내부 DNS를 통해 MySQL과 Redis에 연결합니다.
+- MySQL·Redis·애플리케이션 로그는 Docker Volume에, 업로드 파일은 EC2 호스트의 bind mount 경로에 보존합니다.
 
 ---
 
@@ -72,14 +136,12 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 <img width="1824" height="1282" alt="Untitled" src="https://github.com/user-attachments/assets/8a14ffef-ba67-4b8a-89fb-d40811d0f4ae" />
 
-핵심 모델은 다음과 같습니다.
-
-- `User`는 사용자 계정과 소프트 삭제 상태, 프로필 이미지 키를 관리합니다.
-- `UserFriend`는 사용자 간 단방향 친구 관계를 표현합니다.
-- `ChatRoom`은 `DIRECT`, `GROUP` 채팅방을 구분하고 1대1 채팅방의 중복 생성을 방지합니다.
-- `ChatRoomUser`는 사용자와 채팅방의 관계를 표현하며, 참여 상태, 권한, 읽음 범위, 메시지 공개 범위, 개인 채팅방 이름을 관리합니다.
-- `ChatMessage`는 데이터베이스가 생성한 ID를 메시지 식별, 커서 조회, 공개·읽음 범위 판단에 사용합니다.
-- `StoredFile`은 메시지 또는 프로필 이미지에 연결된 원본·썸네일 파일의 메타데이터를 관리합니다.
+- `User`는 사용자 계정, 소프트 삭제 여부와 프로필 이미지 키를 관리합니다.
+- `UserFriend`는 사용자 간 단방향 친구 관계를 표현하며, 동일한 친구 관계의 중복 저장을 방지합니다.
+- `ChatRoom`은 `DIRECT`, `GROUP` 채팅방을 구분하고, 1대1 채팅방의 사용자 조합을 관리하여 중복 생성을 방지합니다.
+- `ChatRoomUser`는 사용자와 채팅방의 참여 관계를 표현하며, 역할, 참여 상태, 읽지 않은 메시지의 시작 위치, 메시지 노출 시작 위치와 사용자별 채팅방 이름을 관리합니다.
+- `ChatMessage`는 채팅방, 발신자, 메시지 내용과 타입을 관리하며, 데이터베이스가 생성한 ID를 메시지 식별자와 커서 조회 및 사용자별 읽음·노출 위치 판단 기준으로 사용합니다.
+- `StoredFile`은 `fileKey`를 통해 메시지 첨부 파일 또는 프로필 이미지와 논리적으로 연결되며, 원본·썸네일 파일의 이름, 형식, 크기와 저장 정보를 관리합니다.
 
 ---
 
@@ -106,17 +168,18 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 - 기존 1대1 채팅방 재사용과 중복 생성 방지
 - 1대1 채팅방에 사용자를 초대할 때 그룹 채팅방으로 전환
 - 그룹 채팅방 초대, 퇴장, 방장 권한 양도
-- 공통 채팅방 이름과 사용자별 개인 채팅방 이름 관리
+- 그룹 채팅방 공통 이름과 사용자별 개인 채팅방 이름 관리
+- 퇴장·재입장 시 사용자별 메시지 공개 시작 위치를 재설정하여 이전 대화 노출 제한
 - 사용자별 채팅방 목록과 최근 메시지, 안 읽은 메시지 수 조회
 
 ### 메시지 및 파일
 
 - STOMP 기반 텍스트 메시지 전송
-- 메시지 ID 기반 커서 조회와 최대 100개 단위 페이징
-- 사용자별 읽음 커서 갱신과 읽음 이벤트 전달
+- 메시지 ID 기반 커서 조회와 요청당 최대 100개 메시지 반환
+- 사용자별 읽음 위치 갱신과 실시간 읽음 이벤트 전달
 - 이미지, 동영상, 일반 파일을 한 메시지에 최대 30개·총 3GB까지 첨부
 - 이미지 및 동영상 썸네일 생성
-- MediaToken과 채팅방 참여 상태를 함께 검증한 파일 조회
+- MediaToken 유효성, 채팅방 접근 권한, 사용자별 메시지 공개 범위를 검증한 파일 조회
 
 ---
 
