@@ -127,24 +127,8 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 ### 메시지 전송
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant W as STOMP Controller
-    participant S as ChatMessageService
-    participant DB as MySQL
-    participant R as Redis Pub/Sub
-    participant B as STOMP Broker
+<img width="1921" height="715" alt="image" src="https://github.com/user-attachments/assets/c6018237-5855-4d22-8880-6ce4425b2023" />
 
-    C->>W: SEND /app/chatRooms/{chatRoomId}/message
-    W->>S: 사용자·채팅방 권한 검증 및 저장 요청
-    S->>DB: ChatMessage 저장
-    DB-->>S: messageId 반환
-    S-->>W: ChatEvent / ChatRoomListEvent
-    W->>R: 이벤트 발행
-    R->>B: Redis Subscriber가 STOMP 목적지로 전달
-    B-->>C: 채팅방 Topic 및 사용자 Queue 이벤트
-```
 
 ### 읽음 상태 갱신
 
