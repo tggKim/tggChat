@@ -165,7 +165,6 @@ sequenceDiagram
 | 읽음 커서 동시성 | 조건부 UPDATE | 늦게 도착한 읽음 요청이 더 최신 커서를 과거 값으로 덮어쓰는 것을 방지합니다. |
 | 퇴장·재입장 처리 | 참여 행 유지 + 공개 범위 커서 갱신 | `ChatRoomUser`를 삭제하지 않고 `ACTIVE/LEFT` 상태와 `visibleStartMessageId`를 관리해 재입장 정책을 표현합니다. |
 | RefreshToken 관리 | JWT `sid` + Redis | AccessToken은 Stateless하게 검증하면서 세션별 로그아웃, RefreshToken 회전, 최대 세션 수 제한을 지원합니다. |
-| 복잡한 채팅방 목록 조회 | JPA와 MyBatis 역할 분리 | 일반 영속성은 JPA로 처리하고 채팅방 목록처럼 여러 집계 결과를 조합하는 조회는 MyBatis를 사용합니다. |
 | 미디어 접근 제어 | 짧은 MediaToken + 참여 상태 검증 | 브라우저의 `<img>`·`<video>` 요청에서도 쿠키로 인증하면서 현재 채팅방 접근 권한과 메시지 공개 범위를 다시 검증합니다. |
 | 미디어 캐시 | 프로필은 장기 Public, 채팅 미디어는 단기 Private | 불변 프로필 키는 장기 캐시하고 권한이 필요한 채팅 미디어는 사용자 브라우저에만 짧게 캐시합니다. |
 
