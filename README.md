@@ -129,7 +129,6 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 <img width="1921" height="715" alt="image" src="https://github.com/user-attachments/assets/c6018237-5855-4d22-8880-6ce4425b2023" />
 
-
 ### 읽음 상태 갱신
 
 1. 클라이언트가 마지막으로 읽은 `readMessageId`를 전송합니다.
@@ -156,17 +155,7 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 ## 배포 아키텍처 및 CI/CD
 
-```mermaid
-flowchart LR
-    Push["main branch push"] --> Actions["GitHub Actions"]
-    Actions --> Build["Docker image build"]
-    Build --> GHCR["GHCR push"]
-    GHCR --> Deploy["EC2 SSH deployment"]
-    Deploy --> Compose["Docker Compose"]
-    Compose --> App["Spring Boot"]
-    Compose --> MySQL[(MySQL)]
-    Compose --> Redis[(Redis)]
-```
+<img width="1961" height="591" alt="image" src="https://github.com/user-attachments/assets/484f2fad-a893-4f3e-b582-d5cb7d1a1294" />
 
 - `main` 브랜치 Push 또는 수동 실행으로 워크플로우가 시작됩니다.
 - GitHub Actions가 Docker 이미지를 빌드해 GHCR에 Push합니다.
