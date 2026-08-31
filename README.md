@@ -168,8 +168,7 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 - Redis Pub/Sub은 이벤트를 보관하지 않으므로 재연결 이후 HTTP API를 통한 상태 재동기화가 필요합니다.
 - 내장 Simple Broker를 사용하므로 대규모 연결과 메시지 보존이 필요해지면 외부 STOMP Broker 도입을 검토해야 합니다.
-- 채팅 이벤트와 채팅방 목록 이벤트가 서로 다른 Redis 채널을 사용하므로 일시적인 도착 순서 차이를 허용합니다.
-- 업로드 파일을 서버 로컬 볼륨에 저장하므로 애플리케이션을 여러 인스턴스로 확장하려면 공유 스토리지 또는 오브젝트 스토리지가 필요합니다.
+- 채팅 이벤트와 채팅방 목록 이벤트가 서로 다른 Redis 채널을 사용하므로 일시적인 도착 순서 차이가 있으므로 클라이언트는 `chatMessageId`와 읽음 커서를 기준으로 상태를 병합합니다.
 
 ---
 
@@ -287,7 +286,7 @@ Authorization: Bearer {accessToken}
 <details>
 <summary><strong>REST API 명세</strong></summary>
 
-### 엔드포인트 요약
+### 전체 엔드포인트 요약
 
 | 도메인 | Method | 경로 | 인증 | 설명 |
 |---|---|---|---|---|
@@ -321,7 +320,19 @@ Authorization: Bearer {accessToken}
 
 ### 인증 API
 
+| Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
+|---|---|---|---|---|---|
+| POST | `/login` | 공개 | JSON | `200 OK` · JSON + Cookie | 로그인 |
+| POST | `/logout` | AccessToken | Body 없음 | `200 OK` · Body 없음 | 현재 세션 로그아웃 |
+| POST | `/refresh` | RefreshToken Cookie | Body 없음 | `200 OK` · JSON + Cookie | 토큰 재발급 |
+
 #### `POST /login`
+
+이메일과 비밀번호로 로그인합니다.
+
+##### 요청
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -330,21 +341,46 @@ Authorization: Bearer {accessToken}
 }
 ```
 
-성공 시 AccessToken을 Body로 반환하고 RefreshToken과 MediaToken을 HttpOnly Cookie로 설정합니다.
+##### 성공 응답
+
+`200 OK`
 
 ```json
 {
   "accessToken": "eyJ..."
 }
 ```
+
+##### 처리 및 참고사항
+
+AccessToken은 Body로 반환하고 RefreshToken과 MediaToken은 HttpOnly Cookie로 설정합니다.
 
 #### `POST /logout`
 
-AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거하고 RefreshToken·MediaToken Cookie를 만료시킵니다. 성공 응답 Body는 없습니다.
+##### 요청
+
+- `Authorization: Bearer {accessToken}`
+- Body 없음
+
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
+
+##### 처리 및 참고사항
+
+AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거하고 RefreshToken·MediaToken Cookie를 만료시킵니다.
 
 #### `POST /refresh`
 
-요청 Body 없이 RefreshToken Cookie를 사용합니다. 기존 RefreshToken과 동일한 `sid`로 토큰을 회전합니다.
+##### 요청
+
+- Cookie: `refreshToken={refreshToken}`
+- Body 없음
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 {
@@ -352,11 +388,31 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 }
 ```
 
+##### 처리 및 참고사항
+
+기존 RefreshToken과 동일한 `sid`로 AccessToken·RefreshToken·MediaToken을 재발급합니다.
 응답에서 새로운 RefreshToken과 MediaToken Cookie도 함께 설정합니다.
 
-### 사용자 API
+### 사용자·프로필 API
+
+| Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
+|---|---|---|---|---|---|
+| POST | `/user` | 공개 | JSON | `200 OK` · JSON | 회원가입 |
+| GET | `/user/{userId}` | 공개 | Path | `200 OK` · JSON | 다른 사용자 조회 |
+| GET | `/me` | AccessToken | Body 없음 | `200 OK` · JSON | 로그인 사용자 조회 |
+| PATCH | `/me` | AccessToken | JSON | `200 OK` · Body 없음 | 사용자명 변경 |
+| DELETE | `/me` | AccessToken | Body 없음 | `200 OK` · Body 없음 | 회원 삭제 |
+| PUT | `/me/profile-image` | AccessToken | Multipart | `200 OK` · Body 없음 | 프로필 이미지 변경 |
+| GET | `/profile-images/{fileKey}/thumbnail` | 공개 | Path | `200 OK` · JPEG Binary | 프로필 썸네일 조회 |
+| GET | `/profile-images/{fileKey}/image` | 공개 | Path | `200 OK` · Image Binary | 프로필 원본 조회 |
 
 #### `POST /user`
+
+신규 사용자를 등록합니다.
+
+##### 요청
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -365,6 +421,10 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
   "username": "user1"
 }
 ```
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 {
@@ -377,6 +437,18 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 #### `GET /user/{userId}`
 
+지정한 사용자의 공개 정보를 조회합니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `userId` | Number | 조회할 사용자 ID |
+
+##### 성공 응답
+
+`200 OK`
+
 ```json
 {
   "userId": 2,
@@ -387,6 +459,17 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ```
 
 #### `GET /me`
+
+로그인한 사용자의 정보를 조회합니다.
+
+##### 요청
+
+- `Authorization: Bearer {accessToken}`
+- Body 없음
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 {
@@ -399,7 +482,15 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 }
 ```
 
+프로필 이미지를 설정하지 않은 경우 `profileImageKey`는 `null`입니다.
+
 #### `PATCH /me`
+
+로그인한 사용자의 이름을 변경합니다.
+
+##### 요청
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -407,29 +498,96 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 }
 ```
 
-성공 응답 Body는 없습니다. 사용자명 변경은 상호작용한 사용자의 `/user/queue/users/metadata` 구독에도 전달됩니다.
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
+
+##### 처리 및 참고사항
+
+사용자명 변경은 상호작용한 사용자의 `/user/queue/users/metadata` 구독에도 전달됩니다.
 
 #### `DELETE /me`
 
-사용자를 소프트 삭제하고 Redis의 모든 RefreshToken 세션을 제거합니다. 성공 응답 Body는 없습니다.
+##### 요청
+
+- `Authorization: Bearer {accessToken}`
+- Body 없음
+
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
+
+##### 처리 및 참고사항
+
+사용자를 소프트 삭제하고 Redis의 모든 RefreshToken 세션을 제거합니다.
 
 #### `PUT /me/profile-image`
 
-`multipart/form-data`의 `userProfileImage` Part에 JPG, PNG, GIF 또는 WebP 이미지를 전달합니다. 성공 응답 Body는 없습니다.
+##### 요청
+
+`Content-Type: multipart/form-data`
+
+| Part | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `userProfileImage` | File | 예 | JPG, PNG, GIF 또는 WebP 이미지 |
+
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
 
 #### `GET /profile-images/{fileKey}/thumbnail`
 
-JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `fileKey` | String | 사용자 응답의 `profileImageKey` |
+
+##### 성공 응답
+
+- `200 OK`
+- `Content-Type: image/jpeg`
+- JPEG 썸네일 Binary
+
+##### 처리 및 참고사항
+
+응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
 
 #### `GET /profile-images/{fileKey}/image`
 
-프로필 원본 이미지 바이너리와 실제 이미지 Content-Type을 반환합니다. 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `fileKey` | String | 사용자 응답의 `profileImageKey` |
+
+##### 성공 응답
+
+- `200 OK`
+- 원본 이미지 Binary
+- 실제 이미지 형식에 맞는 `Content-Type`
+
+##### 처리 및 참고사항
+
+응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
 
 ### 친구 API
 
+| Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
+|---|---|---|---|---|---|
+| POST | `/friends` | AccessToken | JSON | `200 OK` · Body 없음 | 친구 추가 |
+| GET | `/friends` | AccessToken | Body 없음 | `200 OK` · JSON Array | 친구 목록 조회 |
+
 #### `POST /friends`
 
-친구 관계는 요청 사용자를 기준으로 하는 단방향 관계입니다.
+사용자명으로 친구를 추가합니다.
+
+##### 요청
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -437,9 +595,27 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 }
 ```
 
-성공 응답 Body는 없습니다.
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
+
+##### 처리 및 참고사항
+
+친구 관계는 요청 사용자를 기준으로 하는 단방향 관계입니다.
 
 #### `GET /friends`
+
+로그인한 사용자의 친구 목록을 조회합니다.
+
+##### 요청
+
+- `Authorization: Bearer {accessToken}`
+- Body 없음
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 [
@@ -451,9 +627,31 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 ]
 ```
 
+친구 목록은 사용자명 오름차순이며 프로필 이미지를 설정하지 않은 사용자의 `profileImageKey`는 `null`입니다.
+
 ### 채팅방 API
 
+| Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
+|---|---|---|---|---|---|
+| POST | `/directChatRooms` | AccessToken | JSON | `200 OK` · JSON | 1대1 채팅방 생성·재입장 |
+| POST | `/groupChatRooms` | AccessToken | JSON | `200 OK` · JSON | 그룹 채팅방 생성 |
+| POST | `/directChatRooms/{chatRoomId}/invites` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 1대1 방 초대 및 그룹 전환 |
+| POST | `/groupChatRooms/{chatRoomId}/invites` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 그룹 채팅방 초대 |
+| POST | `/chatRooms/{chatRoomId}/leave` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 채팅방 나가기 |
+| PATCH | `/chatRooms/{chatRoomId}/name` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 그룹 채팅방 기본 이름 변경 |
+| PATCH | `/chatRooms/{chatRoomId}/customName` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 개인 채팅방 이름 변경 |
+| GET | `/chatRooms/{chatRoomId}/invitableFriends` | AccessToken | Path | `200 OK` · JSON Array | 초대 가능 친구 조회 |
+| GET | `/chatRooms/{chatRoomId}/members` | AccessToken | Path | `200 OK` · JSON Array | 채팅방 참여자 조회 |
+| GET | `/chatRooms/{chatRoomId}/readStatuses` | AccessToken | Path | `200 OK` · JSON Array | 참여자별 읽음 범위 조회 |
+| GET | `/chatRooms` | AccessToken | Body 없음 | `200 OK` · JSON Array | 내 채팅방 목록 조회 |
+
 #### `POST /directChatRooms`
+
+친구와의 1대1 채팅방을 생성하거나 기존 방에 재입장합니다.
+
+##### 요청
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -461,17 +659,27 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 }
 ```
 
+##### 성공 응답
+
+`200 OK`
+
 ```json
 {
   "chatRoomId": 10
 }
 ```
 
+##### 처리 및 참고사항
+
 동일한 두 사용자 사이에 기존 1대1 채팅방이 있으면 새로 만들지 않고 기존 채팅방을 사용합니다.
 
 #### `POST /groupChatRooms`
 
-`friendIds`에는 요청 사용자를 제외한 친구 ID를 전달합니다. 중복 ID는 서버에서 제거합니다.
+그룹 채팅방을 생성합니다.
+
+##### 요청
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -480,15 +688,33 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 }
 ```
 
+##### 성공 응답
+
+`200 OK`
+
 ```json
 {
   "chatRoomId": 11
 }
 ```
 
+##### 처리 및 참고사항
+
+- `friendIds`에는 요청 사용자를 제외한 친구 ID를 전달합니다.
+- 중복 ID를 제거한 뒤 최소 1명 이상이어야 합니다.
+- `chatRoomName`은 선택 항목이며 최대 100자입니다.
+
 #### `POST /directChatRooms/{chatRoomId}/invites`
 
 1대1 채팅방에 기존 참여자가 아닌 사용자를 한 명 이상 초대하고 그룹 채팅방으로 전환합니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 초대할 1대1 채팅방 ID |
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -496,23 +722,45 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 }
 ```
 
-성공 응답 Body는 없습니다.
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
 
 #### `POST /groupChatRooms/{chatRoomId}/invites`
 
 그룹 채팅방에 신규 사용자를 초대하거나 `LEFT` 상태의 기존 사용자를 복귀시킵니다.
 
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 초대할 그룹 채팅방 ID |
+
+`Content-Type: application/json`
+
 ```json
 {
   "friendIds": [3, 4]
 }
 ```
 
-성공 응답 Body는 없습니다.
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
 
 #### `POST /chatRooms/{chatRoomId}/leave`
 
 그룹 채팅방의 방장이 나가고 다른 활성 사용자가 남아 있다면 `nextOwnerId`가 필요합니다. 그 외에는 빈 객체를 전달할 수 있습니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 나갈 채팅방 ID |
+
+요청 Body는 필수이며 권한을 양도하지 않는 경우에도 빈 객체 `{}`를 전달합니다.
 
 ```json
 {
@@ -520,11 +768,22 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 }
 ```
 
-성공 응답 Body는 없습니다.
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
 
 #### `PATCH /chatRooms/{chatRoomId}/name`
 
 그룹 채팅방의 `OWNER`만 공통 이름을 변경할 수 있습니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 이름을 변경할 채팅방 ID |
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -532,11 +791,22 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 }
 ```
 
-성공 응답 Body는 없습니다.
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
 
 #### `PATCH /chatRooms/{chatRoomId}/customName`
 
 1대1·그룹 채팅방 모두 사용할 수 있으며 요청 사용자에게만 적용됩니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 개인 이름을 설정할 채팅방 ID |
+
+`Content-Type: application/json`
 
 ```json
 {
@@ -544,9 +814,24 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 }
 ```
 
-성공 응답 Body는 없습니다.
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
 
 #### `GET /chatRooms/{chatRoomId}/invitableFriends`
+
+현재 채팅방에 초대할 수 있는 친구를 조회합니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 채팅방 ID |
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 [
@@ -558,7 +843,21 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 ]
 ```
 
+초대 가능 친구는 사용자명 오름차순으로 반환합니다.
+
 #### `GET /chatRooms/{chatRoomId}/members`
+
+현재 채팅방의 참여자를 조회합니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 채팅방 ID |
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 [
@@ -579,7 +878,21 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 | `OWNER` | 그룹 채팅방 방장 |
 | `MEMBER` | 일반 참여자. 1대1 채팅방의 두 사용자도 `MEMBER`입니다. |
 
+1대1 채팅방은 `LEFT` 상태의 참여자도 포함하고, 그룹 채팅방은 `ACTIVE` 상태의 참여자만 반환합니다. 목록은 사용자명 오름차순입니다.
+
 #### `GET /chatRooms/{chatRoomId}/readStatuses`
+
+활성 참여자별로 읽지 않기 시작한 메시지 ID를 조회합니다.
+
+##### 요청
+
+| Path Parameter | 타입 | 설명 |
+|---|---|---|
+| `chatRoomId` | Number | 채팅방 ID |
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 [
@@ -595,10 +908,20 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 ```
 
 `unreadStartMessageId`를 포함한 이후 메시지를 해당 사용자가 읽지 않은 것으로 판단합니다.
+응답에는 `ACTIVE` 상태의 참여자만 포함하며 배열 순서는 보장하지 않습니다.
 
 #### `GET /chatRooms`
 
 현재 `ACTIVE` 상태로 참여한 채팅방을 `lastActivityAt` 내림차순으로 반환합니다.
+
+##### 요청
+
+- `Authorization: Bearer {accessToken}`
+- Body 없음
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 [
@@ -636,13 +959,24 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 
 ### 메시지 API
 
+| Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
+|---|---|---|---|---|---|
+| GET | `/chatRooms/{chatRoomId}/messages` | AccessToken | Path + Query | `200 OK` · JSON Array | 채팅 메시지 조회 |
+
 #### `GET /chatRooms/{chatRoomId}/messages`
 
-| Query Parameter | 필수 | 설명 |
-|---|---|---|
-| `offsetMessageId` | 아니요 | 전달하면 해당 ID보다 작은 이전 메시지를 조회합니다. |
+채팅방의 메시지를 커서 방식으로 조회합니다.
 
-최신 메시지부터 `messageId` 내림차순으로 최대 100개를 반환합니다.
+##### 요청
+
+| 구분 | 이름 | 필수 | 설명 |
+|---|---|---|---|
+| Path | `chatRoomId` | 예 | 조회할 채팅방 ID |
+| Query | `offsetMessageId` | 아니요 | 전달하면 해당 ID보다 작은 이전 메시지를 조회 |
+
+##### 성공 응답
+
+`200 OK`
 
 ```json
 [
@@ -654,10 +988,16 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
     "senderName": "user1",
     "senderProfileImageKey": "user:1:550e8400-e29b-41d4-a716-446655440000",
     "createdAt": "2026-08-17T15:30:00",
-    "chatEventFiles": []
+    "chatEventFiles": null
   }
 ]
 ```
+
+##### 처리 및 참고사항
+
+- 최신 메시지부터 `messageId` 내림차순으로 최대 100개를 반환합니다.
+- 삭제된 발신자의 메시지는 유지되지만 `senderId`, `senderName`, `senderProfileImageKey`는 `null`로 반환합니다.
+- `chatEventFiles`는 파일 메시지일 때만 배열로 반환하고 그 외에는 `null`입니다.
 
 `chatMessageType`의 가능한 값:
 
@@ -667,8 +1007,6 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 | `FILE` | 파일 첨부 메시지 |
 | `JOIN_TEXT` | 참여 안내 메시지 |
 | `LEAVE_TEXT` | 퇴장 안내 메시지 |
-
-삭제된 발신자의 메시지는 유지되지만 `senderId`, `senderName`, `senderProfileImageKey`는 `null`로 반환합니다.
 
 파일 메시지의 `chatEventFiles` 항목:
 
@@ -689,25 +1027,77 @@ JPEG 썸네일 바이너리를 반환합니다. 응답은 Public·Immutable 정�
 | `VIDEO` | 동영상 파일 |
 | `FILE` | 그 외 일반 파일 |
 
-### 파일 API
+### 채팅 파일 API
+
+| Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
+|---|---|---|---|---|---|
+| POST | `/chatRooms/{chatRoomId}/files` | AccessToken | Path + Multipart | `200 OK` · Body 없음 | 파일 메시지 전송 |
+| GET | `/media/messages/{chatMessageId}/files/{fileOrder}` | MediaToken Cookie | Path + Query | `200 OK` · Binary | 메시지 파일 조회 |
 
 #### `POST /chatRooms/{chatRoomId}/files`
 
-`multipart/form-data`의 `files` Part에 1개 이상 30개 이하의 파일을 전달합니다. 전체 파일 크기는 최대 3GB입니다. 성공 응답 Body는 없으며 저장된 파일 메시지는 STOMP 이벤트로 전달됩니다.
+채팅방에 하나 이상의 파일을 하나의 파일 메시지로 전송합니다.
+
+##### 요청
+
+`Content-Type: multipart/form-data`
+
+| 구분 | 이름 | 타입 | 필수 | 설명 |
+|---|---|---|---|---|
+| Path | `chatRoomId` | Number | 예 | 파일을 전송할 채팅방 ID |
+| Part | `files` | File Array | 예 | 같은 이름의 Part로 반복해 전달 |
+
+```bash
+curl -X POST "http://localhost:8080/chatRooms/10/files" \
+  -H "Authorization: Bearer {accessToken}" \
+  -F "files=@photo.png" \
+  -F "files=@document.pdf"
+```
+
+##### 성공 응답
+
+- `200 OK`
+- Body 없음
+
+##### 처리 및 참고사항
+
+- 파일은 1개 이상 30개 이하, 전체 크기는 최대 3GB입니다.
+- 저장된 파일 메시지는 채팅방 STOMP 이벤트로 전달됩니다.
 
 #### `GET /media/messages/{chatMessageId}/files/{fileOrder}`
 
-MediaToken Cookie가 필요합니다.
+메시지에 첨부된 원본 또는 썸네일 파일을 조회합니다.
 
-| Query Parameter | 필수 | 가능한 값 | 설명 |
-|---|---|---|---|
-| `storedFileVariant` | 예 | `ORIGINAL`, `THUMBNAIL` | 원본 또는 썸네일 선택 |
+##### 요청
+
+- Cookie: `mediaToken={mediaToken}`
+- AccessToken 헤더는 사용하지 않습니다.
+
+| 구분 | 이름 | 필수 | 가능한 값 | 설명 |
+|---|---|---|---|---|
+| Path | `chatMessageId` | 예 | Number | 파일 메시지 ID |
+| Path | `fileOrder` | 예 | Number | 메시지 안의 파일 순번 |
+| Query | `storedFileVariant` | 예 | `ORIGINAL`, `THUMBNAIL` | 원본 또는 썸네일 선택 |
 
 ```text
 GET /media/messages/150/files/1?storedFileVariant=THUMBNAIL
 ```
 
-`IMAGE`, `VIDEO`는 해당 Content-Type으로 인라인 응답하고 10분간 Private Cache를 적용합니다. 일반 `FILE`은 `application/octet-stream`과 Attachment 형식으로 내려받습니다.
+##### 성공 응답
+
+`200 OK`
+
+| 파일 분류 | 사용 가능한 Variant | 응답 방식 |
+|---|---|---|
+| `IMAGE` | `ORIGINAL`, `THUMBNAIL` | 이미지 Content-Type, Inline |
+| `VIDEO` | `ORIGINAL`, `THUMBNAIL` | 동영상 또는 썸네일 Content-Type, Inline |
+| `FILE` | `ORIGINAL` | `application/octet-stream`, Attachment |
+
+##### 처리 및 참고사항
+
+- `IMAGE`, `VIDEO` 응답은 10분간 Private Cache를 적용하고 `Vary: Cookie`를 설정합니다.
+- `THUMBNAIL`은 `IMAGE`, `VIDEO`에만 존재합니다.
+- 현재 사용자가 해당 메시지를 볼 수 있는 활성 채팅방 참여자인지 서버에서 검증합니다.
 
 </details>
 
