@@ -639,7 +639,7 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 | POST | `/groupChatRooms/{chatRoomId}/invites` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 그룹 채팅방 초대 |
 | POST | `/chatRooms/{chatRoomId}/leave` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 채팅방 나가기 |
 | PATCH | `/chatRooms/{chatRoomId}/name` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 그룹 채팅방 기본 이름 변경 |
-| PATCH | `/chatRooms/{chatRoomId}/customName` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 개인 채팅방 이름 변경 |
+| PATCH | `/chatRooms/{chatRoomId}/customName` | AccessToken | Path + JSON | `200 OK` · Body 없음 | 사용자별 채팅방 이름 변경 |
 | GET | `/chatRooms/{chatRoomId}/invitableFriends` | AccessToken | Path | `200 OK` · JSON Array | 초대 가능 친구 조회 |
 | GET | `/chatRooms/{chatRoomId}/members` | AccessToken | Path | `200 OK` · JSON Array | 채팅방 참여자 조회 |
 | GET | `/chatRooms/{chatRoomId}/readStatuses` | AccessToken | Path | `200 OK` · JSON Array | 참여자별 읽음 범위 조회 |
