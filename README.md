@@ -1188,7 +1188,20 @@ GET /media/messages/150/files/1?storedFileVariant=THUMBNAIL
 <details>
 <summary><strong>WebSocket/STOMP 명세</strong></summary>
 
-### 연결
+### 전체 경로 요약
+
+| 방향 | STOMP 동작 | 경로 | Payload 또는 이벤트 | 설명 |
+|---|---|---|---|---|
+| 연결 | `CONNECT` | SockJS `/ws` | `Authorization: Bearer {accessToken}` | AccessToken 인증 후 WebSocket 세션 생성 |
+| 클라이언트 → 서버 | `SEND` | `/app/chatRooms/{chatRoomId}/message` | `ChatMessageRequest` | 텍스트 메시지 전송 |
+| 클라이언트 → 서버 | `SEND` | `/app/chatRooms/{chatRoomId}/read` | `ReadChatMessagesRequestDto` | 읽음 상태 갱신 |
+| 서버 → 클라이언트 | `SUBSCRIBE` | `/topic/chatRooms/{chatRoomId}` | `ChatEvent` | 채팅방 메시지와 읽음 상태 변경 수신 |
+| 서버 → 클라이언트 | `SUBSCRIBE` | `/user/queue/chatRooms/list` | `ChatRoomListEvent` | 현재 사용자의 채팅방 목록 변경 수신 |
+| 서버 → 클라이언트 | `SUBSCRIBE` | `/user/queue/users/metadata` | `UserMetadataEvent` | 관련 사용자의 이름·프로필 변경 수신 |
+| 서버 → 클라이언트 | `SUBSCRIBE` | `/user/queue/errors` | `ErrorResponse` | 구독·메시지 처리 오류 수신 |
+
+<details>
+<summary><strong>연결 및 구독</strong></summary>
 
 | 항목 | 값 |
 |---|---|
@@ -1197,6 +1210,31 @@ GET /media/messages/150/files/1?storedFileVariant=THUMBNAIL
 | Client SEND Prefix | `/app` |
 | Broker Prefix | `/topic`, `/queue` |
 | User Destination Prefix | `/user` |
+
+---
+
+#### SockJS `/ws` 연결 및 STOMP `CONNECT`
+
+AccessToken으로 WebSocket 세션을 인증합니다.
+
+##### 요청
+
+| 항목 | 값 |
+|---|---|
+| SockJS 연결 경로 | `/ws` |
+| STOMP Command | `CONNECT` |
+| Native Header | `Authorization: Bearer {accessToken}` |
+
+##### 성공 결과
+
+- 인증에 성공하면 서버가 `CONNECTED` 프레임을 반환하고 인증된 사용자 정보가 WebSocket 세션에 연결됩니다.
+- 이후 같은 연결에서 사용자 Queue와 채팅방 Topic을 구독하고 `/app` 경로로 메시지를 전송할 수 있습니다.
+
+##### 처리 및 참고사항
+
+- AccessToken은 SockJS HTTP 요청이 아니라 STOMP `CONNECT` 프레임의 `Authorization` 헤더로 전달합니다.
+- 인증에 실패하면 `ERROR` 프레임을 반환하고 연결을 종료합니다.
+- 연결이 끊겨 새 WebSocket 세션을 만들면 STOMP `CONNECT`와 필요한 구독을 다시 수행해야 합니다.
 
 권장 연결 순서:
 
@@ -1209,14 +1247,68 @@ POST /login으로 AccessToken 획득
 → 채팅방 입장 시 Topic 구독
 ```
 
-### 클라이언트 → 서버
+---
 
-| 목적 | SEND 경로 | Payload |
+#### `SUBSCRIBE /topic/chatRooms/{chatRoomId}`
+
+현재 열어 둔 채팅방의 메시지와 참여자별 읽음 상태 변경을 수신합니다.
+
+##### 요청
+
+| 항목 | 값 |
+|---|---|
+| STOMP Command | `SUBSCRIBE` |
+| Destination | `/topic/chatRooms/{chatRoomId}` |
+| 인증 | STOMP `CONNECT`를 완료한 사용자 |
+
+##### 수신 이벤트
+
+`ChatEvent`의 `MESSAGE_SENT`, `MESSAGE_READ` 이벤트를 수신합니다.
+
+##### 처리 및 참고사항
+
+- 구독 시점에 요청 사용자가 해당 채팅방의 `ACTIVE` 참여자인지 검증합니다.
+- 권한이 없으면 해당 구독을 차단하고 `/user/queue/errors`로 오류를 전달합니다.
+- 채팅방을 닫으면 이 Topic 구독을 해제하고, 다시 열 때 구독한 뒤 HTTP 메시지 조회 결과와 이벤트를 병합합니다.
+
+---
+
+#### 사용자 Queue 구독
+
+로그인 사용자에게만 필요한 채팅방 목록, 사용자 메타데이터, 오류 이벤트를 수신합니다.
+
+##### 요청
+
+| Destination | 이벤트 | 설명 |
 |---|---|---|
-| 텍스트 메시지 전송 | `/app/chatRooms/{chatRoomId}/message` | `ChatMessageRequest` |
-| 읽음 처리 | `/app/chatRooms/{chatRoomId}/read` | `ReadChatMessagesRequest` |
+| `/user/queue/chatRooms/list` | `ChatRoomListEvent` | 현재 사용자의 채팅방 목록 변경 |
+| `/user/queue/users/metadata` | `UserMetadataEvent` | 관련 사용자의 이름·프로필 변경 |
+| `/user/queue/errors` | `ErrorResponse` | 구독·메시지 처리 오류 |
 
-텍스트 메시지 전송:
+##### 처리 및 참고사항
+
+- 사용자 Queue는 STOMP `CONNECT`에서 인증된 Principal을 기준으로 현재 사용자에게 라우팅됩니다.
+- 실시간 이벤트는 재연결 중 유실될 수 있으므로 연결 복구 후 `GET /chatRooms`와 현재 채팅방의 HTTP 조회 API로 상태를 다시 동기화합니다.
+
+---
+
+</details>
+
+<details>
+<summary><strong>클라이언트 SEND</strong></summary>
+
+| 목적 | SEND 경로 | Payload | 발생 이벤트 |
+|---|---|---|---|
+| 텍스트 메시지 전송 | `/app/chatRooms/{chatRoomId}/message` | `ChatMessageRequest` | `ChatEvent.MESSAGE_SENT`, `ChatRoomListEvent.MESSAGE_SENT` |
+| 읽음 처리 | `/app/chatRooms/{chatRoomId}/read` | `ReadChatMessagesRequestDto` | `ChatEvent.MESSAGE_READ`, `ChatRoomListEvent.MESSAGE_READ` |
+
+---
+
+#### `SEND /app/chatRooms/{chatRoomId}/message`
+
+채팅방에 텍스트 메시지를 저장하고 실시간 이벤트로 전파합니다.
+
+##### 요청
 
 ```json
 {
@@ -1224,7 +1316,25 @@ POST /login으로 AccessToken 획득
 }
 ```
 
-읽음 처리:
+##### 발생 이벤트
+
+- `/topic/chatRooms/{chatRoomId}`로 `ChatEvent.MESSAGE_SENT`를 전송합니다.
+- 채팅방 목록을 갱신할 사용자에게 `/user/queue/chatRooms/list`의 `ChatRoomListEvent.MESSAGE_SENT`를 전송합니다.
+- 1대1 채팅방의 상대방이 `LEFT` 상태였다면 상대방을 새 메시지부터 다시 참여시키고 `ChatRoomListEvent.ROOM_ADDED`를 별도로 전송합니다.
+
+##### 처리 및 참고사항
+
+- 요청 사용자가 해당 채팅방의 `ACTIVE` 참여자여야 합니다.
+- SEND 요청에 대한 별도의 응답 Payload는 없으며, 저장된 `messageId`와 메시지 정보는 `ChatEvent.MESSAGE_SENT`로 확인합니다.
+- 오류가 발생하면 `/user/queue/errors`로 `ErrorResponse`를 전달하고 WebSocket 연결은 유지합니다.
+
+---
+
+#### `SEND /app/chatRooms/{chatRoomId}/read`
+
+지정한 메시지까지 읽음 처리하고 채팅방과 채팅방 목록의 읽음 상태를 갱신합니다.
+
+##### 요청
 
 ```json
 {
@@ -1232,18 +1342,37 @@ POST /login으로 AccessToken 획득
 }
 ```
 
-### 서버 → 클라이언트
+##### 발생 이벤트
 
-| 구독 경로 | 이벤트 | 설명 |
+- `/topic/chatRooms/{chatRoomId}`로 `ChatEvent.MESSAGE_READ`를 전송합니다.
+- 요청 사용자에게 `/user/queue/chatRooms/list`의 `ChatRoomListEvent.MESSAGE_READ`를 전송합니다.
+
+##### 처리 및 참고사항
+
+- 요청 사용자가 해당 채팅방의 `ACTIVE` 참여자여야 합니다.
+- `readMessageId`는 해당 채팅방에 속하고 현재 사용자에게 공개된 메시지여야 합니다.
+- 읽음 처리 후 `unreadStartMessageId`는 `readMessageId + 1`이 되며, 이미 더 앞까지 읽었다면 더 작은 값으로 되돌리지 않습니다.
+- 오류가 발생하면 `/user/queue/errors`로 `ErrorResponse`를 전달하고 WebSocket 연결은 유지합니다.
+
+---
+
+</details>
+
+<details>
+<summary><strong>ChatEvent</strong></summary>
+
+수신 경로: `/topic/chatRooms/{chatRoomId}`
+
+| `chatEventType` | 발생 시점 | 주요 필드 |
 |---|---|---|
-| `/topic/chatRooms/{chatRoomId}` | `ChatEvent` | 채팅방 메시지와 읽음 상태 변경 |
-| `/user/queue/chatRooms/list` | `ChatRoomListEvent` | 현재 사용자의 채팅방 목록 변경 |
-| `/user/queue/users/metadata` | `UserMetadataEvent` | 상호작용한 사용자의 이름·프로필 변경 |
-| `/user/queue/errors` | `ErrorResponse` | 구독·메시지 처리 오류 |
+| `MESSAGE_SENT` | 텍스트·파일·시스템 메시지 저장 | 발신자, 메시지, 파일, 생성 시각 |
+| `MESSAGE_READ` | 참여자의 읽음 범위 변경 | `readerUserId`, `unreadStartMessageId` |
 
-### ChatEvent
+---
 
 #### `MESSAGE_SENT`
+
+##### 이벤트
 
 ```json
 {
@@ -1263,9 +1392,19 @@ POST /login으로 AccessToken 획득
 }
 ```
 
-`chatMessageType`은 `TEXT`, `FILE`, `JOIN_TEXT`, `LEAVE_TEXT` 중 하나입니다. `FILE`이면 `chatEventFiles`에 파일 순서, 분류, 원본 이름, 크기가 포함됩니다.
+##### 처리 및 참고사항
+
+- `chatMessageType`은 `TEXT`, `FILE`, `JOIN_TEXT`, `LEAVE_TEXT` 중 하나입니다.
+- `FILE`이면 `chatEventFiles`에 파일별 `fileOrder`, `fileCategory`, `originalFileName`, `fileSize`가 포함됩니다.
+- `senderProfileImageKey`는 프로필 이미지가 없으면 `null`입니다. 삭제된 사용자의 과거 메시지는 HTTP 재조회 시 발신자 정보가 `null`일 수 있습니다.
+- `eventUserIds`는 Redis 내부 라우팅에 사용한 뒤 제거되므로 클라이언트에는 `null`로 전달됩니다.
+- 이벤트 도착 순서를 그대로 신뢰하지 않고 `messageId`를 기준으로 중복 제거와 정렬을 수행합니다.
+
+---
 
 #### `MESSAGE_READ`
+
+##### 이벤트
 
 ```json
 {
@@ -1285,18 +1424,35 @@ POST /login으로 AccessToken 획득
 }
 ```
 
-### ChatRoomListEvent
+##### 처리 및 참고사항
+
+- `readerUserId`는 읽음 범위를 변경한 사용자입니다.
+- `unreadStartMessageId` 이상인 메시지를 해당 사용자가 아직 읽지 않은 것으로 계산합니다.
+- 읽음 커서는 더 작은 값으로 되돌리지 않습니다.
+
+---
+
+</details>
+
+<details>
+<summary><strong>ChatRoomListEvent</strong></summary>
+
+수신 경로: `/user/queue/chatRooms/list`
 
 | `eventType` | 발생 시점 | 사용 필드 |
 |---|---|---|
 | `ROOM_ADDED` | 채팅방 생성·초대·재입장 | 채팅방 전체 정보, 참여자 미리보기, 최근 메시지, 읽음 상태 |
 | `ROOM_CHANGED` | 참여자 초대·퇴장 등 방 정보 변경 | 방 정보, 인원수, 미리보기 사용자, 최근 메시지 |
-| `ROOM_NAME_CHANGED` | 기본 또는 개인 이름 변경 | `roomId`, `baseRoomName`, `customRoomName` |
+| `ROOM_NAME_CHANGED` | 기본 또는 사용자별 이름 변경 | `roomId`, `baseRoomName`, `customRoomName` |
 | `ROOM_REMOVED` | 현재 사용자가 채팅방에서 나감 | `roomId` |
 | `MESSAGE_SENT` | 새로운 메시지 저장 | `roomId`, `lastMessagePreview`, `messageId`, `lastActivityAt` |
 | `MESSAGE_READ` | 현재 사용자의 읽음 처리 | `roomId`, `unreadStartMessageId`, `unreadCount` |
 
-`ROOM_ADDED` 예시:
+---
+
+#### `ROOM_ADDED` 예시
+
+##### 이벤트
 
 ```json
 {
@@ -1323,14 +1479,33 @@ POST /login으로 AccessToken 획득
 }
 ```
 
-모든 이벤트가 모든 필드를 채우지는 않습니다. 이벤트에서 `null`인 필드는 기존 클라이언트 상태를 덮어쓰지 않아야 합니다. 최근 메시지는 수신한 `messageId`가 현재 값보다 큰 경우에만 갱신하고, 읽음 커서는 더 작은 값으로 되돌리지 않습니다.
+##### 처리 및 참고사항
 
-### UserMetadataEvent
+- 모든 이벤트가 모든 필드를 채우지는 않습니다. 이벤트에 필요한 필드만 사용하고 나머지는 `null`로 전달됩니다.
+- `null`인 필드는 기존 클라이언트 상태를 임의로 덮어쓰지 않습니다.
+- `ROOM_ADDED`는 새 방을 목록에 추가하거나 같은 `roomId`의 기존 항목을 최신 전체 상태로 교체하는 데 사용합니다.
+- `MESSAGE_SENT`의 최근 메시지는 수신한 `messageId`가 현재 값보다 큰 경우에만 반영합니다.
+- `MESSAGE_READ`의 읽음 커서는 더 작은 값으로 되돌리지 않습니다.
+
+---
+
+</details>
+
+<details>
+<summary><strong>UserMetadataEvent</strong></summary>
+
+수신 경로: `/user/queue/users/metadata`
 
 | `userMetadataEventType` | 의미 | 변경 필드 |
 |---|---|---|
 | `USERNAME_UPDATED` | 사용자명 변경 | `username` |
 | `USER_PROFILE_IMAGE_UPDATE` | 프로필 이미지 변경 | `userProfileImageKey` |
+
+---
+
+#### 사용자 메타데이터 변경 예시
+
+##### 이벤트
 
 ```json
 {
@@ -1342,11 +1517,30 @@ POST /login으로 AccessToken 획득
 }
 ```
 
-### 오류 처리
+##### 처리 및 참고사항
 
-- STOMP `CONNECT` 인증 실패는 `ERROR` 프레임으로 전달되며 연결이 종료됩니다.
-- `/topic/chatRooms/{chatRoomId}` 구독 권한이 없으면 해당 구독만 차단하고 `/user/queue/errors`로 오류를 전달합니다.
-- 메시지 전송과 읽음 처리 중 발생한 오류도 `/user/queue/errors`로 전달하며 연결은 유지합니다.
+- `USERNAME_UPDATED`는 `username`, `USER_PROFILE_IMAGE_UPDATE`는 `userProfileImageKey`만 변경합니다.
+- `eventUserIds`는 Redis 내부 라우팅에 사용한 뒤 제거되므로 클라이언트에는 `null`로 전달됩니다.
+- 이벤트의 `userId`와 일치하는 채팅방 미리보기 사용자, 열린 채팅방 참여자, 메시지 발신자 정보를 갱신합니다.
+
+---
+
+</details>
+
+<details>
+<summary><strong>오류 처리</strong></summary>
+
+| 오류 발생 위치 | 전달 방식 | 연결 상태 |
+|---|---|---|
+| STOMP `CONNECT` 인증 | STOMP `ERROR` 프레임 | 연결 종료 |
+| 채팅방 Topic 구독 권한 | `/user/queue/errors`의 `ErrorResponse` | 연결 유지, 해당 구독만 차단 |
+| 메시지 전송·읽음 처리 | `/user/queue/errors`의 `ErrorResponse` | 연결 유지 |
+
+---
+
+#### `ErrorResponse`
+
+##### 이벤트
 
 ```json
 {
@@ -1356,5 +1550,15 @@ POST /login으로 AccessToken 획득
   "timestamp": "2026-08-17 15:30:00"
 }
 ```
+
+##### 처리 및 참고사항
+
+- `/user/queue/errors`는 STOMP `CONNECT` 직후 미리 구독해야 SEND와 SUBSCRIBE 처리 오류를 받을 수 있습니다.
+- `status`는 대응되는 HTTP 상태 코드이며, WebSocket 프레임 자체의 상태 코드는 아닙니다.
+- `CONNECT` 단계의 인증 오류는 사용자 Queue를 사용할 수 없으므로 `ERROR` 프레임 Body에 같은 오류 형식을 담아 반환합니다.
+
+---
+
+</details>
 
 </details>
