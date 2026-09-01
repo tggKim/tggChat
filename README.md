@@ -400,6 +400,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 기존 RefreshToken과 동일한 `sid`로 AccessToken·RefreshToken·MediaToken을 재발급합니다.
 응답에서 새로운 RefreshToken과 MediaToken Cookie도 함께 설정합니다.
 
+---
+
 </details>
 
 <details>
@@ -600,6 +602,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
 
+---
+
 </details>
 
 <details>
@@ -661,6 +665,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ```
 
 친구 목록은 사용자명 오름차순이며 프로필 이미지를 설정하지 않은 사용자의 `profileImageKey`는 `null`입니다.
+
+---
 
 </details>
 
@@ -1015,6 +1021,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 `myRole`의 가능한 값은 `OWNER`, `MEMBER`입니다. `baseRoomName`, `customRoomName`, 최근 메시지 관련 필드는 값이 없으면 `null`일 수 있습니다.
 
+---
+
 </details>
 
 <details>
@@ -1089,6 +1097,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 | `IMAGE` | 이미지 파일 |
 | `VIDEO` | 동영상 파일 |
 | `FILE` | 그 외 일반 파일 |
+
+---
 
 </details>
 
@@ -1168,6 +1178,8 @@ GET /media/messages/150/files/1?storedFileVariant=THUMBNAIL
 - `IMAGE`, `VIDEO` 응답은 10분간 Private Cache를 적용하고 `Vary: Cookie`를 설정합니다.
 - `THUMBNAIL`은 `IMAGE`, `VIDEO`에만 존재합니다.
 - 현재 사용자가 해당 메시지를 볼 수 있는 활성 채팅방 참여자인지 서버에서 검증합니다.
+
+---
 
 </details>
 
