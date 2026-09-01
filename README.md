@@ -309,7 +309,7 @@ Authorization: Bearer {accessToken}
 | ChatRoom | POST | `/groupChatRooms/{chatRoomId}/invites` | AccessToken | 그룹 채팅방 초대 |
 | ChatRoom | POST | `/chatRooms/{chatRoomId}/leave` | AccessToken | 채팅방 나가기 |
 | ChatRoom | PATCH | `/chatRooms/{chatRoomId}/name` | AccessToken | 그룹 채팅방 기본 이름 변경 |
-| ChatRoom | PATCH | `/chatRooms/{chatRoomId}/customName` | AccessToken | 개인 채팅방 이름 변경 |
+| ChatRoom | PATCH | `/chatRooms/{chatRoomId}/customName` | AccessToken | 사용자별 채팅방 이름 변경 |
 | ChatRoom | GET | `/chatRooms/{chatRoomId}/invitableFriends` | AccessToken | 초대 가능 친구 조회 |
 | ChatRoom | GET | `/chatRooms/{chatRoomId}/members` | AccessToken | 채팅방 참여자 조회 |
 | ChatRoom | GET | `/chatRooms/{chatRoomId}/readStatuses` | AccessToken | 참여자별 읽음 범위 조회 |
