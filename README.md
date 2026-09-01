@@ -582,7 +582,6 @@ Authorization: Bearer {accessToken}
 
 - JPG, PNG, GIF, WebP 형식만 허용하며 비어 있는 파일은 저장하지 않습니다.
 - 원본과 최대 320×320 크기의 JPEG 썸네일을 함께 저장하고 새로운 `profileImageKey`를 생성합니다.
-- 기존 프로필 이미지가 있었다면 새 파일과 DB 정보 저장 후 기존 파일 정보를 제거하므로 이전 `fileKey` URL은 더 이상 사용할 수 없습니다.
 
 ---
 
@@ -604,7 +603,6 @@ Authorization: Bearer {accessToken}
 
 - 썸네일은 원본의 종횡비를 유지한 최대 320×320 JPEG 이미지이며, 애니메이션 이미지는 첫 프레임을 사용합니다.
 - 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
-- 프로필 변경으로 기존 `fileKey`가 제거되면 해당 URL의 신규 조회는 실패합니다.
 
 ---
 
@@ -626,7 +624,6 @@ Authorization: Bearer {accessToken}
 
 - 원본 이미지 형식과 애니메이션 여부를 유지해 반환합니다.
 - 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
-- 프로필 변경으로 기존 `fileKey`가 제거되면 해당 URL의 신규 조회는 실패합니다.
 
 ---
 
