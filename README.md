@@ -356,7 +356,8 @@ Authorization: Bearer {accessToken}
 
 ##### 처리 및 참고사항
 
-AccessToken은 Body로 반환하고 RefreshToken과 MediaToken은 HttpOnly Cookie로 설정합니다.
+- AccessToken은 Body로 반환하고 RefreshToken과 MediaToken은 HttpOnly Cookie로 설정합니다.
+- 요청에 기존 RefreshToken Cookie가 있으면 해당 세션을 정리한 뒤 새로운 `sid`로 로그인 세션을 생성합니다.
 
 ---
 
@@ -374,7 +375,8 @@ AccessToken은 Body로 반환하고 RefreshToken과 MediaToken은 HttpOnly Cooki
 
 ##### 처리 및 참고사항
 
-AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거하고 RefreshToken·MediaToken Cookie를 만료시킵니다.
+- AccessToken으로 식별한 현재 `sid`의 RefreshToken만 Redis에서 제거합니다. 다른 로그인 세션은 유지됩니다.
+- RefreshToken·MediaToken Cookie를 만료시키며, 클라이언트도 보관 중인 AccessToken을 제거해야 합니다.
 
 ---
 
@@ -397,8 +399,9 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
-기존 RefreshToken과 동일한 `sid`로 AccessToken·RefreshToken·MediaToken을 재발급합니다.
-응답에서 새로운 RefreshToken과 MediaToken Cookie도 함께 설정합니다.
+- Cookie의 RefreshToken이 Redis에 저장된 현재 토큰과 일치해야 재발급할 수 있습니다.
+- 기존 RefreshToken과 동일한 `sid`로 AccessToken·RefreshToken·MediaToken을 재발급합니다.
+- 응답에서 새로운 RefreshToken과 MediaToken Cookie도 함께 설정합니다.
 
 ---
 
@@ -449,6 +452,11 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 }
 ```
 
+##### 처리 및 참고사항
+
+- 회원가입만 수행하며 로그인 세션이나 토큰은 생성하지 않습니다.
+- 이메일과 사용자명은 중복될 수 없으며, 소프트 삭제된 사용자의 값도 중복 검사 대상에 포함됩니다.
+
 ---
 
 #### `GET /user/{userId}`
@@ -473,6 +481,11 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
   "updatedAt": "2026-08-17 15:30:00"
 }
 ```
+
+##### 처리 및 참고사항
+
+- 이메일과 프로필 이미지 키는 공개하지 않습니다.
+- 삭제된 사용자는 조회할 수 없습니다.
 
 ---
 
@@ -500,7 +513,9 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 }
 ```
 
-프로필 이미지를 설정하지 않은 경우 `profileImageKey`는 `null`입니다.
+##### 처리 및 참고사항
+
+- 프로필 이미지를 설정하지 않은 경우 `profileImageKey`는 `null`입니다.
 
 ---
 
@@ -525,7 +540,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
-사용자명 변경은 상호작용한 사용자의 `/user/queue/users/metadata` 구독에도 전달됩니다.
+- 변경할 사용자명은 중복될 수 없으며 최대 50자입니다.
+- 사용자명 변경은 같은 채팅방에서 상호작용한 활성 사용자의 `/user/queue/users/metadata` 구독에도 전달됩니다.
 
 ---
 
@@ -543,7 +559,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
-사용자를 소프트 삭제하고 Redis의 모든 RefreshToken 세션을 제거합니다.
+- 사용자를 소프트 삭제하고 Redis의 모든 RefreshToken 세션을 제거합니다.
+- 클라이언트도 보관 중인 AccessToken을 제거해야 합니다.
 
 ---
 
@@ -561,6 +578,13 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 - `200 OK`
 - Body 없음
+
+##### 처리 및 참고사항
+
+- JPG, PNG, GIF, WebP 형식만 허용하며 비어 있는 파일은 저장하지 않습니다.
+- 원본과 최대 320×320 크기의 JPEG 썸네일을 함께 저장하고 새로운 `profileImageKey`를 생성합니다.
+- 응답 Body에는 새 키가 없으므로 변경 결과가 필요하면 `GET /me`를 다시 호출합니다.
+- 기존 프로필 이미지가 있었다면 새 파일과 DB 정보 저장 후 기존 파일 정보를 제거하므로 이전 `fileKey` URL은 더 이상 사용할 수 없습니다.
 
 ---
 
@@ -580,7 +604,9 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
-응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+- 썸네일은 원본의 종횡비를 유지한 최대 320×320 JPEG 이미지이며, 애니메이션 이미지는 첫 프레임을 사용합니다.
+- 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+- 프로필 변경으로 기존 `fileKey`가 제거되면 해당 URL의 신규 조회는 실패합니다.
 
 ---
 
@@ -600,7 +626,9 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
-응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+- 원본 이미지 형식과 애니메이션 여부를 유지해 반환합니다.
+- 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
+- 프로필 변경으로 기존 `fileKey`가 제거되면 해당 URL의 신규 조회는 실패합니다.
 
 ---
 
@@ -637,7 +665,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
-친구 관계는 요청 사용자를 기준으로 하는 단방향 관계입니다.
+- 친구 관계는 요청 사용자를 기준으로 하는 단방향 관계입니다. 상대 사용자의 친구 목록에는 자동으로 추가되지 않습니다.
+- 자기 자신, 이미 추가한 친구 또는 삭제된 사용자는 추가할 수 없습니다.
 
 ---
 
@@ -664,7 +693,11 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ]
 ```
 
-친구 목록은 사용자명 오름차순이며 프로필 이미지를 설정하지 않은 사용자의 `profileImageKey`는 `null`입니다.
+##### 처리 및 참고사항
+
+- 친구 목록은 사용자명 오름차순으로 반환하며 삭제된 사용자는 제외합니다.
+- 조회 결과가 없으면 `null`이 아니라 빈 배열 `[]`을 반환합니다.
+- 프로필 이미지를 설정하지 않은 사용자의 `profileImageKey`는 `null`입니다.
 
 ---
 
@@ -715,7 +748,9 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
-동일한 두 사용자 사이에 기존 1대1 채팅방이 있으면 새로 만들지 않고 기존 채팅방을 사용합니다.
+- 요청 대상은 현재 사용자가 추가한 친구여야 하며 자기 자신과는 1대1 채팅방을 만들 수 없습니다.
+- 동일한 두 사용자 사이에 기존 1대1 채팅방이 있으면 새로 만들지 않고 기존 채팅방 ID를 반환합니다.
+- 기존 참여자가 `LEFT` 상태라면 최신 메시지 다음부터 볼 수 있도록 읽음·공개 경계를 설정하고 `ACTIVE`로 복귀시킵니다.
 
 ---
 
@@ -747,8 +782,9 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ##### 처리 및 참고사항
 
 - `friendIds`에는 요청 사용자를 제외한 친구 ID를 전달합니다.
-- 중복 ID를 제거한 뒤 최소 1명 이상이어야 합니다.
-- `chatRoomName`은 선택 항목이며 최대 100자입니다.
+- 모든 대상은 현재 사용자가 추가한 친구여야 하며, 중복 ID를 제거한 뒤 최소 1명 이상이어야 합니다.
+- 요청 사용자가 `OWNER`, 초대된 사용자가 `MEMBER`로 참여합니다.
+- `chatRoomName`은 선택 항목이며 최대 100자입니다. 값을 생략하거나 `null` 또는 공백으로 전달하면 채팅방 기본 이름을 `null`로 저장합니다.
 
 ---
 
@@ -775,6 +811,13 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 - `200 OK`
 - Body 없음
 
+##### 처리 및 참고사항
+
+- 현재 `ACTIVE` 상태인 참여자라면 방장이 아니어도 초대할 수 있습니다.
+- 요청 대상은 현재 사용자가 추가한 친구여야 하며, 기존 두 참여자 외에 새로 초대할 사용자가 한 명 이상 있어야 합니다.
+- 초대에 성공하면 기존 채팅방 ID를 유지한 채 `DIRECT`에서 `GROUP`으로 전환하고 초대 안내 메시지를 생성합니다.
+- 기존 상대방이 `LEFT` 상태였다면 함께 복귀시키고, 새로 참여하거나 복귀한 사용자는 초대 안내 메시지부터 조회할 수 있습니다.
+
 ---
 
 #### `POST /groupChatRooms/{chatRoomId}/invites`
@@ -799,6 +842,12 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 - `200 OK`
 - Body 없음
+
+##### 처리 및 참고사항
+
+- 현재 `ACTIVE` 상태인 참여자라면 방장이 아니어도 초대할 수 있습니다.
+- 요청 대상은 현재 사용자가 추가한 친구여야 하며, 신규 참여자 또는 `LEFT` 상태에서 복귀할 참여자가 한 명 이상 있어야 합니다.
+- 이미 `ACTIVE` 상태인 참여자는 다시 추가하지 않으며, 신규 참여자와 복귀한 사용자는 초대 안내 메시지부터 조회할 수 있습니다.
 
 ---
 
@@ -825,6 +874,13 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 - `200 OK`
 - Body 없음
 
+##### 처리 및 참고사항
+
+- 나가면 해당 사용자의 참여 상태가 `LEFT`로 바뀌고 사용자별 채팅방 이름은 제거됩니다.
+- 그룹 채팅방에서는 퇴장 안내 메시지를 생성하지만 1대1 채팅방에서는 생성하지 않습니다.
+- 그룹 채팅방의 `OWNER`가 나갈 때 다른 `ACTIVE` 참여자가 남아 있다면 그중 한 명을 `nextOwnerId`로 지정해야 합니다.
+- 다른 활성 참여자가 없다면 방장 권한을 유지한 상태로 나갈 수 있으며 채팅방과 기존 메시지는 삭제하지 않습니다.
+
 ---
 
 #### `PATCH /chatRooms/{chatRoomId}/name`
@@ -850,6 +906,12 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 - `200 OK`
 - Body 없음
 
+##### 처리 및 참고사항
+
+- `GROUP` 채팅방의 `OWNER`만 변경할 수 있으며 `DIRECT` 채팅방에는 사용할 수 없습니다.
+- 변경한 이름은 모든 참여자에게 적용되는 기본 이름이며, 각 사용자가 설정한 `customRoomName`은 그대로 유지됩니다.
+- 공백만 있는 이름은 허용하지 않으며 최대 100자입니다.
+
 ---
 
 #### `PATCH /chatRooms/{chatRoomId}/customName`
@@ -874,6 +936,12 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 - `200 OK`
 - Body 없음
+
+##### 처리 및 참고사항
+
+- `DIRECT`, `GROUP` 채팅방의 `ACTIVE` 참여자 모두 사용할 수 있습니다.
+- 변경 결과는 요청 사용자에게만 적용되며 다른 참여자의 채팅방 이름에는 영향을 주지 않습니다.
+- 공백만 있는 이름은 허용하지 않으며 최대 100자입니다. 별도의 이름 초기화 API는 없고 채팅방을 나갈 때 제거됩니다.
 
 ---
 
@@ -901,7 +969,13 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ]
 ```
 
-초대 가능 친구는 사용자명 오름차순으로 반환합니다.
+##### 처리 및 참고사항
+
+- 현재 사용자가 추가한 친구 중 삭제되지 않은 사용자만 대상으로 하며 사용자명 오름차순으로 반환합니다.
+- 1대1 채팅방에서는 기존 상대방을 참여 상태와 관계없이 제외합니다.
+- 그룹 채팅방에서는 `ACTIVE` 참여자를 제외하고 `LEFT` 상태의 기존 참여자는 복귀 대상으로 포함할 수 있습니다.
+- 조회 결과가 없으면 `null`이 아니라 빈 배열 `[]`을 반환합니다.
+- 프로필 이미지를 설정하지 않은 사용자의 `profileImageKey`는 `null`입니다.
 
 ---
 
@@ -938,7 +1012,13 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 | `OWNER` | 그룹 채팅방 방장 |
 | `MEMBER` | 일반 참여자. 1대1 채팅방의 두 사용자도 `MEMBER`입니다. |
 
-1대1 채팅방은 `LEFT` 상태의 참여자도 포함하고, 그룹 채팅방은 `ACTIVE` 상태의 참여자만 반환합니다. 목록은 사용자명 오름차순입니다.
+##### 처리 및 참고사항
+
+- 삭제된 사용자는 제외합니다.
+- 1대1 채팅방은 `LEFT` 상태의 참여자도 포함하고, 그룹 채팅방은 `ACTIVE` 상태의 참여자만 반환합니다.
+- 목록은 사용자명 오름차순이며, 조회 결과가 없으면 `null`이 아니라 빈 배열 `[]`을 반환합니다.
+- 프로필 이미지를 설정하지 않은 사용자의 `profileImageKey`는 `null`입니다.
+- `canAddFriend`는 자기 자신이거나 이미 현재 사용자가 추가한 친구이면 `false`입니다.
 
 ---
 
@@ -969,8 +1049,11 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ]
 ```
 
-`unreadStartMessageId`를 포함한 이후 메시지를 해당 사용자가 읽지 않은 것으로 판단합니다.
-응답에는 `ACTIVE` 상태의 참여자만 포함하며 배열 순서는 보장하지 않습니다.
+##### 처리 및 참고사항
+
+- `unreadStartMessageId`를 포함한 이후 메시지를 해당 사용자가 읽지 않은 것으로 판단합니다.
+- 삭제되지 않은 `ACTIVE` 상태의 참여자만 포함하며 배열 순서는 보장하지 않습니다.
+- 조회 결과가 없으면 `null`이 아니라 빈 배열 `[]`을 반환합니다.
 
 ---
 
@@ -1019,7 +1102,17 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 | `DIRECT` | 1대1 채팅방 |
 | `GROUP` | 그룹 채팅방 |
 
-`myRole`의 가능한 값은 `OWNER`, `MEMBER`입니다. `baseRoomName`, `customRoomName`, 최근 메시지 관련 필드는 값이 없으면 `null`일 수 있습니다.
+`myRole`의 가능한 값은 `OWNER`, `MEMBER`입니다.
+
+##### 처리 및 참고사항
+
+- 현재 사용자가 `ACTIVE` 상태로 참여 중인 채팅방만 `lastActivityAt` 내림차순으로 반환합니다.
+- 조회 결과가 없으면 `null`이 아니라 빈 배열 `[]`을 반환합니다.
+- `previewUsers`는 현재 사용자를 제외하고 사용자명 오름차순으로 최대 4명까지만 반환하며, 대상이 없으면 빈 배열 `[]`입니다.
+- 1대1 채팅방의 `previewUsers`와 `memberCount`에는 `LEFT` 상태의 상대방도 포함하고, 그룹 채팅방에는 `ACTIVE` 상태의 참여자만 포함합니다. 삭제된 사용자는 제외합니다.
+- `previewUsers`에 포함된 사용자가 프로필 이미지를 설정하지 않았다면 `profileImageKey`는 `null`입니다.
+- 메시지가 하나도 없거나 현재 사용자가 볼 수 있는 메시지가 없으면 `lastMessagePreview`와 `messageId`는 `null`, `unreadCount`는 `0`이며 `lastActivityAt`은 참여 시각을 사용합니다.
+- `DIRECT` 채팅방과 이름을 설정하지 않은 `GROUP` 채팅방은 `baseRoomName`이 `null`일 수 있고, 개인 이름을 설정하지 않았다면 `customRoomName`은 `null`입니다.
 
 ---
 
@@ -1066,9 +1159,15 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 ##### 처리 및 참고사항
 
+- 현재 `ACTIVE` 상태인 참여자만 조회할 수 있으며 `visibleStartMessageId`보다 앞선 초대·재참여 이전 메시지는 반환하지 않습니다.
 - 최신 메시지부터 `messageId` 내림차순으로 최대 100개를 반환합니다.
+- `offsetMessageId`를 전달하면 해당 ID는 포함하지 않고 더 작은 이전 메시지만 조회합니다.
+- 조회 결과가 없으면 `null`이 아니라 빈 배열 `[]`을 반환합니다.
 - 삭제된 발신자의 메시지는 유지되지만 `senderId`, `senderName`, `senderProfileImageKey`는 `null`로 반환합니다.
+- 삭제되지 않은 발신자도 프로필 이미지를 설정하지 않았다면 `senderProfileImageKey`는 `null`입니다.
 - `chatEventFiles`는 파일 메시지일 때만 배열로 반환하고 그 외에는 `null`입니다.
+- `chatEventFiles`의 `fileOrder`는 1부터 시작하며 파일 전송 요청의 순서를 유지한 채 오름차순으로 반환합니다.
+- 한 파일의 `ORIGINAL`과 `THUMBNAIL`은 같은 `fileOrder`를 사용하고, 응답에는 `ORIGINAL` 기준 메타데이터가 파일당 한 건만 포함됩니다.
 
 `chatMessageType`의 가능한 값:
 
@@ -1139,8 +1238,13 @@ curl -X POST "http://localhost:8080/chatRooms/10/files" \
 
 ##### 처리 및 참고사항
 
-- 파일은 1개 이상 30개 이하, 전체 크기는 최대 3GB입니다.
-- 저장된 파일 메시지는 채팅방 STOMP 이벤트로 전달됩니다.
+- 파일은 1개 이상 30개 이하이고 비어 있는 파일은 허용하지 않으며, 전체 크기는 최대 3GB입니다.
+- 한 번의 요청으로 하나의 `FILE` 메시지를 만들고 메시지 내용은 `파일 {개수}개`로 저장합니다.
+- `fileOrder`는 1부터 시작하며 서버가 수신한 multipart `files`의 순서를 유지합니다.
+- 실제 내용 형식을 기준으로 JPEG·PNG·GIF·WebP는 `IMAGE`, MP4·QuickTime·WebM 계열은 `VIDEO`, 나머지는 `FILE`로 분류합니다.
+- `IMAGE`와 `VIDEO`는 원본과 최대 320×320 JPEG 썸네일을 저장하고, `FILE`은 원본만 저장합니다. 애니메이션 이미지와 동영상 썸네일은 첫 프레임을 사용합니다.
+- 성공 응답에는 메시지 ID가 없으며, 생성된 메시지 ID와 파일 메타데이터는 채팅방 STOMP `MESSAGE_SENT` 이벤트로 전달됩니다.
+- 1대1 채팅방의 상대방이 `LEFT` 상태라면 해당 파일 메시지부터 볼 수 있도록 경계를 설정하고 `ACTIVE`로 복귀시킵니다.
 
 ---
 
@@ -1176,8 +1280,10 @@ GET /media/messages/150/files/1?storedFileVariant=THUMBNAIL
 ##### 처리 및 참고사항
 
 - `IMAGE`, `VIDEO` 응답은 10분간 Private Cache를 적용하고 `Vary: Cookie`를 설정합니다.
-- `THUMBNAIL`은 `IMAGE`, `VIDEO`에만 존재합니다.
-- 현재 사용자가 해당 메시지를 볼 수 있는 활성 채팅방 참여자인지 서버에서 검증합니다.
+- `fileOrder`는 1부터 시작하며 하나의 파일에 연결된 `ORIGINAL`과 `THUMBNAIL`은 같은 값을 사용합니다.
+- `THUMBNAIL`은 `IMAGE`, `VIDEO`에만 존재합니다. 일반 `FILE`에 `THUMBNAIL`을 요청하거나 존재하지 않는 순번을 요청하면 `404 Not Found`를 반환합니다.
+- 현재 사용자가 해당 메시지를 볼 수 있는 `ACTIVE` 채팅방 참여자인지 검증하며, 퇴장한 사용자와 재참여 이전 메시지는 토큰이 유효해도 조회할 수 없습니다.
+- 일반 `FILE` 원본은 업로드 당시 파일명으로 다운로드하고, `IMAGE`와 `VIDEO` 원본은 해당 Content-Type과 업로드 당시 파일명을 사용해 Inline으로 반환합니다.
 
 ---
 
