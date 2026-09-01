@@ -582,7 +582,6 @@ Authorization: Bearer {accessToken}
 
 - JPG, PNG, GIF, WebP 형식만 허용하며 비어 있는 파일은 저장하지 않습니다.
 - 원본과 최대 320×320 크기의 JPEG 썸네일을 함께 저장하고 새로운 `profileImageKey`를 생성합니다.
-- 응답 Body에는 새 키가 없으므로 변경 결과가 필요하면 `GET /me`를 다시 호출합니다.
 - 기존 프로필 이미지가 있었다면 새 파일과 DB 정보 저장 후 기존 파일 정보를 제거하므로 이전 `fileKey` URL은 더 이상 사용할 수 없습니다.
 
 ---
