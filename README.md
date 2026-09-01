@@ -537,6 +537,11 @@ Authorization: Bearer {accessToken}
 - `200 OK`
 - Body 없음
 
+##### 이벤트 전달
+
+- 사용자명 변경에 성공하면 참여 이력이 있는 채팅방의 다른 `ACTIVE`·미삭제 사용자에게 `/user/queue/users/metadata`로 `UserMetadataEvent.USERNAME_UPDATED`를 전달합니다.
+- 수신 대상에서 변경한 사용자 자신은 제외하며 친구 관계 여부는 사용하지 않습니다.
+
 ##### 처리 및 참고사항
 
 - 변경할 사용자명은 중복될 수 없으며 최대 50자입니다.
@@ -577,6 +582,11 @@ Authorization: Bearer {accessToken}
 
 - `200 OK`
 - Body 없음
+
+##### 이벤트 전달
+
+- 프로필 이미지 변경에 성공하면 참여 이력이 있는 채팅방의 다른 `ACTIVE`·미삭제 사용자에게 `/user/queue/users/metadata`로 `UserMetadataEvent.USER_PROFILE_IMAGE_UPDATE`를 전달합니다.
+- 수신 대상에서 변경한 사용자 자신은 제외하며 친구 관계 여부는 사용하지 않습니다.
 
 ##### 처리 및 참고사항
 
@@ -741,6 +751,12 @@ Authorization: Bearer {accessToken}
 }
 ```
 
+##### 이벤트 전달
+
+- 새로운 1대1 채팅방을 생성하면 두 참여자 각각에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_ADDED`를 전달합니다.
+- 기존 채팅방을 사용하면서 `LEFT` 참여자를 복귀시킨 경우에는 복귀한 사용자에게만 `ROOM_ADDED`를 전달합니다.
+- 기존 채팅방의 두 참여자가 모두 `ACTIVE`라면 이벤트를 전달하지 않습니다.
+
 ##### 처리 및 참고사항
 
 - 요청 대상은 현재 사용자가 추가한 친구여야 하며 자기 자신과는 1대1 채팅방을 만들 수 없습니다.
@@ -774,6 +790,10 @@ Authorization: Bearer {accessToken}
 }
 ```
 
+##### 이벤트 전달
+
+- 채팅방 생성에 성공하면 요청자와 초대된 모든 참여자 각각에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_ADDED`를 전달합니다.
+
 ##### 처리 및 참고사항
 
 - `friendIds`에는 요청 사용자를 제외한 친구 ID를 전달합니다.
@@ -805,6 +825,12 @@ Authorization: Bearer {accessToken}
 
 - `200 OK`
 - Body 없음
+
+##### 이벤트 전달
+
+- 신규 참여자와 기존 1대1 참여자 중 `LEFT`에서 복귀한 사용자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_ADDED`를 전달합니다.
+- 전환 전부터 `ACTIVE`였던 참여자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_CHANGED`를 전달합니다.
+- 생성된 `JOIN_TEXT` 초대 안내 메시지는 `/topic/chatRooms/{chatRoomId}`로 `ChatEvent.MESSAGE_SENT`를 전달합니다.
 
 ##### 처리 및 참고사항
 
@@ -838,6 +864,12 @@ Authorization: Bearer {accessToken}
 - `200 OK`
 - Body 없음
 
+##### 이벤트 전달
+
+- 신규 참여자와 `LEFT`에서 복귀한 사용자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_ADDED`를 전달합니다.
+- 기존 `ACTIVE` 참여자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_CHANGED`를 전달합니다.
+- 생성된 `JOIN_TEXT` 초대 안내 메시지는 `/topic/chatRooms/{chatRoomId}`로 `ChatEvent.MESSAGE_SENT`를 전달합니다.
+
 ##### 처리 및 참고사항
 
 - 현재 `ACTIVE` 상태인 참여자라면 방장이 아니어도 초대할 수 있습니다.
@@ -868,6 +900,13 @@ Authorization: Bearer {accessToken}
 
 - `200 OK`
 - Body 없음
+
+##### 이벤트 전달
+
+- 방 유형과 관계없이 나간 사용자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_REMOVED`를 전달합니다.
+- 그룹 채팅방이면 남은 `ACTIVE`·미삭제 참여자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_CHANGED`를 전달합니다.
+- 그룹 채팅방이면 생성된 `LEAVE_TEXT` 퇴장 안내 메시지를 `/topic/chatRooms/{chatRoomId}`로 `ChatEvent.MESSAGE_SENT`를 전달합니다.
+- 1대1 채팅방에서는 상대방에게 별도 이벤트를 전달하지 않습니다.
 
 ##### 처리 및 참고사항
 
@@ -901,6 +940,10 @@ Authorization: Bearer {accessToken}
 - `200 OK`
 - Body 없음
 
+##### 이벤트 전달
+
+- 이름 변경에 성공하면 모든 `ACTIVE`·미삭제 참여자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_NAME_CHANGED`를 전달합니다.
+
 ##### 처리 및 참고사항
 
 - `GROUP` 채팅방의 `OWNER`만 변경할 수 있으며 `DIRECT` 채팅방에는 사용할 수 없습니다.
@@ -931,6 +974,10 @@ Authorization: Bearer {accessToken}
 
 - `200 OK`
 - Body 없음
+
+##### 이벤트 전달
+
+- 개인 이름 변경에 성공하면 요청 사용자에게만 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.ROOM_NAME_CHANGED`를 전달합니다.
 
 ##### 처리 및 참고사항
 
@@ -1230,6 +1277,13 @@ curl -X POST "http://localhost:8080/chatRooms/10/files" \
 
 - `200 OK`
 - Body 없음
+
+##### 이벤트 전달
+
+- 파일 메시지 저장에 성공하면 현재 `/topic/chatRooms/{chatRoomId}`를 구독 중인 세션에 `ChatEvent.MESSAGE_SENT`를 전달합니다.
+- 그룹 채팅방에서는 발신자를 포함한 모든 `ACTIVE`·미삭제 참여자에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.MESSAGE_SENT`를 전달합니다.
+- 1대1 채팅방의 두 참여자가 모두 `ACTIVE`라면 발신자와 미삭제 상대방에게 `/user/queue/chatRooms/list`로 `ChatRoomListEvent.MESSAGE_SENT`를 전달합니다.
+- 1대1 상대방이 `LEFT` 상태였다면 상대방을 복귀시키고 상대방에게 `ChatRoomListEvent.ROOM_ADDED`, 발신자에게 `ChatRoomListEvent.MESSAGE_SENT`를 전달합니다.
 
 ##### 처리 및 참고사항
 
