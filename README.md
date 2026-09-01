@@ -318,13 +318,16 @@ Authorization: Bearer {accessToken}
 | File | POST | `/chatRooms/{chatRoomId}/files` | AccessToken | 파일 메시지 전송 |
 | File | GET | `/media/messages/{chatMessageId}/files/{fileOrder}` | MediaToken Cookie | 메시지 파일 조회 |
 
-### 인증 API
+<details>
+<summary><strong>인증 API</strong></summary>
 
 | Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
 |---|---|---|---|---|---|
 | POST | `/login` | 공개 | JSON | `200 OK` · JSON + Cookie | 로그인 |
 | POST | `/logout` | AccessToken | Body 없음 | `200 OK` · Body 없음 | 현재 세션 로그아웃 |
 | POST | `/refresh` | RefreshToken Cookie | Body 없음 | `200 OK` · JSON + Cookie | 토큰 재발급 |
+
+---
 
 #### `POST /login`
 
@@ -355,6 +358,8 @@ Authorization: Bearer {accessToken}
 
 AccessToken은 Body로 반환하고 RefreshToken과 MediaToken은 HttpOnly Cookie로 설정합니다.
 
+---
+
 #### `POST /logout`
 
 ##### 요청
@@ -370,6 +375,8 @@ AccessToken은 Body로 반환하고 RefreshToken과 MediaToken은 HttpOnly Cooki
 ##### 처리 및 참고사항
 
 AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거하고 RefreshToken·MediaToken Cookie를 만료시킵니다.
+
+---
 
 #### `POST /refresh`
 
@@ -393,7 +400,10 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 기존 RefreshToken과 동일한 `sid`로 AccessToken·RefreshToken·MediaToken을 재발급합니다.
 응답에서 새로운 RefreshToken과 MediaToken Cookie도 함께 설정합니다.
 
-### 사용자·프로필 API
+</details>
+
+<details>
+<summary><strong>사용자·프로필 API</strong></summary>
 
 | Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
 |---|---|---|---|---|---|
@@ -405,6 +415,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 | PUT | `/me/profile-image` | AccessToken | Multipart | `200 OK` · Body 없음 | 프로필 이미지 변경 |
 | GET | `/profile-images/{fileKey}/thumbnail` | 공개 | Path | `200 OK` · JPEG Binary | 프로필 썸네일 조회 |
 | GET | `/profile-images/{fileKey}/image` | 공개 | Path | `200 OK` · Image Binary | 프로필 원본 조회 |
+
+---
 
 #### `POST /user`
 
@@ -435,6 +447,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 }
 ```
 
+---
+
 #### `GET /user/{userId}`
 
 지정한 사용자의 공개 정보를 조회합니다.
@@ -457,6 +471,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
   "updatedAt": "2026-08-17 15:30:00"
 }
 ```
+
+---
 
 #### `GET /me`
 
@@ -484,6 +500,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 프로필 이미지를 설정하지 않은 경우 `profileImageKey`는 `null`입니다.
 
+---
+
 #### `PATCH /me`
 
 로그인한 사용자의 이름을 변경합니다.
@@ -507,6 +525,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 사용자명 변경은 상호작용한 사용자의 `/user/queue/users/metadata` 구독에도 전달됩니다.
 
+---
+
 #### `DELETE /me`
 
 ##### 요청
@@ -523,6 +543,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 사용자를 소프트 삭제하고 Redis의 모든 RefreshToken 세션을 제거합니다.
 
+---
+
 #### `PUT /me/profile-image`
 
 ##### 요청
@@ -537,6 +559,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 - `200 OK`
 - Body 없음
+
+---
 
 #### `GET /profile-images/{fileKey}/thumbnail`
 
@@ -556,6 +580,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
 
+---
+
 #### `GET /profile-images/{fileKey}/image`
 
 ##### 요청
@@ -574,12 +600,17 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 응답은 Public·Immutable 정책으로 최대 365일 캐시합니다.
 
-### 친구 API
+</details>
+
+<details>
+<summary><strong>친구 API</strong></summary>
 
 | Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
 |---|---|---|---|---|---|
 | POST | `/friends` | AccessToken | JSON | `200 OK` · Body 없음 | 친구 추가 |
 | GET | `/friends` | AccessToken | Body 없음 | `200 OK` · JSON Array | 친구 목록 조회 |
+
+---
 
 #### `POST /friends`
 
@@ -603,6 +634,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ##### 처리 및 참고사항
 
 친구 관계는 요청 사용자를 기준으로 하는 단방향 관계입니다.
+
+---
 
 #### `GET /friends`
 
@@ -629,7 +662,10 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 친구 목록은 사용자명 오름차순이며 프로필 이미지를 설정하지 않은 사용자의 `profileImageKey`는 `null`입니다.
 
-### 채팅방 API
+</details>
+
+<details>
+<summary><strong>채팅방 API</strong></summary>
 
 | Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
 |---|---|---|---|---|---|
@@ -644,6 +680,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 | GET | `/chatRooms/{chatRoomId}/members` | AccessToken | Path | `200 OK` · JSON Array | 채팅방 참여자 조회 |
 | GET | `/chatRooms/{chatRoomId}/readStatuses` | AccessToken | Path | `200 OK` · JSON Array | 참여자별 읽음 범위 조회 |
 | GET | `/chatRooms` | AccessToken | Body 없음 | `200 OK` · JSON Array | 내 채팅방 목록 조회 |
+
+---
 
 #### `POST /directChatRooms`
 
@@ -672,6 +710,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ##### 처리 및 참고사항
 
 동일한 두 사용자 사이에 기존 1대1 채팅방이 있으면 새로 만들지 않고 기존 채팅방을 사용합니다.
+
+---
 
 #### `POST /groupChatRooms`
 
@@ -704,6 +744,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 - 중복 ID를 제거한 뒤 최소 1명 이상이어야 합니다.
 - `chatRoomName`은 선택 항목이며 최대 100자입니다.
 
+---
+
 #### `POST /directChatRooms/{chatRoomId}/invites`
 
 1대1 채팅방에 기존 참여자가 아닌 사용자를 한 명 이상 초대하고 그룹 채팅방으로 전환합니다.
@@ -726,6 +768,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 - `200 OK`
 - Body 없음
+
+---
 
 #### `POST /groupChatRooms/{chatRoomId}/invites`
 
@@ -750,6 +794,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 - `200 OK`
 - Body 없음
 
+---
+
 #### `POST /chatRooms/{chatRoomId}/leave`
 
 그룹 채팅방의 방장이 나가고 다른 활성 사용자가 남아 있다면 `nextOwnerId`가 필요합니다. 그 외에는 빈 객체를 전달할 수 있습니다.
@@ -772,6 +818,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 - `200 OK`
 - Body 없음
+
+---
 
 #### `PATCH /chatRooms/{chatRoomId}/name`
 
@@ -796,6 +844,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 - `200 OK`
 - Body 없음
 
+---
+
 #### `PATCH /chatRooms/{chatRoomId}/customName`
 
 1대1·그룹 채팅방 모두 사용할 수 있으며 요청 사용자에게만 적용됩니다.
@@ -818,6 +868,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 - `200 OK`
 - Body 없음
+
+---
 
 #### `GET /chatRooms/{chatRoomId}/invitableFriends`
 
@@ -844,6 +896,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 ```
 
 초대 가능 친구는 사용자명 오름차순으로 반환합니다.
+
+---
 
 #### `GET /chatRooms/{chatRoomId}/members`
 
@@ -880,6 +934,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 1대1 채팅방은 `LEFT` 상태의 참여자도 포함하고, 그룹 채팅방은 `ACTIVE` 상태의 참여자만 반환합니다. 목록은 사용자명 오름차순입니다.
 
+---
+
 #### `GET /chatRooms/{chatRoomId}/readStatuses`
 
 활성 참여자별로 읽지 않기 시작한 메시지 ID를 조회합니다.
@@ -909,6 +965,8 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 `unreadStartMessageId`를 포함한 이후 메시지를 해당 사용자가 읽지 않은 것으로 판단합니다.
 응답에는 `ACTIVE` 상태의 참여자만 포함하며 배열 순서는 보장하지 않습니다.
+
+---
 
 #### `GET /chatRooms`
 
@@ -957,11 +1015,16 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 
 `myRole`의 가능한 값은 `OWNER`, `MEMBER`입니다. `baseRoomName`, `customRoomName`, 최근 메시지 관련 필드는 값이 없으면 `null`일 수 있습니다.
 
-### 메시지 API
+</details>
+
+<details>
+<summary><strong>메시지 API</strong></summary>
 
 | Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
 |---|---|---|---|---|---|
 | GET | `/chatRooms/{chatRoomId}/messages` | AccessToken | Path + Query | `200 OK` · JSON Array | 채팅 메시지 조회 |
+
+---
 
 #### `GET /chatRooms/{chatRoomId}/messages`
 
@@ -1027,12 +1090,17 @@ AccessToken으로 식별한 현재 `sid`의 RefreshToken을 Redis에서 제거�
 | `VIDEO` | 동영상 파일 |
 | `FILE` | 그 외 일반 파일 |
 
-### 채팅 파일 API
+</details>
+
+<details>
+<summary><strong>채팅 파일 API</strong></summary>
 
 | Method | 경로 | 인증 | 요청 형식 | 성공 응답 | 설명 |
 |---|---|---|---|---|---|
 | POST | `/chatRooms/{chatRoomId}/files` | AccessToken | Path + Multipart | `200 OK` · Body 없음 | 파일 메시지 전송 |
 | GET | `/media/messages/{chatMessageId}/files/{fileOrder}` | MediaToken Cookie | Path + Query | `200 OK` · Binary | 메시지 파일 조회 |
+
+---
 
 #### `POST /chatRooms/{chatRoomId}/files`
 
@@ -1063,6 +1131,8 @@ curl -X POST "http://localhost:8080/chatRooms/10/files" \
 
 - 파일은 1개 이상 30개 이하, 전체 크기는 최대 3GB입니다.
 - 저장된 파일 메시지는 채팅방 STOMP 이벤트로 전달됩니다.
+
+---
 
 #### `GET /media/messages/{chatMessageId}/files/{fileOrder}`
 
@@ -1098,6 +1168,8 @@ GET /media/messages/150/files/1?storedFileVariant=THUMBNAIL
 - `IMAGE`, `VIDEO` 응답은 10분간 Private Cache를 적용하고 `Vary: Cookie`를 설정합니다.
 - `THUMBNAIL`은 `IMAGE`, `VIDEO`에만 존재합니다.
 - 현재 사용자가 해당 메시지를 볼 수 있는 활성 채팅방 참여자인지 서버에서 검증합니다.
+
+</details>
 
 </details>
 
