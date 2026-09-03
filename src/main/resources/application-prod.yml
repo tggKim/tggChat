@@ -18,9 +18,6 @@ logging:
   file:
     name: /chatApp/logs/chatApp.log
 
-server:
-  forward-headers-strategy: framework
-
 app:
   cookie:
     secure: true

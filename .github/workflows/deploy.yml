@@ -43,7 +43,6 @@ jobs: # 워크플로우에서 실행할 작업 묶음, 작업 단위로 별도�
           username: ${{ secrets.EC2_USER }}   # SSH 로그인 계정명
           key: ${{ secrets.EC2_SSH_KEY }}   # SSH 접속에 사용할 .pem 키
           script: | # docker-compose 실행
-            cd /home/ubuntu/tgg-app
-            sudo docker compose pull
+            cd /home/ubuntu/tgg-chat/backend
             sudo docker compose up -d
             sudo docker image prune -f
