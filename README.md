@@ -10,6 +10,12 @@ WebSocket(STOMP)과 Redis Pub/Sub을 기반으로 구현한 실시간 채팅 백
 
 ---
 
+## 프로젝트 시연
+
+https://github.com/user-attachments/assets/fde373ef-5bd5-48f0-9ab3-0fed08c52afa
+
+---
+
 ## 프로젝트 목표
 
 ### WebSocket/STOMP 기반 실시간 이벤트 전달
