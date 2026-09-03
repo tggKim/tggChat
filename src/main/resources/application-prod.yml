@@ -17,6 +17,8 @@ spring:
 logging:
   file:
     name: /chatApp/logs/chatApp.log
+  level:
+    org.springframework.web.cors: DEBUG
 
 app:
   cookie:
