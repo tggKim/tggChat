@@ -3,6 +3,7 @@ package com.tgg.chat.domain.auth.controller;
 import com.tgg.chat.domain.auth.dto.response.RefreshResponseDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import io.swagger.v3.oas.annotations.headers.Header;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -36,7 +37,10 @@ import java.time.Duration;
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
-	
+
+    @Value("${app.cookie.secure}")
+    private boolean cookieSecure;
+
 	private final AuthService authService;
 	private final JwtUtils jwtUtils;
 	
@@ -205,7 +209,7 @@ public class AuthController {
 	private ResponseCookie buildRefreshTokenCookie(String refreshToken) {
 		return ResponseCookie.from("refreshToken", refreshToken)
 			.httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
-			.secure(false) // http 환경에서만 쿠키 전송
+			.secure(cookieSecure) // http 환경에서만 쿠키 전송
 			.sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
 			.path("/") // 모든 경로의 요청에 쿠키 포함
 			.maxAge(Duration.ofMillis(jwtUtils.getRefreshTokenTtlMillis())) // 만료시간 설정
@@ -215,7 +219,7 @@ public class AuthController {
     private ResponseCookie buildMediaTokenCookie(String mediaToken) {
         return ResponseCookie.from("mediaToken", mediaToken)
                 .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
-                .secure(false) // http 환경에서만 쿠키 전송
+                .secure(cookieSecure) // http 환경에서만 쿠키 전송
                 .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
                 .path("/") // 모든 경로의 요청에 쿠키 포함
                 .maxAge(Duration.ofMillis(jwtUtils.getMediaTokenTtlMillis())) // 만료시간 설정
@@ -225,7 +229,7 @@ public class AuthController {
     private ResponseCookie buildExpiredRefreshTokenCookie() {
         return ResponseCookie.from("refreshToken", "")
                 .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
-                .secure(false) // http 환경에서만 쿠키 전송
+                .secure(cookieSecure) // http 환경에서만 쿠키 전송
                 .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
                 .path("/") // 모든 경로의 요청에 쿠키 포함
                 .maxAge(0) // 만료시간 설정
@@ -235,7 +239,7 @@ public class AuthController {
     private ResponseCookie buildExpiredMediaTokenCookie() {
         return ResponseCookie.from("mediaToken", "")
                 .httpOnly(true) // 이 쿠키는 자바스크립트로 접근 불가
-                .secure(false) // http 환경에서만 쿠키 전송
+                .secure(cookieSecure) // http 환경에서만 쿠키 전송
                 .sameSite("Lax") // 다른 사이트에서 링크를 클릭시 쿠키가 보내지도록 허용하는 옵션
                 .path("/") // 모든 경로의 요청에 쿠키 포함
                 .maxAge(0) // 만료시간 설정

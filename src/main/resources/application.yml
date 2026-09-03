@@ -37,3 +37,7 @@ springdoc:
 JWT_SECRET_KEY: ${SECRET}
 
 file_root_path: ${FILE_ROOT_PATH}
+
+app:
+  cookie:
+    secure: false
