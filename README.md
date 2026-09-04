@@ -77,6 +77,7 @@ https://github.com/user-attachments/assets/fde373ef-5bd5-48f0-9ab3-0fed08c52afa
 - Nginx가 정적 프론트엔드를 제공하고 REST API, 미디어, WebSocket 요청을 Spring Boot 컨테이너로 전달합니다.
 - Spring Boot는 Docker Compose 내부 DNS를 통해 MySQL과 Redis에 연결합니다.
 - MySQL·Redis·애플리케이션 로그는 Docker Volume에, 업로드 파일은 EC2 호스트의 bind mount 경로에 보존합니다.
+- 현재는 단일 EC2 인스턴스를 사용
 
 ---
 
