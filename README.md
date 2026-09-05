@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/fde373ef-5bd5-48f0-9ab3-0fed08c52afa
 | 실시간 통신 | WebSocket, STOMP, Redis Pub/Sub |
 | 인증·보안 | Spring Security, JWT |
 | 파일 처리 | Apache Tika, Thumbnailator, FFmpeg |
-| 배포·인프라 | Docker, Docker Compose, GitHub Actions, GHCR |
+| 배포·인프라 | Docker, GitHub Actions|
 
 ---
 
