@@ -33,11 +33,27 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
            join cru.chatRoom cr
            where cru.user.userId = :userId
            and cru.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
-            """)
+           """)
     List<ChatRoomListBaseRowDto> findActiveChatRoomsByUserId(Long userId);
 
-//    List<ChatRoomMemberCountRowDto> findMemberCountsByChatRoomIds(List<Long> roomIds);
-//
+    @Query("""
+            select
+                cru.chatRoom.chatRoomId   AS roomId
+            ,   count(*)                    AS memberCount
+            from ChatRoomUser cru
+            join cru.user u
+            join cru.chatRoom cr
+            where cru.chatRoom.chatRoomId in :roomIds
+            and (
+                cru.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
+                OR
+                cr.chatRoomType = com.tgg.chat.domain.chat.enums.ChatRoomType.DIRECT
+            )
+            and u.deleted = false
+            group by cru.chatRoom.chatRoomId
+            """)
+    List<ChatRoomMemberCountRowDto> findMemberCountsByChatRoomIds(List<Long> roomIds);
+
 //    List<ChatRoomPreviewUserRowDto> findPreviewUsersByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
 //
 //    List<ChatRoomLatestMessageRowDto> findLatestVisibleMessagesByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);

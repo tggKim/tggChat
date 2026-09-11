@@ -1097,7 +1097,7 @@ public class ChatRoomService {
                 .map(ChatRoomListBaseRowDto::getRoomId)
                 .toList();
 
-        List<ChatRoomMemberCountRowDto> memberCountRows = chatRoomMapper.findMemberCountsByChatRoomIds(activeChatRoomIds);
+        List<ChatRoomMemberCountRowDto> memberCountRows = chatRoomRepository.findMemberCountsByChatRoomIds(activeChatRoomIds);
         Map<Long, Long> memberCountsByRoomId = memberCountRows.stream()
                 .collect(Collectors.toMap(
                         chatRoomMemberCountRowDto -> chatRoomMemberCountRowDto.getRoomId(),
