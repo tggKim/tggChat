@@ -1104,7 +1104,7 @@ public class ChatRoomService {
                         chatRoomMemberCountRowDto -> chatRoomMemberCountRowDto.getMemberCount()
                 ));
 
-        List<ChatRoomPreviewUserRowDto> previewUserRows = chatRoomMapper.findPreviewUsersByUserIdAndChatRoomIds(userId, activeChatRoomIds);
+        List<ChatRoomPreviewUserRowDto> previewUserRows = chatRoomRepository.findPreviewUsersByUserIdAndChatRoomIds(userId, activeChatRoomIds);
         Map<Long, List<ChatRoomPreviewUser>> previewUsersByRoomId = previewUserRows.stream()
                 .collect(Collectors.groupingBy(
                         chatRoomPreviewUserRowDto -> chatRoomPreviewUserRowDto.getRoomId(),
