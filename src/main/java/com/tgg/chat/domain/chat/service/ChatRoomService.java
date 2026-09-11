@@ -1087,7 +1087,7 @@ public class ChatRoomService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
-        List<ChatRoomListBaseRowDto> baseRows = chatRoomMapper.findActiveChatRoomsByUserId(userId);
+        List<ChatRoomListBaseRowDto> baseRows = chatRoomRepository.findActiveChatRoomsByUserId(userId);
 
         if (baseRows.isEmpty()) {
             return List.of();

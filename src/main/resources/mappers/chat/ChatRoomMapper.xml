@@ -1,21 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tgg.chat.domain.chat.repository.ChatRoomMapper">
-    <select id="findActiveChatRoomsByUserId">
-        SELECT
-            cr.chat_room_id                 AS roomId
-        ,   cr.chat_room_type               AS roomType
-        ,   cr.room_name                    AS baseRoomName
-        ,   cru.custom_room_name            AS customRoomName
-        ,   cru.chat_room_user_role         AS myRole
-        ,   cru.joined_at                   AS joinedAt
-        ,   cru.unread_start_message_id     AS unreadStartMessageId
-        FROM chat_room_user cru
-        INNER JOIN chat_room cr
-            ON cru.chat_room_id = cr.chat_room_id
-        WHERE cru.user_id = #{userId}
-        AND cru.chat_room_user_status = 'ACTIVE'
-    </select>
 
     <select id="findMemberCountsByChatRoomIds">
         SELECT

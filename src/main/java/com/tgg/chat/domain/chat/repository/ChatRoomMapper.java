@@ -7,8 +7,6 @@ import java.util.List;
 
 @Mapper
 public interface ChatRoomMapper {
-    List<ChatRoomListBaseRowDto> findActiveChatRoomsByUserId(Long userId);
-
     List<ChatRoomMemberCountRowDto> findMemberCountsByChatRoomIds(List<Long> roomIds);
 
     List<ChatRoomPreviewUserRowDto> findPreviewUsersByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
