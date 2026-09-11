@@ -11,10 +11,10 @@ import com.tgg.chat.common.messaging.event.ChatRoomListEvent;
 import com.tgg.chat.common.messaging.event.ChatRoomPreviewUser;
 import com.tgg.chat.domain.chat.dto.internal.ReadChatMessageResult;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
-import com.tgg.chat.domain.chat.dto.query.ChatMessageFileRowDto;
 import com.tgg.chat.domain.chat.dto.request.ReadChatMessagesRequestDto;
 import com.tgg.chat.domain.chat.repository.*;
-import com.tgg.chat.domain.file.repository.StoredFileMapper;
+import com.tgg.chat.domain.file.entity.StoredFile;
+import com.tgg.chat.domain.file.repository.StoredFileRepository;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +41,7 @@ public class ChatMessageService {
     
     private final ChatMessageRepository chatMessageRepository;
 
-    private final StoredFileMapper storedFileMapper;
+    private final StoredFileRepository storedFileRepository;
     
     @Transactional
     public SaveChatMessageResult saveMessage(
@@ -174,12 +174,12 @@ public class ChatMessageService {
         if (storedFileKeys.isEmpty()) {
             filesByFileKey = Map.of();
         } else {
-            List<ChatMessageFileRowDto> fileRows =
-                    storedFileMapper.findOriginalMessageFilesByFileKeys(storedFileKeys);
+            List<StoredFile> fileRows =
+                    storedFileRepository.findOriginalMessageFilesByFileKeys(storedFileKeys);
 
             filesByFileKey = fileRows.stream()
                     .collect(Collectors.groupingBy(
-                            ChatMessageFileRowDto::getFileKey,
+                            StoredFile::getFileKey,
                             Collectors.mapping(
                                     row -> ChatEventFile.of(
                                             row.getFileOrder(),
