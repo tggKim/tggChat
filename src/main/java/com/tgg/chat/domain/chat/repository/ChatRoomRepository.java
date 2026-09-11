@@ -98,8 +98,45 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             nativeQuery = true
     )
     List<ChatRoomPreviewUserRowDto> findPreviewUsersByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
-//
-//    List<ChatRoomLatestMessageRowDto> findLatestVisibleMessagesByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
-//
-//    List<ChatRoomUnreadCountRowDto> findUnreadMessageCountsByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
+
+    @Query(
+            value = """
+                SELECT
+                    cm.chat_room_id    AS roomId,
+                    cm.content         AS lastMessagePreview,
+                    cm.chat_message_id AS messageId,
+                    cm.created_at      AS createdAt
+                FROM chat_room_user cru
+                INNER JOIN chat_message cm
+                    ON cm.chat_message_id = (
+                        SELECT m.chat_message_id
+                        FROM chat_message m
+                        WHERE m.chat_room_id = cru.chat_room_id
+                          AND m.chat_message_id >= cru.visible_start_message_id
+                        ORDER BY m.chat_message_id DESC
+                        LIMIT 1
+                    )
+                WHERE cru.user_id = :userId
+                  AND cru.chat_room_id IN (:roomIds)
+                """,
+            nativeQuery = true
+    )
+    List<ChatRoomLatestMessageRowDto> findLatestVisibleMessagesByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
+
+    @Query(
+            value = """
+                SELECT
+                    cm.chat_room_id AS roomId,
+                    COUNT(*)        AS unreadCount
+                FROM chat_message cm
+                INNER JOIN chat_room_user cru
+                    ON cru.chat_room_id = cm.chat_room_id
+                    AND cru.user_id = :userId
+                WHERE cm.chat_room_id IN (:roomIds)
+                  AND cm.chat_message_id >= cru.unread_start_message_id
+                GROUP BY cm.chat_room_id
+                """,
+            nativeQuery = true
+    )
+    List<ChatRoomUnreadCountRowDto> findUnreadMessageCountsByUserIdAndChatRoomIds(Long userId, List<Long> roomIds);
 }

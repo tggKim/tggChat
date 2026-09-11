@@ -38,7 +38,6 @@ public class ChatRoomService {
     private final UserRepository userRepository;
 
     private final ChatRoomRepository chatRoomRepository;
-    private final ChatRoomMapper chatRoomMapper;
 
     private final ChatRoomUserRepository chatRoomUserRepository;
 
@@ -1120,14 +1119,14 @@ public class ChatRoomService {
                         )
                 ));
 
-        List<ChatRoomLatestMessageRowDto> latestMessageRows = chatRoomMapper.findLatestVisibleMessagesByUserIdAndChatRoomIds(userId, activeChatRoomIds);
+        List<ChatRoomLatestMessageRowDto> latestMessageRows = chatRoomRepository.findLatestVisibleMessagesByUserIdAndChatRoomIds(userId, activeChatRoomIds);
         Map<Long, ChatRoomLatestMessageRowDto> latestMessageByRoomId = latestMessageRows.stream()
                 .collect(Collectors.toMap(
                         chatRoomLatestMessageRowDto -> chatRoomLatestMessageRowDto.getRoomId(),
                         chatRoomLatestMessageRowDto -> chatRoomLatestMessageRowDto
                 ));
 
-        List<ChatRoomUnreadCountRowDto> unreadCountRows = chatRoomMapper.findUnreadMessageCountsByUserIdAndChatRoomIds(userId, activeChatRoomIds);
+        List<ChatRoomUnreadCountRowDto> unreadCountRows = chatRoomRepository.findUnreadMessageCountsByUserIdAndChatRoomIds(userId, activeChatRoomIds);
         Map<Long, Long> unreadCountByRoomId = unreadCountRows.stream()
                 .collect(Collectors.toMap(
                         chatRoomUnreadCountRowDto -> chatRoomUnreadCountRowDto.getRoomId(),

@@ -13,5 +13,7 @@ spring:
       host: localhost
 
 logging:
+  level:
+    org.hibernate.orm.jdbc.bind: TRACE
   file:
     name: /logs/chatApp/chatApp.log
