@@ -6,6 +6,7 @@ import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.file.dto.internal.FindMessageFileResult;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.dto.internal.SaveMessageFileResult;
+import com.tgg.chat.domain.file.dto.internal.SaveUserProfileResult;
 import com.tgg.chat.domain.file.enums.FileCategory;
 import com.tgg.chat.domain.file.enums.StoredFileVariant;
 import com.tgg.chat.domain.file.service.StoredFileService;
@@ -86,7 +87,11 @@ public class StoredFileController {
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestPart(required = false) MultipartFile userProfileImage
     ) {
-        UserMetadataEvent userMetadataEvent = storedFileService.saveUserProfile(authenticatedUser.getUserId(), userProfileImage);
+        SaveUserProfileResult saveUserProfileResult = storedFileService.saveUserProfile(authenticatedUser.getUserId(), userProfileImage);
+
+        UserMetadataEvent userMetadataEvent = saveUserProfileResult.getUserMetadataEvent();
+
+        storedFileService.deleteOldUserProfile(saveUserProfileResult.getPreviousProfileImageKey());
 
         redisPublisher.publishUserMetadataEvent(userMetadataEvent);
 

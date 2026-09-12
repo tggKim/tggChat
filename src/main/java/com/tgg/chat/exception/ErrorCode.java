@@ -66,6 +66,8 @@ public enum ErrorCode {
     CHAT_FILE_COUNT_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "SF004", "한 번에 최대 30개의 파일만 전송할 수 있습니다."),
     CHAT_FILE_TOTAL_SIZE_LIMIT_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "SF005", "한 번에 전송할 수 있는 파일의 총 크기는 최대 3GB입니다."),
     PROFILE_FILE_REQUIRED(HttpStatus.BAD_REQUEST, "SF003", "비어 있지 않은 파일을 1개 선택해야 합니다."),
+    PROFILE_IMAGE_SIZE_LIMIT_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "SF006", "프로필 이미지는 최대 10MB까지 업로드할 수 있습니다."),
+    PROFILE_IMAGE_RESOLUTION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "SF007", "프로필 이미지의 가로와 세로는 각각 최대 6000px까지 허용됩니다."),
 
     // 웹소켓
     WEBSOCKET_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "W001", "인증되지 않은 WebSocket 요청입니다.");

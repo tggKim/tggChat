@@ -13,6 +13,7 @@ import com.tgg.chat.domain.chat.repository.ChatRoomUserRepository;
 import com.tgg.chat.domain.file.dto.internal.FindMessageFileResult;
 import com.tgg.chat.domain.file.dto.internal.FindUserImageResult;
 import com.tgg.chat.domain.file.dto.internal.SaveMessageFileResult;
+import com.tgg.chat.domain.file.dto.internal.SaveUserProfileResult;
 import com.tgg.chat.domain.file.entity.StoredFile;
 import com.tgg.chat.domain.file.enums.FileCategory;
 import com.tgg.chat.domain.file.enums.StoredFileVariant;
@@ -56,6 +57,10 @@ public class StoredFileService {
 
     private static final long MAX_TOTAL_FILE_SIZE = 3L * 1024 * 1024 * 1024;
 
+    private static final long MAX_PROFILE_IMAGE_FILE_SIZE = 10L * 1024 * 1024;
+    private static final int MAX_PROFILE_IMAGE_WIDTH = 6000;
+    private static final int MAX_PROFILE_IMAGE_HEIGHT = 6000;
+
     private static final Set<String> ALLOWED_IMAGE_FORMATS = Set.of(
             "jpeg",
             "png",
@@ -96,7 +101,7 @@ public class StoredFileService {
     }
 
     @Transactional
-    public UserMetadataEvent saveUserProfile(Long userId, MultipartFile userProfileImage) {
+    public SaveUserProfileResult saveUserProfile(Long userId, MultipartFile userProfileImage) {
         User findUser = userRepository.findById(userId).orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
         if(findUser.getDeleted()) {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
@@ -106,7 +111,11 @@ public class StoredFileService {
             throw new ErrorException(ErrorCode.PROFILE_FILE_REQUIRED);
         }
 
-        // 기존 저장된 파일들이 있다면 삭제하기 위해 미리 key 추출
+        if(userProfileImage.getSize() > MAX_PROFILE_IMAGE_FILE_SIZE) {
+            throw new ErrorException(ErrorCode.PROFILE_IMAGE_SIZE_LIMIT_EXCEEDED);
+        }
+
+        // 기존 저장된 파일들이 있다면 삭제하기 위해 파일키 따로 추출
         String previousProfileImageKey = findUser.getProfileImageKey();
 
         // 새로운 key를 생성 후 유저의 정보 업데이트
@@ -135,6 +144,13 @@ public class StoredFileService {
                 // 파일의 포맷을 가져온뒤 jpeg, png, gif, webp 중 하나인지 검증
                 if (!ALLOWED_IMAGE_FORMATS.contains(imageFormat)) {
                     throw new ErrorException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
+                }
+
+                int width = reader.getWidth(0);
+                int height = reader.getHeight(0);
+
+                if(width > MAX_PROFILE_IMAGE_WIDTH || height > MAX_PROFILE_IMAGE_HEIGHT) {
+                    throw new ErrorException(ErrorCode.PROFILE_IMAGE_RESOLUTION_LIMIT_EXCEEDED);
                 }
 
                 // GIF와 WebP가 애니메이션이어도 첫 프레임만 읽는다.
@@ -211,27 +227,30 @@ public class StoredFileService {
 
         // 수신자 조회 실패 시 기존 파일이 먼저 삭제되지 않도록 삭제 전에 조회
         List<Long> eventUserIds = userRepository.findAllInteractingUserIds(userId);
-        
-        // 기존의 파일이 있었다면 실제파일과 StoredFile 모두 삭제
-        if(previousProfileImageKey != null) {
-            List<StoredFile> previousStoredFiles = storedFileRepository.findAllByFileKey(previousProfileImageKey);
 
-            previousStoredFiles.forEach(
-                    previousStoredFile -> {
-                        Path deletePath = fileRootPath.resolve(previousStoredFile.getStoredFileName());
-                        try {
-                            Files.deleteIfExists(deletePath);
-                        } catch (IOException e) {
-                            // 기존파일 삭제시 에러가 난다고 해서 새로운 파일 저장에 영향을 주면 안된다.
-                            log.warn("기존 프로필 파일 삭제 실패: {}", deletePath, e);
-                        }
-                    }
-            );
+        UserMetadataEvent userMetadataEvent = UserMetadataEvent.userProfileImageUpdated(userId, newProfileImageKey, eventUserIds);
 
-            storedFileRepository.deleteAll(previousStoredFiles);
+        return SaveUserProfileResult.of(userMetadataEvent, previousProfileImageKey);
+    }
+
+    public void deleteOldUserProfile(String previousProfileImageKey) {
+        if (previousProfileImageKey == null) {
+            return;
         }
-        
-        return UserMetadataEvent.userProfileImageUpdated(userId, newProfileImageKey, eventUserIds);
+
+        List<StoredFile> previousStoredFiles = storedFileRepository.findAllByFileKey(previousProfileImageKey);
+        previousStoredFiles.forEach(
+                previousStoredFile -> {
+                    Path deletePath = fileRootPath.resolve(previousStoredFile.getStoredFileName());
+                    try {
+                        Files.deleteIfExists(deletePath);
+                        storedFileRepository.delete(previousStoredFile);
+                    } catch (IOException e) {
+                        // 기존파일 삭제시 에러가 난다고 해서 새로운 파일 저장에 영향을 주면 안된다.
+                        log.warn("기존 프로필 파일 삭제 실패: {}", deletePath, e);
+                    }
+                }
+        );
     }
 
     @Transactional(readOnly = true)
