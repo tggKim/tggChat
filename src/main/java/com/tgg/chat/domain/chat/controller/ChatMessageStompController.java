@@ -10,6 +10,7 @@ import com.tgg.chat.domain.chat.dto.internal.ReadChatMessageResult;
 import com.tgg.chat.domain.chat.dto.internal.SaveChatMessageResult;
 import com.tgg.chat.domain.chat.dto.request.ReadChatMessagesRequestDto;
 import com.tgg.chat.domain.chat.service.ChatMessageService;
+import jakarta.validation.Valid;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
@@ -27,7 +28,7 @@ public class ChatMessageStompController {
 	@MessageMapping("/chatRooms/{chatRoomId}/message")
 	public void sendMessage(
             @DestinationVariable Long chatRoomId,
-            ChatMessageRequest message,
+            @Valid ChatMessageRequest message,
             Principal principal
     ) {
 		Long userId = Long.parseLong(principal.getName());
