@@ -255,6 +255,10 @@ public class StoredFileService {
 
     @Transactional(readOnly = true)
     public FileSystemResource findUserThumbnail(String fileKey) {
+        if(!fileKey.startsWith("user:")) {
+            throw new ErrorException(ErrorCode.INVALID_PROFILE_IMAGE_KEY);
+        }
+
         StoredFile findStoredFile = storedFileRepository.findByFileKeyAndStoredFileVariant(fileKey, StoredFileVariant.THUMBNAIL).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
 
@@ -268,6 +272,10 @@ public class StoredFileService {
 
     @Transactional(readOnly = true)
     public FindUserImageResult findUserImage(String fileKey) {
+        if(!fileKey.startsWith("user:")) {
+            throw new ErrorException(ErrorCode.INVALID_PROFILE_IMAGE_KEY);
+        }
+
         StoredFile findStoredFile = storedFileRepository.findByFileKeyAndStoredFileVariant(fileKey, StoredFileVariant.ORIGINAL).orElseThrow(() -> new ErrorException(ErrorCode.STORED_FILE_NOT_FOUND));
         String savedFileName = findStoredFile.getStoredFileName();
 

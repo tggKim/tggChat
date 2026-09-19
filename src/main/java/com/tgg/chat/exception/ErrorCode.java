@@ -68,6 +68,7 @@ public enum ErrorCode {
     PROFILE_FILE_REQUIRED(HttpStatus.BAD_REQUEST, "SF003", "비어 있지 않은 파일을 1개 선택해야 합니다."),
     PROFILE_IMAGE_SIZE_LIMIT_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "SF006", "프로필 이미지는 최대 10MB까지 업로드할 수 있습니다."),
     PROFILE_IMAGE_RESOLUTION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "SF007", "프로필 이미지의 가로와 세로는 각각 최대 6000px까지 허용됩니다."),
+    INVALID_PROFILE_IMAGE_KEY(HttpStatus.BAD_REQUEST, "SF008", "프로필 이미지 키 형식이 올바르지 않습니다."),
 
     // 웹소켓
     WEBSOCKET_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "W001", "인증되지 않은 WebSocket 요청입니다.");
