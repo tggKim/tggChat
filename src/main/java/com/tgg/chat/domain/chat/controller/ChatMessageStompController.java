@@ -38,7 +38,9 @@ public class ChatMessageStompController {
         List<ChatEvent> chatEvents = saveChatMessageResult.getChatEvents();
         List<ChatRoomListEvent> chatRoomListEvents = saveChatMessageResult.getChatRoomListEvents();
 
-        redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+        if(!chatRoomListEvents.isEmpty()) {
+            redisPublisher.publishChatRoomListEvents(chatRoomListEvents);
+        }
         chatEvents.forEach(redisPublisher::publishChatEvent);
 	}
 
