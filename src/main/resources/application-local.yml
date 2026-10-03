@@ -17,3 +17,9 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE
   file:
     name: /logs/chatApp/chatApp.log
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, prometheus

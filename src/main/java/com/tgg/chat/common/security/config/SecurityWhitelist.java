@@ -17,7 +17,10 @@ public class SecurityWhitelist {
 				new PermitRule(HttpMethod.POST, "/refresh"),
 				new PermitRule(HttpMethod.GET, "/ws/**"),
                 new PermitRule(HttpMethod.GET, "/profile-images/**"),
-                new PermitRule(HttpMethod.GET, "/media/**")
+                new PermitRule(HttpMethod.GET, "/media/**"),
+                new PermitRule(HttpMethod.GET, "/actuator/health"),
+                new PermitRule(HttpMethod.GET, "/actuator/metrics/**"),
+                new PermitRule(HttpMethod.GET, "/actuator/prometheus")
 			);
 	
 	@Getter
