@@ -2,17 +2,46 @@ name: CI-CD
 
 # main 브랜치에 push 가 발생할때 해당 워크플로우 실행
 on:
+  pull_request:
+    branches: [ "main" ]
   push:
     branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
   contents: read    # 해당 워크플로우가 깃허브 저장소 읽기만 허용
-  packages: write   # GHCR(GitHub Container Registry) 에 이미지 push 하려면 필요
 
 jobs: # 워크플로우에서 실행할 작업 묶음, 작업 단위로 별도의 환경에서 실행됨
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+
   build-and-push: # 내가 이름 붙인 작업
+    needs: test # test 작업이 성공해야 한다.
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }} # pull 리퀘스트 일때는 테스트가 유효한지만 검사하고 이미지는 빌드하지 않는다
     runs-on: ubuntu-latest  # 깃허브에서 제공하는 ubuntu 에서 실행
+
+    permissions:
+      contents: read
+      packages: write # GHCR(GitHub Container Registry) 에 이미지 push 하려면 필요
 
     steps:  # build-and-push 작업에서 순서대로 실행될 작업들
       - name: Checkout source code  # 작업의 이름
