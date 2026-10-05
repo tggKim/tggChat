@@ -100,9 +100,13 @@ public class AuthService {
 	}
 	
 	private User findActiveUserByEmail(String email) {
-		User findUser = userRepository.findByEmailAndAuthProvider(email, AuthProvider.LOCAL)
+		User findUser = userRepository.findByEmail(email)
 	              .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
-	
+
+        if(findUser.getAuthProvider() != AuthProvider.LOCAL) {
+            throw new ErrorException(ErrorCode.SOCIAL_LOGIN_REQUIRED);
+        }
+
 		if (findUser.getDeleted()) {
 	    	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
 	    }

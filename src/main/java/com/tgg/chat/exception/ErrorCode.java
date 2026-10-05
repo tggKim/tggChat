@@ -19,6 +19,7 @@ public enum ErrorCode {
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U003", "존재하지 않는 유저입니다."),
 	INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "U004", "비밀번호가 일치하지 않습니다."),
 	FORBIDDEN_USER_ACCESS(HttpStatus.FORBIDDEN, "U005", "해당 사용자 정보에 접근할 권한이 없습니다."),
+    SOCIAL_LOGIN_REQUIRED(HttpStatus.BAD_REQUEST, "U006", "소셜 로그인으로 가입된 이메일입니다. 소셜 로그인을 이용해 주세요."),
 	
     // JWT 토큰 관련
     JWT_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "J001", "유효하지 않은 JWT 토큰입니다."),

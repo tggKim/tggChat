@@ -21,6 +21,7 @@ import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,10 +33,18 @@ public class UserService {
 	
 	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
-		// 이메일 중복 검사
-		if(userRepository.existsByEmailAndAuthProvider(signUpRequestDto.getEmail(), AuthProvider.LOCAL)) {
-			throw new ErrorException(ErrorCode.DUPLICATE_EMAIL_ERROR);
-		}
+
+        // 이메일 중복 검사
+        Optional<User> optionalUser = userRepository.findByEmail(signUpRequestDto.getEmail());
+		if(optionalUser.isPresent()) {
+            User findUser = optionalUser.get();
+
+            if(findUser.getAuthProvider() == AuthProvider.LOCAL) {
+                throw new ErrorException(ErrorCode.DUPLICATE_EMAIL_ERROR);
+            } else {
+                throw new ErrorException(ErrorCode.SOCIAL_LOGIN_REQUIRED);
+            }
+        }
 
 		String encodedPassword = passwordEncoder.encode(signUpRequestDto.getPassword());
 		
