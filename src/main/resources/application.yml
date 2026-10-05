@@ -18,6 +18,17 @@ spring:
       max-file-size: 3GB
       max-request-size: 3100MB
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - profile
+              - email
+
 logging:
   rollingpolicy:
     max-history: 30
