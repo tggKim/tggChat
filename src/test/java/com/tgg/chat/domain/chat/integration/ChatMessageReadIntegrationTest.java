@@ -21,7 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=create-drop")
+@DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=create")
 @Import({SqlTestContainerConfig.class, ChatMessageService.class})
 public class ChatMessageReadIntegrationTest {
 
