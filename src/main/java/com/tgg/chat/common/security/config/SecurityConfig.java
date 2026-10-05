@@ -1,9 +1,11 @@
 package com.tgg.chat.common.security.config;
 
+import com.tgg.chat.common.security.oauth.OAuth2LoginSuccessHandler;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,6 +27,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 	private final JwtSecurityFilter jwtSecurityFilter;
+
+    private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
 	
 	@Bean
     @Order(1)
@@ -47,7 +51,8 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .logout(logout -> logout.disable())
-		        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+		        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .oauth2Login(oauth2 -> oauth2.successHandler(oauth2LoginSuccessHandler));
 
 				return http.build();
 	}

@@ -20,7 +20,11 @@ public class SecurityWhitelist {
                 new PermitRule(HttpMethod.GET, "/media/**"),
                 new PermitRule(HttpMethod.GET, "/actuator/health"),
                 new PermitRule(HttpMethod.GET, "/actuator/metrics/**"),
-                new PermitRule(HttpMethod.GET, "/actuator/prometheus")
+                new PermitRule(HttpMethod.GET, "/actuator/prometheus"),
+                // Google 로그인 시작
+                new PermitRule(HttpMethod.GET, "/oauth2/authorization/google"),
+                // Google 로그인 콜백
+                new PermitRule(HttpMethod.GET, "/login/oauth2/code/google")
 			);
 	
 	@Getter
