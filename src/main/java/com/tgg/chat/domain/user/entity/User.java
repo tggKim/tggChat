@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.user.entity;
 
+import com.tgg.chat.domain.user.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -14,19 +15,30 @@ import java.time.LocalDateTime;
 @Getter
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_user_provider_email",
+                columnNames = {"email", "auth_provider"}
+        )
+})
 public class User {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    @Column(unique = true, nullable = false, length = 254)
+    @Column(nullable = false, length = 254)
     private String email;
 
-    @Column(nullable = false)
+    // 소셜 계정은 비밀번호가 없으므로 NULL 허용
+    @Column
     private String password;
 
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(nullable = false, length = 50)
     private String username;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider authProvider;
 
     @Column(nullable = false)
     private Boolean deleted;
@@ -42,15 +54,20 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    private User(String email, String password, String username, Boolean deleted) {
+    private User(String email, String password, String username, Boolean deleted, AuthProvider authProvider) {
         this.email = email;
         this.password = password;
         this.username = username;
         this.deleted = deleted;
+        this.authProvider = authProvider;
     }
 
     public static User of(String email, String password, String username) {
-        return new User(email, password, username, false);
+        return new User(email, password, username, false, AuthProvider.LOCAL);
+    }
+
+    public static User of(String email, String password, String username, AuthProvider authProvider) {
+        return new User(email, password, username, false, authProvider);
     }
 
     public void deleteUser() {
