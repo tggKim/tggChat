@@ -1,6 +1,7 @@
 package com.tgg.chat.domain.auth.service;
 
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
+import com.tgg.chat.domain.user.enums.AuthProvider;
 import io.jsonwebtoken.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -99,7 +100,7 @@ public class AuthService {
 	}
 	
 	private User findActiveUserByEmail(String email) {
-		User findUser = userRepository.findByEmail(email)
+		User findUser = userRepository.findByEmailAndAuthProvider(email, AuthProvider.LOCAL)
 	              .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
 	
 		if (findUser.getDeleted()) {

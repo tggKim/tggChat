@@ -1,5 +1,6 @@
 package com.tgg.chat.domain.user.repository;
 
+import com.tgg.chat.domain.user.enums.AuthProvider;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -13,9 +14,13 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long>{
     public Optional<User> findByEmail(String email);
 
+    public Optional<User> findByEmailAndAuthProvider(String email, AuthProvider authProvider);
+
     public Optional<User> findByUsername(String username);
 
     public boolean existsByEmail(String email);
+
+    public boolean existsByEmailAndAuthProvider(String email, AuthProvider authProvider);
 
     public boolean existsByUsername(String username);
 

@@ -5,6 +5,7 @@ import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.user.dto.internal.UpdatedUserResult;
 import com.tgg.chat.domain.user.dto.request.UserUpdateRequestDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
+import com.tgg.chat.domain.user.enums.AuthProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,15 +33,10 @@ public class UserService {
 	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
 		// 이메일 중복 검사
-		if(userRepository.existsByEmail(signUpRequestDto.getEmail())) {
+		if(userRepository.existsByEmailAndAuthProvider(signUpRequestDto.getEmail(), AuthProvider.LOCAL)) {
 			throw new ErrorException(ErrorCode.DUPLICATE_EMAIL_ERROR);
 		}
-		
-		// 유저명 중복 검사
-		if(userRepository.existsByUsername(signUpRequestDto.getUsername())) {
-			throw new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR);
-		}
-		
+
 		String encodedPassword = passwordEncoder.encode(signUpRequestDto.getPassword());
 		
 		User requestUser = User.of(signUpRequestDto.getEmail(), encodedPassword, signUpRequestDto.getUsername());
@@ -69,10 +65,6 @@ public class UserService {
 		User findUser = findActiveUserById(loginUserId);
 
         String newUsername = userUpdateRequestDto.getUsername();
-        // 기존 username과 다르면 db에서 중복된 username 있는지 검사
-        if(!findUser.getUsername().equals(newUsername) && userRepository.existsByUsername(newUsername)) {
-            throw new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR);
-        }
 
 		findUser.update(newUsername);
 
