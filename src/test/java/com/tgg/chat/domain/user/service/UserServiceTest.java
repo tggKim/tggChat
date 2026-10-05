@@ -10,6 +10,7 @@ import com.tgg.chat.domain.user.dto.response.OtherUserResponseDto;
 import com.tgg.chat.domain.user.dto.response.SignUpResponseDto;
 import com.tgg.chat.domain.user.dto.response.UserResponseDto;
 import com.tgg.chat.domain.user.entity.User;
+import com.tgg.chat.domain.user.enums.AuthProvider;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -48,7 +49,7 @@ class UserServiceTest {
     UserService userService;
 
     @Test
-    @DisplayName("회원가입 성공")
+    @DisplayName("회원가입 성공 - LOCAL 계정 생성")
     void signup_success() {
         // given
         SignUpRequestDto requestDto = new SignUpRequestDto();
@@ -56,15 +57,22 @@ class UserServiceTest {
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
         ReflectionTestUtils.setField(requestDto, "username", "testUsername");
 
-        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
-        when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(false);
-        when(passwordEncoder.encode(requestDto.getPassword())).thenReturn("encoded-password");
+        when(userRepository.findByEmail(requestDto.getEmail()))
+                .thenReturn(Optional.empty());
+        when(passwordEncoder.encode(requestDto.getPassword()))
+                .thenReturn("encoded-password");
 
-        User savedUser = User.of(requestDto.getEmail(), "encoded-password", requestDto.getUsername());
+        User savedUser = User.of(
+                requestDto.getEmail(),
+                "encoded-password",
+                requestDto.getUsername(),
+                AuthProvider.LOCAL
+        );
+
+        LocalDateTime now = LocalDateTime.now();
         ReflectionTestUtils.setField(savedUser, "userId", 1L);
-        LocalDateTime localDateTime  = LocalDateTime.now();
-        ReflectionTestUtils.setField(savedUser, "createdAt", localDateTime);
-        ReflectionTestUtils.setField(savedUser, "updatedAt", localDateTime);
+        ReflectionTestUtils.setField(savedUser, "createdAt", now);
+        ReflectionTestUtils.setField(savedUser, "updatedAt", now);
 
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
@@ -77,8 +85,7 @@ class UserServiceTest {
         assertThat(responseDto.getCreatedAt()).isEqualTo(savedUser.getCreatedAt());
         assertThat(responseDto.getUpdatedAt()).isEqualTo(savedUser.getUpdatedAt());
 
-        verify(userRepository, times(1)).existsByEmail(requestDto.getEmail());
-        verify(userRepository, times(1)).existsByUsername(requestDto.getUsername());
+        verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
         verify(passwordEncoder, times(1)).encode(requestDto.getPassword());
 
         ArgumentCaptor<User> argumentCaptor = ArgumentCaptor.forClass(User.class);
@@ -88,11 +95,12 @@ class UserServiceTest {
         assertThat(captorUser.getEmail()).isEqualTo(requestDto.getEmail());
         assertThat(captorUser.getPassword()).isEqualTo("encoded-password");
         assertThat(captorUser.getUsername()).isEqualTo(requestDto.getUsername());
+        assertThat(captorUser.getAuthProvider()).isEqualTo(AuthProvider.LOCAL);
         assertThat(captorUser.getDeleted()).isFalse();
     }
 
     @Test
-    @DisplayName("회원가입시 이메일 중복으로 실패")
+    @DisplayName("회원가입 실패 - 일반 가입 계정의 이메일 중복")
     void signup_fail_duplicated_email() {
         // given
         SignUpRequestDto requestDto = new SignUpRequestDto();
@@ -100,41 +108,54 @@ class UserServiceTest {
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
         ReflectionTestUtils.setField(requestDto, "username", "testUsername");
 
-        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(true);
+        User existingUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "existingUsername",
+                AuthProvider.LOCAL
+        );
+
+        when(userRepository.findByEmail(requestDto.getEmail()))
+                .thenReturn(Optional.of(existingUser));
 
         // when & then
         assertThatThrownBy(() -> userService.signUpUser(requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.DUPLICATE_EMAIL_ERROR);
 
-        verify(userRepository, times(1)).existsByEmail(requestDto.getEmail());
-        verify(userRepository, never()).existsByUsername(anyString());
-        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
+        verifyNoInteractions(passwordEncoder);
         verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
-    @DisplayName("회원가입시 유저명 중복으로 실패")
-    void signup_fail_duplicated_username() {
+    @DisplayName("회원가입 실패 - 소셜 가입 계정은 소셜 로그인 필요")
+    void signup_fail_social_login_required() {
         // given
         SignUpRequestDto requestDto = new SignUpRequestDto();
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
         ReflectionTestUtils.setField(requestDto, "username", "testUsername");
 
-        when(userRepository.existsByEmail(requestDto.getEmail())).thenReturn(false);
-        when(userRepository.existsByUsername(requestDto.getUsername())).thenReturn(true);
+        User existingUser = User.of(
+                "test@test.com",
+                null,
+                "existingUsername",
+                AuthProvider.GOOGLE
+        );
+
+        when(userRepository.findByEmail(requestDto.getEmail()))
+                .thenReturn(Optional.of(existingUser));
 
         // when & then
         assertThatThrownBy(() -> userService.signUpUser(requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
-                .isEqualTo(ErrorCode.DUPLICATE_USERNAME_ERROR);
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.SOCIAL_LOGIN_REQUIRED);
 
-        verify(userRepository, times(1)).existsByEmail(requestDto.getEmail());
-        verify(userRepository, times(1)).existsByUsername(requestDto.getUsername());
-        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
+        verifyNoInteractions(passwordEncoder);
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -253,33 +274,38 @@ class UserServiceTest {
     @DisplayName("유저 업데이트 성공 - 기존과 다른 유저명")
     void update_user_success_changed_username() {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "testUsername"
+        );
 
         UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
         ReflectionTestUtils.setField(requestDto, "username", "updateUsername");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
-        when(userRepository.existsByUsername("updateUsername")).thenReturn(false);
-
         List<Long> eventUserIds = List.of(2L, 3L, 4L);
-        when(userRepository.findAllInteractingUserIds(1L)).thenReturn(eventUserIds);
+        when(userRepository.findAllInteractingUserIds(1L))
+                .thenReturn(eventUserIds);
 
         // when
-        UpdatedUserResult updatedUserResult = userService.updateUser(1L, requestDto);
+        UpdatedUserResult updatedUserResult =
+                userService.updateUser(1L, requestDto);
 
         // then
         assertThat(findUser.getUsername()).isEqualTo("updateUsername");
 
-        UserMetadataEvent userMetadataEvent = updatedUserResult.getUserMetadataEvent();
-        assertThat(userMetadataEvent.getUserMetadataEventType()).isEqualTo(UserMetadataEventType.USERNAME_UPDATED);
-        assertThat(userMetadataEvent.getUserId()).isEqualTo(1L);
-        assertThat(userMetadataEvent.getUsername()).isEqualTo("updateUsername");
-        assertThat(userMetadataEvent.getUserProfileImageKey()).isNull();
-        assertThat(userMetadataEvent.getEventUserIds()).containsExactlyElementsOf(eventUserIds);
+        UserMetadataEvent event = updatedUserResult.getUserMetadataEvent();
+        assertThat(event.getUserMetadataEventType())
+                .isEqualTo(UserMetadataEventType.USERNAME_UPDATED);
+        assertThat(event.getUserId()).isEqualTo(1L);
+        assertThat(event.getUsername()).isEqualTo("updateUsername");
+        assertThat(event.getUserProfileImageKey()).isNull();
+        assertThat(event.getEventUserIds())
+                .containsExactlyElementsOf(eventUserIds);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).existsByUsername("updateUsername");
         verify(userRepository, times(1)).findAllInteractingUserIds(1L);
     }
 
@@ -354,29 +380,6 @@ class UserServiceTest {
 
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, never()).existsByUsername(anyString());
-        verify(userRepository, never()).findAllInteractingUserIds(anyLong());
-    }
-
-    @Test
-    @DisplayName("유저 업데이트 실패 - 중복된 유저명")
-    void update_user_fail_duplicated_username() {
-        // given
-        User findUser = User.of("test@test.com", "testPassword", "testUsername");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
-
-        UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "updateUsername");
-
-        when(userRepository.existsByUsername("updateUsername")).thenReturn(true);
-
-        // when & then
-        assertThatThrownBy(() -> userService.updateUser(1L, requestDto))
-                .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
-                .isEqualTo(ErrorCode.DUPLICATE_USERNAME_ERROR);
-
-        verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).existsByUsername("updateUsername");
         verify(userRepository, never()).findAllInteractingUserIds(anyLong());
     }
 

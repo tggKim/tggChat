@@ -5,6 +5,7 @@ import com.tgg.chat.common.security.token.RedisTokenStore;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
 import com.tgg.chat.domain.auth.dto.response.TokenPair;
 import com.tgg.chat.domain.user.entity.User;
+import com.tgg.chat.domain.user.enums.AuthProvider;
 import com.tgg.chat.domain.user.repository.UserRepository;
 import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
@@ -50,12 +51,19 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
 
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "testUsername",
+                AuthProvider.LOCAL
+        );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
-        when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(findUser));
+        when(userRepository.findByEmail("test@test.com"))
+                .thenReturn(Optional.of(findUser));
 
-        when(passwordEncoder.matches("testPassword", "encoded-password")).thenReturn(true);
+        when(passwordEncoder.matches("testPassword", "encoded-password"))
+                .thenReturn(true);
 
         Claims claims = mock(Claims.class);
         when(jwtUtils.parseClaims("cookie-refreshToken")).thenReturn(claims);
@@ -67,7 +75,6 @@ class AuthServiceTest {
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
         when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
-
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
         // when
@@ -91,8 +98,8 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
-
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
@@ -104,18 +111,24 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
 
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "testUsername",
+                AuthProvider.LOCAL
+        );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
-        when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(findUser));
+        when(userRepository.findByEmail("test@test.com"))
+                .thenReturn(Optional.of(findUser));
 
-        when(passwordEncoder.matches("testPassword", "encoded-password")).thenReturn(true);
+        when(passwordEncoder.matches("testPassword", "encoded-password"))
+                .thenReturn(true);
 
         when(jwtUtils.generateSid()).thenReturn("newSid");
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
         when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
-
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
         // when
@@ -138,8 +151,8 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
-
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
@@ -151,11 +164,15 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
 
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "testUsername",
+                AuthProvider.LOCAL
+        );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
         when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(findUser));
-
         when(passwordEncoder.matches("testPassword", "encoded-password")).thenReturn(true);
 
         when(jwtUtils.parseClaims("cookie-invalidRefreshToken")).thenThrow(new ErrorException(ErrorCode.JWT_INVALID_TOKEN));
@@ -164,8 +181,6 @@ class AuthServiceTest {
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
         when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
-
-
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
         // when
@@ -188,8 +203,8 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
-
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
@@ -201,11 +216,15 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
 
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "testUsername",
+                AuthProvider.LOCAL
+        );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
         when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(findUser));
-
         when(passwordEncoder.matches("testPassword", "encoded-password")).thenReturn(true);
 
         Claims claims = mock(Claims.class);
@@ -216,7 +235,6 @@ class AuthServiceTest {
         when(jwtUtils.createAccessToken(findUser, "newSid")).thenReturn("accessToken");
         when(jwtUtils.createRefreshToken(findUser, "newSid")).thenReturn("refreshToken");
         when(jwtUtils.createMediaToken(findUser, "newSid")).thenReturn("mediaToken");
-
         when(jwtUtils.getRefreshTokenTtlMillis()).thenReturn(2000L);
 
         // when
@@ -240,8 +258,8 @@ class AuthServiceTest {
         verify(jwtUtils, times(1)).createAccessToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createRefreshToken(findUser, "newSid");
         verify(jwtUtils, times(1)).createMediaToken(findUser, "newSid");
-
         verify(jwtUtils, times(1)).getRefreshTokenTtlMillis();
+
         verify(redisTokenStore, times(1)).saveRefreshToken(1L, "newSid", "refreshToken", 2000L);
     }
 
@@ -253,12 +271,13 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
 
-        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(requestDto.getEmail()))
+                .thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> authService.login(requestDto, null))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findByEmail("test@test.com");
@@ -279,21 +298,28 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 실패 - 삭제된 유저")
+    @DisplayName("로그인 실패 - 삭제된 LOCAL 유저")
     void login_fail_deleted_user() {
         // given
         LoginRequestDto requestDto = new LoginRequestDto();
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
 
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "testUsername",
+                AuthProvider.LOCAL
+        );
         ReflectionTestUtils.setField(findUser, "deleted", true);
-        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.of(findUser));
+
+        when(userRepository.findByEmail(requestDto.getEmail()))
+                .thenReturn(Optional.of(findUser));
 
         // when & then
         assertThatThrownBy(() -> authService.login(requestDto, null))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findByEmail("test@test.com");
@@ -321,19 +347,30 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
         ReflectionTestUtils.setField(requestDto, "password", "testPassword");
 
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
-        when(userRepository.findByEmail(requestDto.getEmail())).thenReturn(Optional.of(findUser));
+        User findUser = User.of(
+                "test@test.com",
+                "encoded-password",
+                "testUsername",
+                AuthProvider.LOCAL
+        );
 
-        when(passwordEncoder.matches(requestDto.getPassword(), findUser.getPassword())).thenReturn(false);
+        when(userRepository.findByEmail(requestDto.getEmail()))
+                .thenReturn(Optional.of(findUser));
+
+        when(passwordEncoder.matches(
+                requestDto.getPassword(),
+                findUser.getPassword()
+        )).thenReturn(false);
 
         // when & then
         assertThatThrownBy(() -> authService.login(requestDto, null))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.INVALID_PASSWORD);
 
         verify(userRepository, times(1)).findByEmail("test@test.com");
-        verify(passwordEncoder, times(1)).matches("testPassword", "encoded-password");
+        verify(passwordEncoder, times(1))
+                .matches("testPassword", "encoded-password");
 
         verify(jwtUtils, never()).parseClaims(anyString());
         verify(jwtUtils, never()).isRefreshToken(any(Claims.class));
@@ -344,8 +381,8 @@ class AuthServiceTest {
         verify(jwtUtils, never()).createAccessToken(any(User.class), anyString());
         verify(jwtUtils, never()).createRefreshToken(any(User.class), anyString());
         verify(jwtUtils, never()).createMediaToken(any(User.class), anyString());
-
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
     }
 
@@ -557,5 +594,35 @@ class AuthServiceTest {
         verify(jwtUtils, never()).getRefreshTokenTtlMillis();
 
         verify(redisTokenStore, never()).saveRefreshToken(anyLong(), anyString(), anyString(), anyLong());
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 소셜 가입 계정은 일반 로그인 불가")
+    void login_fail_social_login_required() {
+        // given
+        LoginRequestDto requestDto = new LoginRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+        ReflectionTestUtils.setField(requestDto, "password", "testPassword");
+
+        User findUser = User.of(
+                "test@test.com",
+                null,
+                "testUsername",
+                AuthProvider.GOOGLE
+        );
+
+        when(userRepository.findByEmail("test@test.com"))
+                .thenReturn(Optional.of(findUser));
+
+        // when & then
+        assertThatThrownBy(
+                () -> authService.login(requestDto, "cookie-refreshToken")
+        )
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.SOCIAL_LOGIN_REQUIRED);
+
+        verify(userRepository, times(1)).findByEmail("test@test.com");
+        verifyNoInteractions(passwordEncoder, jwtUtils, redisTokenStore);
     }
 }
