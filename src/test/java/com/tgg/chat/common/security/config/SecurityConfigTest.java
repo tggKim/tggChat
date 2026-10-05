@@ -3,6 +3,7 @@ package com.tgg.chat.common.security.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgg.chat.common.security.jwt.AccessTokenAuthenticator;
 import com.tgg.chat.common.security.jwt.JwtUtils;
+import com.tgg.chat.common.security.oauth.OAuth2LoginSuccessHandler;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.auth.controller.AuthController;
 import com.tgg.chat.domain.auth.dto.request.LoginRequestDto;
@@ -48,6 +49,9 @@ class SecurityConfigTest {
 
     @MockitoBean
     JpaMetamodelMappingContext jpaMetamodelMappingContext;
+
+    @MockitoBean
+    OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
 
     @Test
     @DisplayName("보안 설정 실패 - 보호 API는 Authorization 헤더가 없으면 401 응답")
