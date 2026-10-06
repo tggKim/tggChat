@@ -55,7 +55,7 @@ class AuthServiceTest {
                 "test@test.com",
                 "encoded-password",
                 "testUsername",
-                AuthProvider.LOCAL
+                "TAG23456"
         );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
@@ -115,7 +115,7 @@ class AuthServiceTest {
                 "test@test.com",
                 "encoded-password",
                 "testUsername",
-                AuthProvider.LOCAL
+                "TAG23456"
         );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
@@ -168,7 +168,7 @@ class AuthServiceTest {
                 "test@test.com",
                 "encoded-password",
                 "testUsername",
-                AuthProvider.LOCAL
+                "TAG23456"
         );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
@@ -220,7 +220,7 @@ class AuthServiceTest {
                 "test@test.com",
                 "encoded-password",
                 "testUsername",
-                AuthProvider.LOCAL
+                "TAG23456"
         );
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
@@ -309,7 +309,7 @@ class AuthServiceTest {
                 "test@test.com",
                 "encoded-password",
                 "testUsername",
-                AuthProvider.LOCAL
+                "TAG23456"
         );
         ReflectionTestUtils.setField(findUser, "deleted", true);
 
@@ -351,7 +351,7 @@ class AuthServiceTest {
                 "test@test.com",
                 "encoded-password",
                 "testUsername",
-                AuthProvider.LOCAL
+                "TAG23456"
         );
 
         when(userRepository.findByEmail(requestDto.getEmail()))
@@ -414,7 +414,7 @@ class AuthServiceTest {
         when(redisTokenStore.matchesRefreshToken("sid", refreshToken)).thenReturn(true);
 
         when(claims.getSubject()).thenReturn("1");
-        User user = User.of("test@test.com", "testPassword", "testUsername");
+        User user = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         when(jwtUtils.createRefreshToken(user, "sid")).thenReturn("newRefreshToken");
@@ -569,7 +569,7 @@ class AuthServiceTest {
         when(redisTokenStore.matchesRefreshToken("sid", refreshToken)).thenReturn(true);
 
         when(claims.getSubject()).thenReturn("1");
-        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        User findUser = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "deleted", true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
@@ -608,6 +608,8 @@ class AuthServiceTest {
                 "test@test.com",
                 null,
                 "testUsername",
+                "TAG23456",
+                "google-sub-1",
                 AuthProvider.GOOGLE
         );
 

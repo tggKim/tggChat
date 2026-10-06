@@ -76,11 +76,11 @@ class UserFriendControllerTest {
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
         try {
-            User user1 = User.of("minjae1@test.com", "password1", username);
+            User user1 = User.of("minjae1@test.com", "password1", username, "USERA234");
             ReflectionTestUtils.setField(user1, "userId", 2L);
             ReflectionTestUtils.setField(user1, "profileImageKey", "profileImage1");
 
-            User user2 = User.of("minjae2@test.com", "password2", username);
+            User user2 = User.of("minjae2@test.com", "password2", username, "USERB234");
             ReflectionTestUtils.setField(user2, "userId", 3L);
             ReflectionTestUtils.setField(user2, "profileImageKey", "profileImage2");
 

@@ -36,8 +36,8 @@ class ChatRoomUserRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        user = em.persist(User.of("a@example.test", "password", "userA"));
-        otherUser = em.persist(User.of("b@example.test", "password", "userB"));
+        user = em.persist(User.of("a@example.test", "password", "userA", "USERA234"));
+        otherUser = em.persist(User.of("b@example.test", "password", "userB", "USERB234"));
         room = em.persist(ChatRoom.of(ChatRoomType.GROUP));
         otherRoom = em.persist(ChatRoom.of(ChatRoomType.GROUP));
 

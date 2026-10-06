@@ -71,7 +71,7 @@ class UserControllerTest {
                 "username", "testUsername"
         );
 
-        User savedUser = User.of("test@test.com", "encodedPassword", "testUsername");
+        User savedUser = User.of("test@test.com", "encodedPassword", "testUsername", "TAG23456");
         LocalDateTime testTime = LocalDateTime.of(2026, 5, 23, 12, 0, 0);
         ReflectionTestUtils.setField(savedUser, "userId", 1L);
         ReflectionTestUtils.setField(savedUser, "createdAt", testTime);
@@ -89,6 +89,7 @@ class UserControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.userId").value(1L))
                 .andExpect(jsonPath("$.username").value("testUsername"))
+                .andExpect(jsonPath("$.userTag").value("TAG23456"))
                 .andExpect(jsonPath("$.createdAt").value("2026-05-23 12:00:00"))
                 .andExpect(jsonPath("$.updatedAt").value("2026-05-23 12:00:00"));
 
@@ -280,8 +281,8 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("회원가입 API 실패 - 중복된 유저명")
-    void signup_api_fail_duplicate_username() throws Exception {
+    @DisplayName("회원가입 API 실패 - 소셜 가입 계정은 소셜 로그인 필요")
+    void signup_api_fail_social_login_required() throws Exception {
         // given
         Map<String, Object> requestBody = Map.of(
                 "email", "test@test.com",
@@ -289,18 +290,19 @@ class UserControllerTest {
                 "username", "testUsername"
         );
 
-        when(userService.signUpUser(any(SignUpRequestDto.class))).thenThrow(new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR));
+        when(userService.signUpUser(any(SignUpRequestDto.class)))
+                .thenThrow(new ErrorException(ErrorCode.SOCIAL_LOGIN_REQUIRED));
 
         // when & then
         mockMvc.perform(
                         post("/user")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(requestBody)))
-                .andExpect(status().isConflict())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.code").value("U002"))
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("중복된 유저명 입니다."));
+                .andExpect(jsonPath("$.code").value("U006"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("소셜 로그인으로 가입된 이메일입니다. 소셜 로그인을 이용해 주세요."));
 
         verify(userService, times(1)).signUpUser(any(SignUpRequestDto.class));
     }
@@ -309,7 +311,7 @@ class UserControllerTest {
     @DisplayName("타 회원 조회 API 성공")
     void find_other_user_api_success() throws Exception {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "userId", 1L);
         LocalDateTime localDateTime = LocalDateTime.of(2026, 12, 1, 9, 0, 0);
         ReflectionTestUtils.setField(findUser, "createdAt", localDateTime);
@@ -352,7 +354,7 @@ class UserControllerTest {
     @DisplayName("본인 회원 조회 API 성공")
     void find_user_api_success() throws Exception {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "userId", 1L);
         LocalDateTime localDateTime = LocalDateTime.of(2026, 12, 1, 9, 0, 0);
         ReflectionTestUtils.setField(findUser, "createdAt", localDateTime);
@@ -516,43 +518,6 @@ class UserControllerTest {
                     .andExpect(jsonPath("$.code").value("U003"))
                     .andExpect(jsonPath("$.status").value(404))
                     .andExpect(jsonPath("$.message").value("존재하지 않는 유저입니다."));
-
-            ArgumentCaptor<UserUpdateRequestDto> argumentCaptor = ArgumentCaptor.forClass(UserUpdateRequestDto.class);
-            verify(userService, times(1)).updateUser(eq(1L), argumentCaptor.capture());
-            UserUpdateRequestDto userUpdateRequestDto = argumentCaptor.getValue();
-
-            assertThat(userUpdateRequestDto.getUsername()).isEqualTo("updateUsername");
-
-            verify(redisPublisher, never()).publishUserMetadataEvent(any(UserMetadataEvent.class));
-        } finally {
-            SecurityContextHolder.clearContext();
-        }
-    }
-
-    @Test
-    @DisplayName("회원 수정 API 실패 - 중복된 유저명")
-    void update_user_api_fail_duplicate_username() throws Exception {
-        // given
-        Map<String, Object> requestBody = Map.of(
-                "username", "updateUsername"
-        );
-
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
-        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
-        doThrow(new ErrorException(ErrorCode.DUPLICATE_USERNAME_ERROR)).when(userService).updateUser(eq(1L), any(UserUpdateRequestDto.class));
-
-        // when & then
-        try {
-            mockMvc.perform(patch("/me")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(requestBody)))
-                    .andExpect(status().isConflict())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.code").value("U002"))
-                    .andExpect(jsonPath("$.status").value(409))
-                    .andExpect(jsonPath("$.message").value("중복된 유저명 입니다."));
 
             ArgumentCaptor<UserUpdateRequestDto> argumentCaptor = ArgumentCaptor.forClass(UserUpdateRequestDto.class);
             verify(userService, times(1)).updateUser(eq(1L), argumentCaptor.capture());

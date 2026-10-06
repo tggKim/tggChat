@@ -45,6 +45,9 @@ class UserServiceTest {
     @Mock
     RedisTokenStore redisTokenStore;
 
+    @Mock
+    UserTagGenerator userTagGenerator;
+
     @InjectMocks
     UserService userService;
 
@@ -59,6 +62,8 @@ class UserServiceTest {
 
         when(userRepository.findByEmail(requestDto.getEmail()))
                 .thenReturn(Optional.empty());
+        when(userTagGenerator.generate()).thenReturn("TAG23456");
+        when(userRepository.existsByUserTag("TAG23456")).thenReturn(false);
         when(passwordEncoder.encode(requestDto.getPassword()))
                 .thenReturn("encoded-password");
 
@@ -66,7 +71,7 @@ class UserServiceTest {
                 requestDto.getEmail(),
                 "encoded-password",
                 requestDto.getUsername(),
-                AuthProvider.LOCAL
+                "TAG23456"
         );
 
         LocalDateTime now = LocalDateTime.now();
@@ -82,10 +87,13 @@ class UserServiceTest {
         // then
         assertThat(responseDto.getUserId()).isEqualTo(savedUser.getUserId());
         assertThat(responseDto.getUsername()).isEqualTo(savedUser.getUsername());
+        assertThat(responseDto.getUserTag()).isEqualTo("TAG23456");
         assertThat(responseDto.getCreatedAt()).isEqualTo(savedUser.getCreatedAt());
         assertThat(responseDto.getUpdatedAt()).isEqualTo(savedUser.getUpdatedAt());
 
         verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
+        verify(userTagGenerator, times(1)).generate();
+        verify(userRepository, times(1)).existsByUserTag("TAG23456");
         verify(passwordEncoder, times(1)).encode(requestDto.getPassword());
 
         ArgumentCaptor<User> argumentCaptor = ArgumentCaptor.forClass(User.class);
@@ -95,8 +103,44 @@ class UserServiceTest {
         assertThat(captorUser.getEmail()).isEqualTo(requestDto.getEmail());
         assertThat(captorUser.getPassword()).isEqualTo("encoded-password");
         assertThat(captorUser.getUsername()).isEqualTo(requestDto.getUsername());
+        assertThat(captorUser.getUserTag()).isEqualTo("TAG23456");
         assertThat(captorUser.getAuthProvider()).isEqualTo(AuthProvider.LOCAL);
         assertThat(captorUser.getDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("회원가입 성공 - 중복 사용자 태그가 생성되면 다시 생성")
+    void signup_success_retry_when_user_tag_duplicated() {
+        // given
+        SignUpRequestDto requestDto = new SignUpRequestDto();
+        ReflectionTestUtils.setField(requestDto, "email", "test@test.com");
+        ReflectionTestUtils.setField(requestDto, "password", "testPassword");
+        ReflectionTestUtils.setField(requestDto, "username", "testUsername");
+
+        when(userRepository.findByEmail(requestDto.getEmail()))
+                .thenReturn(Optional.empty());
+        when(userTagGenerator.generate())
+                .thenReturn("DUPL2CAT", "UNQ23TAG");
+        when(userRepository.existsByUserTag("DUPL2CAT")).thenReturn(true);
+        when(userRepository.existsByUserTag("UNQ23TAG")).thenReturn(false);
+        when(passwordEncoder.encode(requestDto.getPassword()))
+                .thenReturn("encoded-password");
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        SignUpResponseDto responseDto = userService.signUpUser(requestDto);
+
+        // then
+        assertThat(responseDto.getUserTag()).isEqualTo("UNQ23TAG");
+
+        ArgumentCaptor<User> argumentCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).save(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue().getUserTag()).isEqualTo("UNQ23TAG");
+
+        verify(userTagGenerator, times(2)).generate();
+        verify(userRepository, times(1)).existsByUserTag("DUPL2CAT");
+        verify(userRepository, times(1)).existsByUserTag("UNQ23TAG");
     }
 
     @Test
@@ -112,7 +156,7 @@ class UserServiceTest {
                 "test@test.com",
                 "encoded-password",
                 "existingUsername",
-                AuthProvider.LOCAL
+                "TAG23456"
         );
 
         when(userRepository.findByEmail(requestDto.getEmail()))
@@ -125,7 +169,8 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.DUPLICATE_EMAIL_ERROR);
 
         verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
-        verifyNoInteractions(passwordEncoder);
+        verifyNoInteractions(passwordEncoder, userTagGenerator);
+        verify(userRepository, never()).existsByUserTag(anyString());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -142,6 +187,8 @@ class UserServiceTest {
                 "test@test.com",
                 null,
                 "existingUsername",
+                "TAG23456",
+                "google-sub-1",
                 AuthProvider.GOOGLE
         );
 
@@ -155,7 +202,8 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.SOCIAL_LOGIN_REQUIRED);
 
         verify(userRepository, times(1)).findByEmail(requestDto.getEmail());
-        verifyNoInteractions(passwordEncoder);
+        verifyNoInteractions(passwordEncoder, userTagGenerator);
+        verify(userRepository, never()).existsByUserTag(anyString());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -163,7 +211,7 @@ class UserServiceTest {
     @DisplayName("타 유저 조회 성공")
     void find_other_user_success() {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "userId", 1L);
         LocalDateTime now = LocalDateTime.now();
         ReflectionTestUtils.setField(findUser, "createdAt", now);
@@ -201,7 +249,7 @@ class UserServiceTest {
     @DisplayName("타 유저 조회 실패 - 삭제된 유저")
     void find_other_user_fail_deleted_user() {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "deleted", true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
@@ -218,7 +266,7 @@ class UserServiceTest {
     @DisplayName("본인 유저 조회 성공")
     void find_user_success() {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "userId", 1L);
         LocalDateTime now = LocalDateTime.now();
         ReflectionTestUtils.setField(findUser, "createdAt", now);
@@ -257,7 +305,7 @@ class UserServiceTest {
     @DisplayName("본인 유저 조회 실패 - 삭제된 유저")
     void find_user_fail_deleted_user() {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "deleted", true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
@@ -277,7 +325,8 @@ class UserServiceTest {
         User findUser = User.of(
                 "test@test.com",
                 "encoded-password",
-                "testUsername"
+                "testUsername",
+                "TAG23456"
         );
 
         UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
@@ -313,7 +362,7 @@ class UserServiceTest {
     @DisplayName("유저 업데이트 성공 - 기존과 같은 유저명")
     void update_user_success_same_username() {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "TAG23456");
 
         UserUpdateRequestDto requestDto = new UserUpdateRequestDto();
         ReflectionTestUtils.setField(requestDto, "username", "testUsername");
@@ -337,7 +386,6 @@ class UserServiceTest {
         assertThat(userMetadataEvent.getEventUserIds()).containsExactlyElementsOf(eventUserIds);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, never()).existsByUsername(anyString());
         verify(userRepository, times(1)).findAllInteractingUserIds(1L);
     }
 
@@ -357,7 +405,6 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, never()).existsByUsername(anyString());
         verify(userRepository, never()).findAllInteractingUserIds(anyLong());
     }
 
@@ -365,7 +412,7 @@ class UserServiceTest {
     @DisplayName("유저 업데이트 실패 - 삭제된 유저")
     void update_user_fail_deleted_user() {
         // given
-        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        User findUser = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "deleted", true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
@@ -379,7 +426,6 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, never()).existsByUsername(anyString());
         verify(userRepository, never()).findAllInteractingUserIds(anyLong());
     }
 
@@ -387,7 +433,7 @@ class UserServiceTest {
     @DisplayName("유저 삭제 성공")
     void delete_user_success() {
         // given
-        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        User findUser = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
         // when
@@ -420,7 +466,7 @@ class UserServiceTest {
     @DisplayName("유저 삭제 실패 - 삭제된 유저")
     void delete_user_fail_deleted_user() {
         // given
-        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        User findUser = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(findUser, "deleted", true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 

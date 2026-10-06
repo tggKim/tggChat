@@ -45,10 +45,10 @@ class UserFriendServiceTest {
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
         ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
-        User owner = User.of("owner@owner.com", "ownerPassword", "sameUsername");
+        User owner = User.of("owner@owner.com", "ownerPassword", "sameUsername", "OWNER234");
         ReflectionTestUtils.setField(owner, "userId", 1L);
 
-        User friend = User.of("friend@friend.com", "friendPassword", "sameUsername");
+        User friend = User.of("friend@friend.com", "friendPassword", "sameUsername", "FRIEND23");
         ReflectionTestUtils.setField(friend, "userId", 2L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
@@ -101,7 +101,7 @@ class UserFriendServiceTest {
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
         ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
-        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(owner, "userId", 1L);
         ReflectionTestUtils.setField(owner, "deleted", true);
 
@@ -125,7 +125,7 @@ class UserFriendServiceTest {
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
         ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
-        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(owner, "userId", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
@@ -149,10 +149,10 @@ class UserFriendServiceTest {
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
         ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
-        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(owner, "userId", 1L);
 
-        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
+        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername", "FRIEND23");
         ReflectionTestUtils.setField(friend, "userId", 2L);
         ReflectionTestUtils.setField(friend, "deleted", true);
 
@@ -177,7 +177,7 @@ class UserFriendServiceTest {
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
         ReflectionTestUtils.setField(requestDto, "userId", 1L);
 
-        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(owner, "userId", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
@@ -200,10 +200,10 @@ class UserFriendServiceTest {
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
         ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
-        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(owner, "userId", 1L);
 
-        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
+        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername", "FRIEND23");
         ReflectionTestUtils.setField(friend, "userId", 2L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
@@ -230,14 +230,14 @@ class UserFriendServiceTest {
         // given
         String username = "김민재";
 
-        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(loginUser, "userId", 1L);
 
-        User user1 = User.of("minjae1@test.com", "password1", username);
+        User user1 = User.of("minjae1@test.com", "password1", username, "USERA234");
         ReflectionTestUtils.setField(user1, "userId", 2L);
         ReflectionTestUtils.setField(user1, "profileImageKey", "profileImage1");
 
-        User user2 = User.of("minjae2@test.com", "password2", username);
+        User user2 = User.of("minjae2@test.com", "password2", username, "USERB234");
         ReflectionTestUtils.setField(user2, "userId", 3L);
         // user2는 프로필 이미지가 없는 상태
 
@@ -275,7 +275,7 @@ class UserFriendServiceTest {
         // given
         String username = "김민재";
 
-        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(loginUser, "userId", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
@@ -301,10 +301,10 @@ class UserFriendServiceTest {
         // given
         String username = "가".repeat(50);
 
-        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(loginUser, "userId", 1L);
 
-        User candidate = User.of("candidate@test.com", "password", username);
+        User candidate = User.of("candidate@test.com", "password", username, "CAND2345");
         ReflectionTestUtils.setField(candidate, "userId", 2L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
@@ -382,7 +382,7 @@ class UserFriendServiceTest {
         // given
         String username = "김민재";
 
-        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername", "OWNER234");
         ReflectionTestUtils.setField(loginUser, "userId", 1L);
         ReflectionTestUtils.setField(loginUser, "deleted", true);
 
@@ -404,20 +404,20 @@ class UserFriendServiceTest {
     @DisplayName("친구 목록조회 성공 - 이메일 반환 및 이름, userId 순 정렬")
     void find_friend_list_success() {
         // given
-        User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        User findUser = User.of("test@test.com", "testPassword", "testUsername", "USER2345");
         ReflectionTestUtils.setField(findUser, "userId", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
-        User friend1 = User.of("email1@test.com", "password1", "friend2");
+        User friend1 = User.of("email1@test.com", "password1", "friend2", "FRIEND23");
         ReflectionTestUtils.setField(friend1, "userId", 2L);
         ReflectionTestUtils.setField(friend1, "profileImageKey", "profileImage1");
 
-        User friend2 = User.of("email2@test.com", "password2", "friend1");
+        User friend2 = User.of("email2@test.com", "password2", "friend1", "FRIEND24");
         ReflectionTestUtils.setField(friend2, "userId", 3L);
         ReflectionTestUtils.setField(friend2, "profileImageKey", "profileImage2");
 
-        User friend3 = User.of("email3@test.com", "password3", "friend1");
+        User friend3 = User.of("email3@test.com", "password3", "friend1", "FRIEND25");
         ReflectionTestUtils.setField(friend3, "userId", 4L);
         ReflectionTestUtils.setField(friend3, "profileImageKey", "profileImage3");
 
@@ -468,7 +468,7 @@ class UserFriendServiceTest {
     @DisplayName("친구 목록조회 실패 - 삭제된 로그인 유저")
     void find_friend_list_fail_deleted_login_user() {
         // given
-        User findUser = User.of("test@test.com", "encoded-password", "testUsername");
+        User findUser = User.of("test@test.com", "encoded-password", "testUsername", "USER2345");
         ReflectionTestUtils.setField(findUser, "deleted", true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 

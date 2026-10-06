@@ -259,6 +259,33 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("로그인 API 실패 - 소셜 가입 계정은 소셜 로그인 필요")
+    void login_api_fail_social_login_required() throws Exception {
+        // given
+        Map<String, Object> requestBody = Map.of(
+                "email", "test@test.com",
+                "password", "testPassword"
+        );
+
+        when(authService.login(any(LoginRequestDto.class), isNull()))
+                .thenThrow(new ErrorException(ErrorCode.SOCIAL_LOGIN_REQUIRED));
+
+        // when & then
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.code").value("U006"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("소셜 로그인으로 가입된 이메일입니다. 소셜 로그인을 이용해 주세요."));
+
+        verify(authService, times(1)).login(any(LoginRequestDto.class), isNull());
+        verify(jwtUtils, never()).getRefreshTokenTtlMillis();
+        verify(jwtUtils, never()).getMediaTokenTtlMillis();
+    }
+
+    @Test
     @DisplayName("로그아웃 API 성공")
     void logout_api_success() throws Exception {
         // given

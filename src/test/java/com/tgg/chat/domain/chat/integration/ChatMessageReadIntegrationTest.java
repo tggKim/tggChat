@@ -35,7 +35,7 @@ public class ChatMessageReadIntegrationTest {
     void olderReadDoesNotMoveCursorBackwards() {
 
         // given
-        User user = em.persist(User.of("reader@example.test", "test-password", "reader"));
+        User user = em.persist(User.of("reader@example.test", "test-password", "reader", "READER23"));
 
         ChatRoom room = em.persist(ChatRoom.of(ChatRoomType.GROUP));
         ChatRoomUser member = em.persist(ChatRoomUser.of(user, room, ChatRoomUserRole.OWNER, ChatRoomUserStatus.ACTIVE));

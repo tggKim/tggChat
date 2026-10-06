@@ -28,7 +28,7 @@ class JwtUtilsTest {
     @DisplayName("AccessToken 생성 및 파싱 성공")
     void create_access_token_and_parse_claims_success() {
         // given
-        User user = User.of("test@test.com", "testPassword", "testUsername");
+        User user = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(user, "userId", 1L);
         String sid = jwtUtils.generateSid();
 
@@ -48,7 +48,7 @@ class JwtUtilsTest {
     @DisplayName("RefreshToken 생성 및 파싱 성공")
     void create_refresh_token_and_parse_claims_success() {
         // given
-        User user = User.of("test@test.com", "testPassword", "testUsername");
+        User user = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(user, "userId", 1L);
         String sid = jwtUtils.generateSid();
 
@@ -68,7 +68,7 @@ class JwtUtilsTest {
     @DisplayName("MediaToken 생성 및 파싱 성공")
     void create_media_token_and_parse_claims_success() {
         // given
-        User user = User.of("test@test.com", "testPassword", "testUsername");
+        User user = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(user, "userId", 1L);
         String sid = jwtUtils.generateSid();
 
@@ -111,7 +111,7 @@ class JwtUtilsTest {
         // given
         JwtUtils anotherJwtUtils = new JwtUtils("0123456789abcdefghijklmnopqrstuvwxyzfake");
 
-        User user = User.of("test@test.com", "testPassword", "testUsername");
+        User user = User.of("test@test.com", "testPassword", "testUsername", "TAG23456");
         ReflectionTestUtils.setField(user, "userId", 1L);
         String sid = anotherJwtUtils.generateSid();
 
