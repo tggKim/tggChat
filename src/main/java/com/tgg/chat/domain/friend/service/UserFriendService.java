@@ -53,7 +53,7 @@ public class UserFriendService {
             throw new ErrorException(ErrorCode.USER_NOT_FOUND);
         }
 
-        User friend = userRepository.findByUsername(createFriendRequestDto.getUsername())
+        User friend = userRepository.findById(createFriendRequestDto.getUserId())
                 .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
         if(friend.getDeleted()) {
         	throw new ErrorException(ErrorCode.USER_NOT_FOUND);
