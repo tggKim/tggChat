@@ -1068,6 +1068,7 @@ public class ChatRoomService {
 
                     return FindChatRoomMembersResponseDto.of(
                             user.getUserId(),
+                            user.getEmail(),
                             user.getUsername(),
                             user.getProfileImageKey(),
                             chatRoomUser.getChatRoomUserRole(),
