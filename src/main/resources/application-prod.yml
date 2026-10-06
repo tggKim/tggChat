@@ -25,5 +25,6 @@ app:
   cookie:
     secure: true
 
+# 리버스 프록시의 전달 헤더를 반영해 OAuth2 콜백 URL을 외부 HTTPS 주소로 생성한다.
 server:
   forward-headers-strategy: native
