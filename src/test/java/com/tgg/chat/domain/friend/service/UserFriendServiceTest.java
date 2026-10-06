@@ -2,6 +2,7 @@ package com.tgg.chat.domain.friend.service;
 
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
 import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
+import com.tgg.chat.domain.friend.dto.response.SearchFriendResponseDto;
 import com.tgg.chat.domain.friend.entity.UserFriend;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
@@ -11,6 +12,9 @@ import com.tgg.chat.exception.ErrorException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -35,36 +39,39 @@ class UserFriendServiceTest {
     UserFriendService userFriendService;
 
     @Test
-    @DisplayName("친구 등록 성공")
+    @DisplayName("친구 등록 성공 - 이름이 같아도 userId가 다른 유저는 등록 가능")
     void create_friend_success() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+        ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
-        User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        User owner = User.of("owner@owner.com", "ownerPassword", "sameUsername");
         ReflectionTestUtils.setField(owner, "userId", 1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
-        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
+        User friend = User.of("friend@friend.com", "friendPassword", "sameUsername");
         ReflectionTestUtils.setField(friend, "userId", 2L);
-        when(userRepository.findByUsername(requestDto.getUsername())).thenReturn(Optional.of(friend));
 
-        when(userFriendRepository.existsByOwner_UserIdAndFriend_UserId(owner.getUserId(), friend.getUserId())).thenReturn(false);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(friend));
+        when(userFriendRepository.existsByOwner_UserIdAndFriend_UserId(1L, 2L))
+                .thenReturn(false);
 
         // when
         userFriendService.createFriend(1L, requestDto);
 
         // then
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
-        verify(userFriendRepository, times(1)).existsByOwner_UserIdAndFriend_UserId(owner.getUserId(), friend.getUserId());
+        verify(userRepository, times(1)).findById(2L);
+        verify(userFriendRepository, times(1))
+                .existsByOwner_UserIdAndFriend_UserId(1L, 2L);
 
-        ArgumentCaptor<UserFriend> argumentCaptor = ArgumentCaptor.forClass(UserFriend.class);
+        ArgumentCaptor<UserFriend> argumentCaptor =
+                ArgumentCaptor.forClass(UserFriend.class);
         verify(userFriendRepository, times(1)).save(argumentCaptor.capture());
-        UserFriend userFriend = argumentCaptor.getValue();
 
-        assertThat(userFriend.getOwner().getUserId()).isEqualTo(owner.getUserId());
-        assertThat(userFriend.getFriend().getUserId()).isEqualTo(friend.getUserId());
+        UserFriend userFriend = argumentCaptor.getValue();
+        assertThat(userFriend.getOwner()).isSameAs(owner);
+        assertThat(userFriend.getFriend()).isSameAs(friend);
     }
 
     @Test
@@ -72,20 +79,19 @@ class UserFriendServiceTest {
     void create_friend_fail_not_found_owner() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+        ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, never()).findByUsername(anyString());
-        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
-        verify(userFriendRepository, never()).save(any(UserFriend.class));
+        verify(userRepository, never()).findById(2L);
+        verifyNoInteractions(userFriendRepository);
     }
 
     @Test
@@ -93,22 +99,23 @@ class UserFriendServiceTest {
     void create_friend_fail_deleted_owner() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+        ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
         User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        ReflectionTestUtils.setField(owner, "userId", 1L);
         ReflectionTestUtils.setField(owner, "deleted", true);
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
         // when & then
         assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, never()).findByUsername(anyString());
-        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
-        verify(userFriendRepository, never()).save(any(UserFriend.class));
+        verify(userRepository, never()).findById(2L);
+        verifyNoInteractions(userFriendRepository);
     }
 
     @Test
@@ -116,23 +123,23 @@ class UserFriendServiceTest {
     void create_friend_fail_not_found_friend() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+        ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
         User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        ReflectionTestUtils.setField(owner, "userId", 1L);
 
-        when(userRepository.findByUsername(requestDto.getUsername())).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
-        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
-        verify(userFriendRepository, never()).save(any(UserFriend.class));
+        verify(userRepository, times(1)).findById(2L);
+        verifyNoInteractions(userFriendRepository);
     }
 
     @Test
@@ -140,25 +147,27 @@ class UserFriendServiceTest {
     void create_friend_fail_deleted_friend() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+        ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
         User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        ReflectionTestUtils.setField(owner, "userId", 1L);
 
         User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
+        ReflectionTestUtils.setField(friend, "userId", 2L);
         ReflectionTestUtils.setField(friend, "deleted", true);
-        when(userRepository.findByUsername(requestDto.getUsername())).thenReturn(Optional.of(friend));
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(friend));
 
         // when & then
         assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
-        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
-        verify(userFriendRepository, never()).save(any(UserFriend.class));
+        verify(userRepository, times(1)).findById(2L);
+        verifyNoInteractions(userFriendRepository);
     }
 
     @Test
@@ -166,26 +175,22 @@ class UserFriendServiceTest {
     void create_friend_fail_self_friend_not_allowed() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+        ReflectionTestUtils.setField(requestDto, "userId", 1L);
 
         User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
         ReflectionTestUtils.setField(owner, "userId", 1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
-        User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
-        ReflectionTestUtils.setField(friend, "userId", 1L);
-        when(userRepository.findByUsername(requestDto.getUsername())).thenReturn(Optional.of(friend));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
         // when & then
         assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.SELF_FRIEND_NOT_ALLOWED);
 
-        verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
-        verify(userFriendRepository, never()).existsByOwner_UserIdAndFriend_UserId(anyLong(), anyLong());
-        verify(userFriendRepository, never()).save(any(UserFriend.class));
+        // 로그인 유저 조회와 대상 유저 조회에서 같은 ID를 각각 조회한다.
+        verify(userRepository, times(2)).findById(1L);
+        verifyNoInteractions(userFriendRepository);
     }
 
     @Test
@@ -193,28 +198,206 @@ class UserFriendServiceTest {
     void create_friend_fail_already_friend() {
         // given
         CreateFriendRequestDto requestDto = new CreateFriendRequestDto();
-        ReflectionTestUtils.setField(requestDto, "username", "friendUsername");
+        ReflectionTestUtils.setField(requestDto, "userId", 2L);
 
         User owner = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
         ReflectionTestUtils.setField(owner, "userId", 1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
         User friend = User.of("friend@friend.com", "friendPassword", "friendUsername");
         ReflectionTestUtils.setField(friend, "userId", 2L);
-        when(userRepository.findByUsername(requestDto.getUsername())).thenReturn(Optional.of(friend));
 
-        when(userFriendRepository.existsByOwner_UserIdAndFriend_UserId(owner.getUserId(), friend.getUserId())).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(friend));
+        when(userFriendRepository.existsByOwner_UserIdAndFriend_UserId(1L, 2L))
+                .thenReturn(true);
 
         // when & then
         assertThatThrownBy(() -> userFriendService.createFriend(1L, requestDto))
                 .isInstanceOf(ErrorException.class)
-                .extracting(ex -> ((ErrorException)ex).getErrorCode())
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.ALREADY_FRIEND);
 
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).findByUsername(requestDto.getUsername());
-        verify(userFriendRepository, times(1)).existsByOwner_UserIdAndFriend_UserId(owner.getUserId(), friend.getUserId());
+        verify(userRepository, times(1)).findById(2L);
+        verify(userFriendRepository, times(1))
+                .existsByOwner_UserIdAndFriend_UserId(1L, 2L);
         verify(userFriendRepository, never()).save(any(UserFriend.class));
+    }
+
+    @Test
+    @DisplayName("친구 검색 성공 - 동명이인 목록과 식별 정보를 반환")
+    void search_friends_success() {
+        // given
+        String username = "김민재";
+
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        ReflectionTestUtils.setField(loginUser, "userId", 1L);
+
+        User user1 = User.of("minjae1@test.com", "password1", username);
+        ReflectionTestUtils.setField(user1, "userId", 2L);
+        ReflectionTestUtils.setField(user1, "profileImageKey", "profileImage1");
+
+        User user2 = User.of("minjae2@test.com", "password2", username);
+        ReflectionTestUtils.setField(user2, "userId", 3L);
+        // user2는 프로필 이미지가 없는 상태
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+        when(userRepository.findFriendCandidatesByUsername(1L, username))
+                .thenReturn(List.of(user1, user2));
+
+        // when
+        List<SearchFriendResponseDto> result =
+                userFriendService.searchFriends(1L, username);
+
+        // then
+        assertThat(result)
+                .hasSize(2)
+                .extracting(
+                        SearchFriendResponseDto::getUserId,
+                        SearchFriendResponseDto::getUsername,
+                        SearchFriendResponseDto::getEmail,
+                        SearchFriendResponseDto::getProfileImageKey
+                )
+                .containsExactly(
+                        tuple(2L, username, "minjae1@test.com", "profileImage1"),
+                        tuple(3L, username, "minjae2@test.com", null)
+                );
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1))
+                .findFriendCandidatesByUsername(1L, username);
+        verifyNoInteractions(userFriendRepository);
+    }
+
+    @Test
+    @DisplayName("친구 검색 성공 - 검색 결과가 없으면 빈 목록 반환")
+    void search_friends_success_empty_result() {
+        // given
+        String username = "김민재";
+
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        ReflectionTestUtils.setField(loginUser, "userId", 1L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+        when(userRepository.findFriendCandidatesByUsername(1L, username))
+                .thenReturn(List.of());
+
+        // when
+        List<SearchFriendResponseDto> result =
+                userFriendService.searchFriends(1L, username);
+
+        // then
+        assertThat(result).isEmpty();
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1))
+                .findFriendCandidatesByUsername(1L, username);
+        verifyNoInteractions(userFriendRepository);
+    }
+
+    @Test
+    @DisplayName("친구 검색 성공 - 검색어가 정확히 50자이면 조회 가능")
+    void search_friends_success_username_length_50() {
+        // given
+        String username = "가".repeat(50);
+
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        ReflectionTestUtils.setField(loginUser, "userId", 1L);
+
+        User candidate = User.of("candidate@test.com", "password", username);
+        ReflectionTestUtils.setField(candidate, "userId", 2L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+        when(userRepository.findFriendCandidatesByUsername(1L, username))
+                .thenReturn(List.of(candidate));
+
+        // when
+        List<SearchFriendResponseDto> result =
+                userFriendService.searchFriends(1L, username);
+
+        // then
+        assertThat(result)
+                .hasSize(1)
+                .extracting(SearchFriendResponseDto::getUsername)
+                .containsExactly(username);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1))
+                .findFriendCandidatesByUsername(1L, username);
+        verifyNoInteractions(userFriendRepository);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "   ", "\t", "\n"})
+    @DisplayName("친구 검색 실패 - 검색어가 null, 빈 문자열 또는 공백")
+    void search_friends_fail_blank_username(String username) {
+        // when & then
+        assertThatThrownBy(() -> userFriendService.searchFriends(1L, username))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_SEARCH_USERNAME);
+
+        verifyNoInteractions(userRepository, userFriendRepository);
+    }
+
+    @Test
+    @DisplayName("친구 검색 실패 - 검색어가 50자 초과")
+    void search_friends_fail_username_too_long() {
+        // given
+        String username = "가".repeat(51);
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.searchFriends(1L, username))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_SEARCH_USERNAME);
+
+        verifyNoInteractions(userRepository, userFriendRepository);
+    }
+
+    @Test
+    @DisplayName("친구 검색 실패 - 존재하지 않는 로그인 유저")
+    void search_friends_fail_not_found_login_user() {
+        // given
+        String username = "김민재";
+
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.searchFriends(1L, username))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, never())
+                .findFriendCandidatesByUsername(anyLong(), anyString());
+        verifyNoInteractions(userFriendRepository);
+    }
+
+    @Test
+    @DisplayName("친구 검색 실패 - 삭제된 로그인 유저")
+    void search_friends_fail_deleted_login_user() {
+        // given
+        String username = "김민재";
+
+        User loginUser = User.of("owner@owner.com", "ownerPassword", "ownerUsername");
+        ReflectionTestUtils.setField(loginUser, "userId", 1L);
+        ReflectionTestUtils.setField(loginUser, "deleted", true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+
+        // when & then
+        assertThatThrownBy(() -> userFriendService.searchFriends(1L, username))
+                .isInstanceOf(ErrorException.class)
+                .extracting(ex -> ((ErrorException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, never())
+                .findFriendCandidatesByUsername(anyLong(), anyString());
+        verifyNoInteractions(userFriendRepository);
     }
 
     @Test
