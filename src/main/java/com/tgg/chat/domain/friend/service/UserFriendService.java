@@ -11,6 +11,7 @@ import com.tgg.chat.exception.ErrorCode;
 import com.tgg.chat.exception.ErrorException;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -91,10 +92,14 @@ public class UserFriendService {
 		
 		// 응답 DTO로 변환
 		return friendList.stream()
-                .sorted((user1, user2) -> user1.getUsername().compareTo(user2.getUsername()))
+                .sorted(
+                        Comparator.comparing(User::getUsername)
+                                .thenComparing(User::getUserId)
+                )
                 .map(user -> {
                     return FriendListResponseDto.of(
                             user.getUserId(),
+                            user.getEmail(),
                             user.getUsername(),
                             user.getProfileImageKey()
                     );

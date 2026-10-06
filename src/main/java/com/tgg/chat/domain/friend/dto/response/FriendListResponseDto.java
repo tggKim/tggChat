@@ -10,6 +10,9 @@ public class FriendListResponseDto {
 
 	@Schema(description = "추가하고자 하는 유저 ID", example = "1")
 	private final Long friendId;
+
+    @Schema(description = "추가하고자 하는 유저 email", example = "example@example.com")
+    private final String email;
 	
 	@Schema(description = "유저 이름", example = "user1")
 	private final String friendUsername;
@@ -17,14 +20,15 @@ public class FriendListResponseDto {
     @Schema(description = "유저 프로필 이미지 키", example = "key")
     private final String profileImageKey;
 	
-	private FriendListResponseDto(Long friendId, String friendUsername, String profileImageKey) {
+	private FriendListResponseDto(Long friendId, String email, String friendUsername, String profileImageKey) {
 		this.friendId = friendId;
+        this.email = email;
 		this.friendUsername = friendUsername;
         this.profileImageKey = profileImageKey;
 	}
 	
-	public static FriendListResponseDto of(Long friendId, String friendUsername, String profileImageKey) {
-		return new FriendListResponseDto(friendId, friendUsername, profileImageKey);
+	public static FriendListResponseDto of(Long friendId, String email, String friendUsername, String profileImageKey) {
+		return new FriendListResponseDto(friendId, email, friendUsername, profileImageKey);
 	}
 	
 }
