@@ -30,6 +30,7 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
     private final RedisTokenStore redisTokenStore;
+    private final UserTagGenerator userTagGenerator;
 	
 	@Transactional
 	public SignUpResponseDto signUpUser(SignUpRequestDto signUpRequestDto) {
@@ -46,9 +47,14 @@ public class UserService {
             }
         }
 
+        String userTag;
+        do {
+            userTag = userTagGenerator.generate();
+        } while (userRepository.existsByUserTag(userTag));
+
 		String encodedPassword = passwordEncoder.encode(signUpRequestDto.getPassword());
 		
-		User requestUser = User.of(signUpRequestDto.getEmail(), encodedPassword, signUpRequestDto.getUsername());
+		User requestUser = User.of(signUpRequestDto.getEmail(), encodedPassword, signUpRequestDto.getUsername(), userTag);
 		
 		User savedUser = userRepository.save(requestUser);
 		
