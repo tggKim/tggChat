@@ -401,30 +401,47 @@ class UserFriendServiceTest {
     }
 
     @Test
-    @DisplayName("친구 목록조회 성공")
+    @DisplayName("친구 목록조회 성공 - 이메일 반환 및 이름, userId 순 정렬")
     void find_friend_list_success() {
         // given
         User findUser = User.of("test@test.com", "testPassword", "testUsername");
+        ReflectionTestUtils.setField(findUser, "userId", 1L);
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(findUser));
 
-        User friend1 = User.of("email1", "password1", "friend1");
-        ReflectionTestUtils.setField(friend1, "userId", 1L);
+        User friend1 = User.of("email1@test.com", "password1", "friend2");
+        ReflectionTestUtils.setField(friend1, "userId", 2L);
         ReflectionTestUtils.setField(friend1, "profileImageKey", "profileImage1");
 
-        User friend2 = User.of("email2", "password2", "friend2");
-        ReflectionTestUtils.setField(friend2, "userId", 2L);
+        User friend2 = User.of("email2@test.com", "password2", "friend1");
+        ReflectionTestUtils.setField(friend2, "userId", 3L);
         ReflectionTestUtils.setField(friend2, "profileImageKey", "profileImage2");
-        when(userFriendRepository.findActiveFriends(1L)).thenReturn(List.of(friend1, friend2));
+
+        User friend3 = User.of("email3@test.com", "password3", "friend1");
+        ReflectionTestUtils.setField(friend3, "userId", 4L);
+        ReflectionTestUtils.setField(friend3, "profileImageKey", "profileImage3");
+
+        // 정렬되지 않은 순서로 반환
+        when(userFriendRepository.findActiveFriends(1L))
+                .thenReturn(List.of(friend3, friend1, friend2));
 
         // when
-        List<FriendListResponseDto> result = userFriendService.findFriendListByOwnerId(1L);
+        List<FriendListResponseDto> result =
+                userFriendService.findFriendListByOwnerId(1L);
 
         // then
-        assertThat(result).hasSize(2)
-                .extracting(FriendListResponseDto::getFriendId, FriendListResponseDto::getFriendUsername, FriendListResponseDto::getProfileImageKey)
+        assertThat(result)
+                .hasSize(3)
+                .extracting(
+                        FriendListResponseDto::getFriendId,
+                        FriendListResponseDto::getEmail,
+                        FriendListResponseDto::getFriendUsername,
+                        FriendListResponseDto::getProfileImageKey
+                )
                 .containsExactly(
-                        tuple(1L, "friend1", "profileImage1"),
-                        tuple(2L, "friend2", "profileImage2")
+                        tuple(3L, "email2@test.com", "friend1", "profileImage2"),
+                        tuple(4L, "email3@test.com", "friend1", "profileImage3"),
+                        tuple(2L, "email1@test.com", "friend2", "profileImage1")
                 );
 
         verify(userRepository, times(1)).findById(1L);
