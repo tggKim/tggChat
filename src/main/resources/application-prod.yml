@@ -24,3 +24,6 @@ logging:
 app:
   cookie:
     secure: true
+
+server:
+  forward-headers-strategy: native
