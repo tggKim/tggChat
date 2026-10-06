@@ -8,18 +8,18 @@ public class SearchFriendResponseDto {
 
     private final Long userId;
     private final String username;
-    private final String email;
+    private final String userTag;
     private final String profileImageKey;
 
     private SearchFriendResponseDto(
             Long userId,
             String username,
-            String email,
+            String userTag,
             String profileImageKey
     ) {
         this.userId = userId;
         this.username = username;
-        this.email = email;
+        this.userTag = userTag;
         this.profileImageKey = profileImageKey;
     }
 
@@ -27,7 +27,7 @@ public class SearchFriendResponseDto {
         return new SearchFriendResponseDto(
                 user.getUserId(),
                 user.getUsername(),
-                user.getEmail(),
+                user.getUserTag(),
                 user.getProfileImageKey()
         );
     }

@@ -224,6 +224,7 @@ class UserServiceTest {
         // then
         assertThat(responseDto.getUserId()).isEqualTo(1L);
         assertThat(responseDto.getUsername()).isEqualTo("testUsername");
+        assertThat(responseDto.getUserTag()).isEqualTo("TAG23456");
         assertThat(responseDto.getCreatedAt()).isEqualTo(now);
         assertThat(responseDto.getUpdatedAt()).isEqualTo(now);
 
@@ -280,6 +281,7 @@ class UserServiceTest {
         assertThat(responseDto.getUserId()).isEqualTo(1L);
         assertThat(responseDto.getEmail()).isEqualTo("test@test.com");
         assertThat(responseDto.getUsername()).isEqualTo("testUsername");
+        assertThat(responseDto.getUserTag()).isEqualTo("TAG23456");
         assertThat(responseDto.getCreatedAt()).isEqualTo(now);
         assertThat(responseDto.getUpdatedAt()).isEqualTo(now);
 

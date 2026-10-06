@@ -1012,6 +1012,7 @@ public class ChatRoomService {
                     return FindInvitableFriendsResponseDto.of(
                             invitableFriend.getUserId(),
                             invitableFriend.getUsername(),
+                            invitableFriend.getUserTag(),
                             invitableFriend.getProfileImageKey()
                     );
                 })
@@ -1068,7 +1069,7 @@ public class ChatRoomService {
 
                     return FindChatRoomMembersResponseDto.of(
                             user.getUserId(),
-                            user.getEmail(),
+                            user.getUserTag(),
                             user.getUsername(),
                             user.getProfileImageKey(),
                             chatRoomUser.getChatRoomUserRole(),

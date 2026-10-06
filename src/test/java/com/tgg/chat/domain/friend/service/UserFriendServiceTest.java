@@ -255,12 +255,12 @@ class UserFriendServiceTest {
                 .extracting(
                         SearchFriendResponseDto::getUserId,
                         SearchFriendResponseDto::getUsername,
-                        SearchFriendResponseDto::getEmail,
+                        SearchFriendResponseDto::getUserTag,
                         SearchFriendResponseDto::getProfileImageKey
                 )
                 .containsExactly(
-                        tuple(2L, username, "minjae1@test.com", "profileImage1"),
-                        tuple(3L, username, "minjae2@test.com", null)
+                        tuple(2L, username, "USERA234", "profileImage1"),
+                        tuple(3L, username, "USERB234", null)
                 );
 
         verify(userRepository, times(1)).findById(1L);
@@ -401,7 +401,7 @@ class UserFriendServiceTest {
     }
 
     @Test
-    @DisplayName("친구 목록조회 성공 - 이메일 반환 및 이름, userId 순 정렬")
+    @DisplayName("친구 목록조회 성공 - 사용자 태그 반환 및 이름, userId 순 정렬")
     void find_friend_list_success() {
         // given
         User findUser = User.of("test@test.com", "testPassword", "testUsername", "USER2345");
@@ -434,14 +434,14 @@ class UserFriendServiceTest {
                 .hasSize(3)
                 .extracting(
                         FriendListResponseDto::getFriendId,
-                        FriendListResponseDto::getEmail,
+                        FriendListResponseDto::getUserTag,
                         FriendListResponseDto::getFriendUsername,
                         FriendListResponseDto::getProfileImageKey
                 )
                 .containsExactly(
-                        tuple(3L, "email2@test.com", "friend1", "profileImage2"),
-                        tuple(4L, "email3@test.com", "friend1", "profileImage3"),
-                        tuple(2L, "email1@test.com", "friend2", "profileImage1")
+                        tuple(3L, "FRIEND24", "friend1", "profileImage2"),
+                        tuple(4L, "FRIEND25", "friend1", "profileImage3"),
+                        tuple(2L, "FRIEND23", "friend2", "profileImage1")
                 );
 
         verify(userRepository, times(1)).findById(1L);

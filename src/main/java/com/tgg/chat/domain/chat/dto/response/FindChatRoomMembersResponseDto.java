@@ -10,8 +10,8 @@ public class FindChatRoomMembersResponseDto {
     @Schema(description = "유저 ID", example = "1")
     private final Long userId;
 
-    @Schema(description = "유저 EMAIL", example = "example@example.com")
-    private final String email;
+    @Schema(description = "유저 Tag", example = "XXXXXXXX")
+    private final String userTag;
 
     @Schema(description = "유저명", example = "tgg")
     private final String username;
@@ -25,16 +25,16 @@ public class FindChatRoomMembersResponseDto {
     @Schema(description = "요청 사용자가 해당 유저를 친구로 추가할 수 있는지 여부", example = "true")
     private final boolean canAddFriend;
 
-    private FindChatRoomMembersResponseDto(Long userId, String email, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole, boolean canAddFriend) {
+    private FindChatRoomMembersResponseDto(Long userId, String userTag, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole, boolean canAddFriend) {
         this.userId = userId;
-        this.email = email;
+        this.userTag = userTag;
         this.username = username;
         this.profileImageKey = profileImageKey;
         this.chatRoomUserRole = chatRoomUserRole;
         this.canAddFriend = canAddFriend;
     }
 
-    public static FindChatRoomMembersResponseDto of(Long userId, String email, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole, boolean canAddFriend) {
-        return new FindChatRoomMembersResponseDto(userId, email, username, profileImageKey, chatRoomUserRole, canAddFriend);
+    public static FindChatRoomMembersResponseDto of(Long userId, String userTag, String username, String profileImageKey, ChatRoomUserRole chatRoomUserRole, boolean canAddFriend) {
+        return new FindChatRoomMembersResponseDto(userId, userTag, username, profileImageKey, chatRoomUserRole, canAddFriend);
     }
 }

@@ -12,16 +12,20 @@ public class FindInvitableFriendsResponseDto {
     @Schema(description = "유저명", example = "tgg")
     private final String username;
 
+    @Schema(description = "유저 Tag", example = "XXXXXXXX")
+    private final String userTag;
+
     @Schema(description = "유저 프로필 이미지 키", example = "key")
     private final String profileImageKey;
 
-    private FindInvitableFriendsResponseDto(Long userId, String username, String profileImageKey) {
+    private FindInvitableFriendsResponseDto(Long userId, String username, String userTag, String profileImageKey) {
         this.userId = userId;
         this.username = username;
+        this.userTag = userTag;
         this.profileImageKey = profileImageKey;
     }
 
-    public static FindInvitableFriendsResponseDto of(Long userId, String username, String profileImageKey) {
-        return new FindInvitableFriendsResponseDto(userId, username, profileImageKey);
+    public static FindInvitableFriendsResponseDto of(Long userId, String username, String userTag, String profileImageKey) {
+        return new FindInvitableFriendsResponseDto(userId, username, userTag, profileImageKey);
     }
 }

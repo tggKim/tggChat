@@ -99,7 +99,7 @@ public class UserFriendService {
                 .map(user -> {
                     return FriendListResponseDto.of(
                             user.getUserId(),
-                            user.getEmail(),
+                            user.getUserTag(),
                             user.getUsername(),
                             user.getProfileImageKey()
                     );

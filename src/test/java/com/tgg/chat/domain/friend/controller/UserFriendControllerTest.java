@@ -61,7 +61,7 @@ class UserFriendControllerTest {
     JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     @Test
-    @DisplayName("친구 검색 API 성공 - 동명이인의 userId와 이메일 반환")
+    @DisplayName("친구 검색 API 성공 - 동명이인의 userId와 사용자 태그 반환")
     void search_friends_api_success() throws Exception {
         // given
         String username = "김민재";
@@ -98,11 +98,11 @@ class UserFriendControllerTest {
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[0].userId").value(2))
                     .andExpect(jsonPath("$[0].username").value(username))
-                    .andExpect(jsonPath("$[0].email").value("minjae1@test.com"))
+                    .andExpect(jsonPath("$[0].userTag").value("USERA234"))
                     .andExpect(jsonPath("$[0].profileImageKey").value("profileImage1"))
                     .andExpect(jsonPath("$[1].userId").value(3))
                     .andExpect(jsonPath("$[1].username").value(username))
-                    .andExpect(jsonPath("$[1].email").value("minjae2@test.com"))
+                    .andExpect(jsonPath("$[1].userTag").value("USERB234"))
                     .andExpect(jsonPath("$[1].profileImageKey").value("profileImage2"));
 
             verify(userFriendService, times(1)).searchFriends(1L, username);
@@ -418,7 +418,7 @@ class UserFriendControllerTest {
     }
 
     @Test
-    @DisplayName("친구 목록 조회 API 성공 - 이메일 포함")
+    @DisplayName("친구 목록 조회 API 성공 - 사용자 태그 포함")
     void find_friend_list_success() throws Exception {
         // given
         AuthenticatedUser authenticatedUser = new AuthenticatedUser(1L, "sid");
@@ -431,14 +431,14 @@ class UserFriendControllerTest {
 
         FriendListResponseDto friendListResponseDto1 = FriendListResponseDto.of(
                 2L,
-                "email1@test.com",
+                "FRIEND23",
                 "friend1",
                 "profileImage1"
         );
 
         FriendListResponseDto friendListResponseDto2 = FriendListResponseDto.of(
                 3L,
-                "email2@test.com",
+                "FRIEND24",
                 "friend2",
                 "profileImage2"
         );
@@ -455,11 +455,11 @@ class UserFriendControllerTest {
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[0].friendId").value(2))
-                    .andExpect(jsonPath("$[0].email").value("email1@test.com"))
+                    .andExpect(jsonPath("$[0].userTag").value("FRIEND23"))
                     .andExpect(jsonPath("$[0].friendUsername").value("friend1"))
                     .andExpect(jsonPath("$[0].profileImageKey").value("profileImage1"))
                     .andExpect(jsonPath("$[1].friendId").value(3))
-                    .andExpect(jsonPath("$[1].email").value("email2@test.com"))
+                    .andExpect(jsonPath("$[1].userTag").value("FRIEND24"))
                     .andExpect(jsonPath("$[1].friendUsername").value("friend2"))
                     .andExpect(jsonPath("$[1].profileImageKey").value("profileImage2"));
 

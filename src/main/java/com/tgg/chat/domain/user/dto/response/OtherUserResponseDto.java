@@ -17,6 +17,9 @@ public class OtherUserResponseDto {
 	
 	@Schema(description = "유저 이름", example = "user1")
 	private final String username;
+
+    @Schema(description = "유저 Tag", example = "XXXXXXXX")
+    private final String userTag;
 	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	@Schema(description = "가입 일시", example = "2025-02-13 14:23:44")
@@ -26,15 +29,16 @@ public class OtherUserResponseDto {
 	@Schema(description = "마지막 수정 일시", example = "2025-02-13 14:23:44")
 	private final LocalDateTime updatedAt;
 	
-	private OtherUserResponseDto(Long userId, String username, LocalDateTime createdAt, LocalDateTime updatedAt) {
+	private OtherUserResponseDto(Long userId, String username, String userTag, LocalDateTime createdAt, LocalDateTime updatedAt) {
 		this.userId = userId;
 		this.username = username;
+        this.userTag = userTag;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 	}
 	
 	public static OtherUserResponseDto of(User user) {
-		return new OtherUserResponseDto(user.getUserId(), user.getUsername(), user.getCreatedAt(), user.getUpdatedAt());
+		return new OtherUserResponseDto(user.getUserId(), user.getUsername(), user.getUserTag(), user.getCreatedAt(), user.getUpdatedAt());
 	}
 
 }

@@ -114,6 +114,7 @@ DELETED
 {
   "userId": 1,
   "username": "user1",
+  "userTag": "ABCD1234",
   "createdAt": "2026-08-18 10:00:00",
   "updatedAt": "2026-08-18 10:00:00"
 }
@@ -125,6 +126,7 @@ DELETED
 {
   "userId": 1,
   "username": "user1",
+  "userTag": "ABCD1234",
   "createdAt": "2026-08-18 10:00:00",
   "updatedAt": "2026-08-18 10:00:00"
 }
@@ -137,6 +139,7 @@ DELETED
   "userId": 1,
   "email": "user@example.com",
   "username": "user1",
+  "userTag": "ABCD1234",
   "profileImageKey": "user:1:uuid-or-null",
   "createdAt": "2026-08-18 10:00:00",
   "updatedAt": "2026-08-18 10:00:00"
@@ -241,7 +244,7 @@ DELETED
 1. path의 `userId`로 `findActiveUserById`를 호출한다.
 2. 없거나 삭제된 사용자는 `U003 / 404`다.
 3. active 사용자를 `OtherUserResponseDto`로 변환한다.
-4. `userId`, `username`, `createdAt`, `updatedAt`만 `200 OK`로 반환한다.
+4. `userId`, `username`, `userTag`, `createdAt`, `updatedAt`을 `200 OK`로 반환한다.
 
 - 인증 없이 호출 가능하다.
 - email, password, `deleted`, `profileImageKey`는 반환하지 않는다.
@@ -254,7 +257,7 @@ DELETED
 1. AccessToken 인증 결과의 userId를 받는다.
 2. `findActiveUserById`로 DB row와 soft-delete 상태를 확인한다.
 3. active 사용자를 `UserResponseDto`로 변환한다.
-4. `userId`, `email`, `username`, `profileImageKey`, 생성/수정 시각을 반환한다.
+4. `userId`, `email`, `username`, `userTag`, `profileImageKey`, 생성/수정 시각을 반환한다.
 
 - token 자체가 유효해도 DB row가 없거나 삭제 상태면 `U003 / 404`다.
 - 본인 상태를 다시 동기화하고, 서버가 생성한 최신 프로필 key와 `updatedAt`을 받는 기준 API다.
@@ -502,7 +505,7 @@ PATCH /me 또는 PUT /me/profile-image
 
 ### 15.2 본인 상태의 기준 데이터
 
-- 로그인/새로고침/재연결 뒤 `GET /me`로 `userId`, email, 최신 username, `profileImageKey`를 동기화한다.
+- 로그인/새로고침/재연결 뒤 `GET /me`로 `userId`, email, 최신 username, `userTag`, `profileImageKey`를 동기화한다.
 - `PATCH /me`는 body가 없으므로 요청값을 낙관적으로 적용하더라도 실패 시 되돌리고, 정확한 `updatedAt`이 필요하면 `GET /me`를 다시 호출한다.
 - `PUT /me/profile-image`는 서버가 key를 생성하고 body로 반환하지 않으며 자기 자신에게 이벤트도 보내지 않는다. 성공 뒤 반드시 `GET /me`로 새 key를 가져와야 한다.
 

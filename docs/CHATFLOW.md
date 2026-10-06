@@ -796,7 +796,7 @@ WHERE chatRoomUserId = 내 참여 행 ID
 - `GROUP`에서는 현재 `ACTIVE` 참여자를 제외한다.
 - `GROUP`의 `LEFT` 참여자는 복귀 가능하므로 후보에 포함한다.
 - 결과는 Java 문자열 기준 사용자 이름 오름차순이다.
-- 응답 필드는 `userId`, `username`, `profileImageKey`다.
+- 응답 필드는 `userId`, `username`, `userTag`, `profileImageKey`다.
 
 이 조회는 UI 보조 API다. 실제 초대 시 서비스가 친구·삭제·참여 상태를 다시 검증하므로 조회 후 상태가 바뀐 요청은 실패할 수 있다.
 
@@ -808,7 +808,7 @@ WHERE chatRoomUserId = 내 참여 행 ID
 - `DIRECT`는 `ACTIVE/LEFT`에 관계없이 삭제되지 않은 기존 두 참여자를 표시 대상으로 한다.
 - `GROUP`은 현재 `ACTIVE` 참여자만 표시한다.
 - 결과는 이름 오름차순이다.
-- 응답 필드는 `userId`, `username`, `profileImageKey`, `chatRoomUserRole`, `canAddFriend`다.
+- 응답 필드는 `userId`, `userTag`, `username`, `profileImageKey`, `chatRoomUserRole`, `canAddFriend`다.
 - `canAddFriend`는 자기 자신이거나 이미 현재 친구면 `false`, 그 외면 `true`다.
 - 응답에는 `ChatRoomUserStatus`가 없으므로 DIRECT 응답만으로 상대방이 `LEFT`인지 구분할 수 없다.
 

@@ -327,6 +327,7 @@ class UserControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.userId").value(1L))
                 .andExpect(jsonPath("$.username").value("testUsername"))
+                .andExpect(jsonPath("$.userTag").value("TAG23456"))
                 .andExpect(jsonPath("$.createdAt").value("2026-12-01 09:00:00"))
                 .andExpect(jsonPath("$.updatedAt").value("2026-12-01 09:00:00"));
 
@@ -376,6 +377,7 @@ class UserControllerTest {
                     .andExpect(jsonPath("$.userId").value(1L))
                     .andExpect(jsonPath("$.email").value("test@test.com"))
                     .andExpect(jsonPath("$.username").value("testUsername"))
+                    .andExpect(jsonPath("$.userTag").value("TAG23456"))
                     .andExpect(jsonPath("$.createdAt").value("2026-12-01 09:00:00"))
                     .andExpect(jsonPath("$.updatedAt").value("2026-12-01 09:00:00"));
 
