@@ -37,4 +37,20 @@ public interface UserRepository extends JpaRepository<User, Long>{
             and receiver.chatRoomUserStatus = com.tgg.chat.domain.chat.enums.ChatRoomUserStatus.ACTIVE
             """)
     List<Long> findAllInteractingUserIds(Long userId);
+
+    @Query("""
+        select u
+        from User u
+        where u.username = :username
+          and u.deleted = false
+          and u.userId <> :loginUserId
+          and not exists (
+              select uf.userFriendId
+              from UserFriend uf
+              where uf.owner.userId = :loginUserId
+                and uf.friend.userId = u.userId
+          )
+        order by u.userId asc
+        """)
+    List<User> findFriendCandidatesByUsername(Long loginUserId, String username);
 }

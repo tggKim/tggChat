@@ -3,6 +3,7 @@ package com.tgg.chat.domain.friend.controller;
 import com.tgg.chat.common.security.principal.AuthenticatedUser;
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
 import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
+import com.tgg.chat.domain.friend.dto.response.SearchFriendResponseDto;
 import com.tgg.chat.domain.friend.service.UserFriendService;
 import com.tgg.chat.exception.ErrorResponse;
 
@@ -22,10 +23,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Friend API", description = "친구 관련 API")
 @RestController
@@ -33,6 +31,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserFriendController {
 
     private final UserFriendService userFriendService;
+
+    @GetMapping("/friends/search")
+    @SecurityRequirement(name = "JWT Auth")
+    @Operation(
+            summary = "친구 추가 대상 검색",
+            description = "이름이 일치하는 유저 중 친구로 추가할 수 있는 유저를 조회합니다."
+    )
+    public ResponseEntity<List<SearchFriendResponseDto>> searchFriends(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestParam(name = "username", required = false) String username
+    ) {
+        List<SearchFriendResponseDto> responseDtos = userFriendService.searchFriends(authenticatedUser.getUserId(), username);
+
+        return ResponseEntity.ok(responseDtos);
+    }
 
     @PostMapping("/friends")
 	@SecurityRequirement(name = "JWT Auth")

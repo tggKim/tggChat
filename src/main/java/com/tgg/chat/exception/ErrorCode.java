@@ -35,6 +35,7 @@ public enum ErrorCode {
 	// 친구(Friend)
 	ALREADY_FRIEND(HttpStatus.CONFLICT, "F001", "이미 친구로 등록되어 있습니다."),
 	SELF_FRIEND_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "F002", "자기 자신을 친구로 추가할 수 없습니다."),
+    INVALID_SEARCH_USERNAME(HttpStatus.BAD_REQUEST, "F003", "검색할 이름이 필요하며, 50자 이하여야 합니다."),
 
     // 채팅방
     CHAT_ROOM_NOT_EXISTS(HttpStatus.NOT_FOUND, "CR001", "존재하지 않는 채팅방 입니다."),

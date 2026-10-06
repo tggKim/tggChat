@@ -15,18 +15,12 @@ import java.time.LocalDateTime;
 @Getter
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(uniqueConstraints = {
-        @UniqueConstraint(
-                name = "uk_user_provider_email",
-                columnNames = {"email", "auth_provider"}
-        )
-})
 public class User {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    @Column(nullable = false, length = 254)
+    @Column(unique = true, nullable = false, length = 254)
     private String email;
 
     // 소셜 계정은 비밀번호가 없으므로 NULL 허용

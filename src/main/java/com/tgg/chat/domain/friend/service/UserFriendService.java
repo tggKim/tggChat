@@ -2,6 +2,7 @@ package com.tgg.chat.domain.friend.service;
 
 import com.tgg.chat.domain.friend.dto.request.CreateFriendRequestDto;
 import com.tgg.chat.domain.friend.dto.response.FriendListResponseDto;
+import com.tgg.chat.domain.friend.dto.response.SearchFriendResponseDto;
 import com.tgg.chat.domain.friend.entity.UserFriend;
 import com.tgg.chat.domain.friend.repository.UserFriendRepository;
 import com.tgg.chat.domain.user.entity.User;
@@ -22,6 +23,26 @@ public class UserFriendService {
 
     private final UserRepository userRepository;
     private final UserFriendRepository userFriendRepository;
+
+    @Transactional(readOnly = true)
+    public List<SearchFriendResponseDto> searchFriends(Long loginUserId, String username) {
+        if (username == null || username.isBlank() || username.length() > 50) {
+            throw new ErrorException(ErrorCode.INVALID_SEARCH_USERNAME);
+        }
+
+        User loginUser = userRepository.findById(loginUserId)
+                .orElseThrow(() -> new ErrorException(ErrorCode.USER_NOT_FOUND));
+
+        if (loginUser.getDeleted()) {
+            throw new ErrorException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        List<User> users = userRepository.findFriendCandidatesByUsername(loginUserId, username);
+
+        return users.stream()
+                .map(SearchFriendResponseDto::of)
+                .toList();
+    }
 
     @Transactional
     public void createFriend(Long loginUserId, CreateFriendRequestDto createFriendRequestDto) {
