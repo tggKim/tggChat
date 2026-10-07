@@ -677,6 +677,8 @@ REST와 STOMP 오류 body는 같은 `ErrorResponse` 구조를 사용한다.
 3. 성공하면 body의 새 AccessToken을 저장하고, 브라우저가 갱신된 두 쿠키를 반영하게 한다.
 4. 재발급 실패 시 로그인되지 않은 상태로 전환하고 로컬 AccessToken을 제거한다.
 
+OAuth2 로그인 후 `chat.html` 최초 진입처럼 AccessToken이 없는 상태에서 재발급에 성공한 경우에는 로그인 이벤트를 `localStorage`에 기록해 같은 브라우저의 다른 채팅 탭이 기존 프론트 세션을 종료하도록 한다. AccessToken 만료에 따른 일반 재발급에서는 이 이벤트를 기록하지 않는다.
+
 JWT payload를 프론트에서 decode하는 것은 만료 예정 시각을 예측하는 보조 수단일 수 있지만, Redis RefreshToken 상태나 사용자 삭제 상태를 증명하지 않으므로 서버 응답을 최종 기준으로 삼아야 한다.
 
 ### 16.3 401과 재발급
